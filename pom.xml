@@ -6,7 +6,7 @@
 
     <groupId>dev.minted</groupId>
     <artifactId>minted-free</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <packaging>jar</packaging>
 
     <name>Minted-Free</name>
@@ -40,6 +40,33 @@
             <version>1.8.8-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+
+        <!--
+            Last HikariCP release on the Java-7 compatible line. Bundled and
+            relocated (see the shade plugin) so it never clashes with a copy the
+            host server or another plugin already ships.
+        -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>2.7.9</version>
+        </dependency>
+
+        <!--
+            JDBC drivers are bundled for a reason: the server classpath has no
+            driver for the default sqlite setup (or any driver, on modern
+            Paper). Bundling both keeps the jar self-sufficient from 1.8 up.
+        -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.28.0</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -58,6 +85,46 @@
                 <configuration>
                     <release>8</release>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.zaxxer.hikari</pattern>
+                                    <shadedPattern>dev.minted.libs.hikari</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.slf4j</pattern>
+                                    <shadedPattern>dev.minted.libs.slf4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.mysql</pattern>
+                                    <shadedPattern>dev.minted.libs.mysql</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google.protobuf</pattern>
+                                    <shadedPattern>dev.minted.libs.protobuf</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <!--
+                                Other jdbc driver is deliberately NOT relocated: sqlite-jdbc's native
+                                library (JNI) hard-codes org.sqlite.core.*, so "org.sqlite" has to
+                                keep its name. The plugin classloader is child-first, so our bundled
+                                copy shadows anything the host server ships.
+                            -->
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

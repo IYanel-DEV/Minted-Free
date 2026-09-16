@@ -35,12 +35,20 @@ public final class Reflection {
     }
 
     public static Method getMethod(Class<?> owner, String name, Class<?>... parameterTypes) {
+        // Public lookup first: finds inherited methods, which getDeclaredMethod
+        // never does. Fall back to declared only for private/non-public members.
         try {
-            Method method = owner.getDeclaredMethod(name, parameterTypes);
+            Method method = owner.getMethod(name, parameterTypes);
             method.setAccessible(true);
             return method;
         } catch (NoSuchMethodException e) {
-            throw new ReflectionException("No method " + owner.getName() + "#" + name, e);
+            try {
+                Method method = owner.getDeclaredMethod(name, parameterTypes);
+                method.setAccessible(true);
+                return method;
+            } catch (NoSuchMethodException ignored) {
+                throw new ReflectionException("No method " + owner.getName() + "#" + name, e);
+            }
         }
     }
 

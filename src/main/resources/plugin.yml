@@ -20,6 +20,13 @@ commands:
     description: Main Minted command.
     aliases: [mint]
     usage: /minted [reload]
+  balance:
+    description: Check a balance.
+    aliases: [bal, money]
+    usage: /balance [player]
+  pay:
+    description: Pay another player.
+    usage: /pay <player> <amount>
 
 permissions:
   minted.use:
@@ -28,3 +35,12 @@ permissions:
   minted.admin:
     description: Manage Minted and reload its configuration.
     default: op
+  minted.balance:
+    description: Check your own balance.
+    default: true
+  minted.balance.others:
+    description: Check another player's balance.
+    default: op
+  minted.pay:
+    description: Pay another player.
+    default: true

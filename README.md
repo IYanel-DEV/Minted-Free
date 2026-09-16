@@ -1,7 +1,7 @@
 # Minted Free
 
 A GUI-first economy plugin for premium survival and roleplay servers.
-**Status:** `v0.1.0` - Foundation (build skeleton + cross-version layer).
+**Status:** `v0.2.0` - Economy Core (async storage, balances, banknotes).
 
 Minted ships **1.8 through 1.26 in a single jar**. No separate JARs per
 version, no `api-version` legacy switch, no per-version shims duplicated in
@@ -23,6 +23,9 @@ Output: `target/Minted-<version>.jar`
 | --- | --- |
 | `dev.minted` | Plugin entry point, lifecycle wiring |
 | `dev.minted.command` | Command registration and dispatch |
+| `dev.minted.backend` | Async SQL storage (sqlite/mysql) over a shaded Hikari pool |
+| `dev.minted.bank` | Balances, transfers and the batched save loop |
+| `dev.minted.banknote` | Paper banknotes: mint, verify, redeem |
 | `dev.minted.compat` | `ServerVersion` - version parsing, NMS package detection |
 | `dev.minted.util` | Version-safe reflection helpers for NMS access |
 

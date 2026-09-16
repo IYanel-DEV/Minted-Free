@@ -122,6 +122,9 @@ public final class ServerVersion {
 
     @Override
     public String toString() {
-        return String.format(Locale.ROOT, "1.%d.%d (%s)", major, minor, patch);
+        // 1.13.2 or 1.21; only print the patch when the server actually has one.
+        return patch > 0
+                ? String.format(Locale.ROOT, "%d.%d.%d", major, minor, patch)
+                : String.format(Locale.ROOT, "%d.%d", major, minor);
     }
 }
