@@ -1,0 +1,28 @@
+# ---------------------------------------------------------------------------
+# Minted configuration
+# ---------------------------------------------------------------------------
+
+currency:
+  # Display name of the currency unit used across all GUIs and messages.
+  name: Coins
+  singular: Coin
+  # Symbol prepended to formatted balances.
+  symbol: "$"
+
+database:
+  # Storage backend. sqlite ships zero-config; mysql requires the fields below
+  # and enables cross-server syncing on BungeeCord/Velocity networks.
+  type: sqlite
+  host: localhost
+  port: 3306
+  database: minted
+  username: root
+  password: ""
+  # Connection pool size. One thread per requested pool slot, allocated lazily.
+  pool-size: 8
+
+economy:
+  # Starting balance granted to players on first join.
+  starting-balance: 0
+  # Hard cap for any single balance. Guards against overflow duplication bugs.
+  max-balance: 1000000000

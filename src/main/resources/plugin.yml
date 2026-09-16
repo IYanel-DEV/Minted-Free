@@ -1,0 +1,30 @@
+# ---------------------------------------------------------------------------
+# Minted - plugin descriptor
+#
+# api-version is intentionally NOT set. It tells the server to enable legacy
+# behaviour (legacy material names, etc.). Since Minted ships 1.8 -> 1.26 in
+# a single jar, omitting it keeps startup behaviour identical everywhere.
+# Version-specific behaviour is handled by the compat layer, never by the
+# server's own legacy switch.
+# ---------------------------------------------------------------------------
+
+name: Minted
+version: ${project.version}
+description: GUI-first economy for premium survival and roleplay servers.
+author: iyanel-dev
+website: https://github.com/IYanel-DEV/Minted-Free
+main: dev.minted.MintedPlugin
+
+commands:
+  minted:
+    description: Main Minted command.
+    aliases: [mint]
+    usage: /minted [reload]
+
+permissions:
+  minted.use:
+    description: Access to the Minted economy.
+    default: true
+  minted.admin:
+    description: Manage Minted and reload its configuration.
+    default: op
