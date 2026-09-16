@@ -1,5 +1,7 @@
 package dev.minted.gui;
 
+import dev.minted.gui.theme.Design;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -35,7 +37,9 @@ public final class AmountMenu extends Menu {
         double[] presets = ctx.presets();
         for (int i = 0; i < presets.length; i++) {
             final double amount = presets[i];
-            set(1 + i * 2, Icon.of(Material.GOLD_INGOT, ChatColor.GOLD + verb + " " + ctx.format().format(amount)),
+            set(1 + i * 2, Icon.of(Material.GOLD_INGOT,
+                            Design.MONEY + "" + ChatColor.BOLD + verb + " " + ctx.format().format(amount),
+                            Design.lore(null, null, "Click to " + verb.toLowerCase() + " this amount.")),
                     new Consumer<Player>() {
                         @Override
                         public void accept(Player player) {
@@ -43,14 +47,15 @@ public final class AmountMenu extends Menu {
                         }
                     });
         }
-        set(7, Icon.of(Material.PAPER, ChatColor.YELLOW + "Custom amount",
-                        ChatColor.GRAY + "Type a number in chat, or 'cancel'."),
+        set(7, Icon.of(Material.PAPER, Design.HEADING + "" + ChatColor.BOLD + "Custom amount",
+                        Design.lore("Enter your own amount.", null, "Type a number in chat, or 'cancel'.")),
                 new Consumer<Player>() {
                     @Override
                     public void accept(Player player) {
                         askCustom(player);
                     }
                 });
+        fillEmpty(ctx.design().filler());
     }
 
     private void askCustom(final Player player) {

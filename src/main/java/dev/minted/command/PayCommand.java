@@ -2,6 +2,7 @@ package dev.minted.command;
 
 import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.WalletService;
+import dev.minted.sound.SoundFX;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -19,10 +20,12 @@ public final class PayCommand implements CommandExecutor {
 
     private final WalletService wallet;
     private final MoneyFormat format;
+    private final SoundFX sounds;
 
-    public PayCommand(WalletService wallet, MoneyFormat format) {
+    public PayCommand(WalletService wallet, MoneyFormat format, SoundFX sounds) {
         this.wallet = wallet;
         this.format = format;
+        this.sounds = sounds;
     }
 
     @Override
@@ -66,6 +69,8 @@ public final class PayCommand implements CommandExecutor {
                 + ChatColor.GREEN + " to " + target.getName() + ".");
         target.sendMessage(ChatColor.GREEN + "Received " + ChatColor.WHITE + format.format(amount)
                 + ChatColor.GREEN + " from " + from.getName() + ".");
+        sounds.paySent(from);
+        sounds.payReceived(target);
         return true;
     }
 

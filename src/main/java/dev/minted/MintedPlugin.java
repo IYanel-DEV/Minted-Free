@@ -20,13 +20,16 @@ import dev.minted.command.BankCommand;
 import dev.minted.command.CommandManager;
 import dev.minted.command.PayCommand;
 import dev.minted.command.SellCommand;
+import dev.minted.compat.Glass;
 import dev.minted.compat.ServerVersion;
 import dev.minted.gui.ChatPrompt;
 import dev.minted.gui.GuiContext;
 import dev.minted.gui.InteractionListener;
 import dev.minted.gui.MenuListener;
+import dev.minted.gui.theme.Design;
 import dev.minted.lang.Messages;
 import dev.minted.request.RequestService;
+import dev.minted.sound.SoundFX;
 import dev.minted.shop.ShopContext;
 import dev.minted.shop.ShopService;
 import dev.minted.shop.Trade;
@@ -132,19 +135,22 @@ public final class MintedPlugin extends JavaPlugin {
 
         CombatLock combatLock = combatLock();
 
+        Design design = new Design(new Glass(serverVersion));
+        SoundFX sounds = new SoundFX(getConfig().getConfigurationSection("sounds"));
+
         ChatPrompt chatPrompt = new ChatPrompt(this);
         GuiContext gui = new GuiContext(walletEconomy, bankEconomy, bankService, walletService, noteInventory,
-                format, chatPrompt, requestService, presets(), banknotes, messages, combatLock);
+                format, chatPrompt, requestService, presets(), banknotes, messages, combatLock, design, sounds);
 
         this.shopService = new ShopService(this, new ShopDao(pool, dialect));
         Trade trade = new Trade(walletService, bankEconomy, format, messages);
-        ShopContext shopContext = new ShopContext(shopService, trade, messages, format, chatPrompt);
+        ShopContext shopContext = new ShopContext(shopService, trade, messages, format, chatPrompt, design);
 
         registerListeners(chatPrompt, gui, banknotes, noteInventory, format, messages, physical, combatLock);
 
         new CommandManager(this, gui, requestService).register();
         setExecutor("balance", new BalanceCommand(walletService, format));
-        setExecutor("pay", new PayCommand(walletService, format));
+        setExecutor("pay", new PayCommand(walletService, format, sounds));
         setExecutor("bank", new BankCommand(bankService, bankEconomy, banknotes, noteInventory, gui, format,
                 messages, physical, combatLock));
         setExecutor("sell", new SellCommand(shopContext, banknotes, getConfig().getString("shops.global", "Spawn")));

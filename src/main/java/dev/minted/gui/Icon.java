@@ -5,10 +5,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * Builds menu icons. Only materials whose name is unchanged from 1.8 to 1.26
- * are used, so an icon renders the same on every supported server.
+ * Builds menu icons. Materials are chosen so an icon renders the same on every
+ * supported server (or come pre-resolved through the compat layer); this class
+ * only names and lores a stack.
  */
 public final class Icon {
 
@@ -16,11 +18,24 @@ public final class Icon {
     }
 
     public static ItemStack of(Material material, String name, String... lore) {
-        ItemStack item = new ItemStack(material);
+        return of(new ItemStack(material), name, Arrays.asList(lore));
+    }
+
+    /** Names and lores an already-built stack (e.g. a compat-resolved pane). */
+    public static ItemStack of(ItemStack base, String name, String... lore) {
+        return of(base, name, Arrays.asList(lore));
+    }
+
+    public static ItemStack of(Material material, String name, List<String> lore) {
+        return of(new ItemStack(material), name, lore);
+    }
+
+    public static ItemStack of(ItemStack base, String name, List<String> lore) {
+        ItemStack item = base.clone();
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(name);
-        if (lore.length > 0) {
-            meta.setLore(Arrays.asList(lore));
+        if (lore != null && !lore.isEmpty()) {
+            meta.setLore(lore);
         }
         item.setItemMeta(meta);
         return item;

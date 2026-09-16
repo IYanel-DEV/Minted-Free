@@ -79,6 +79,19 @@ shops:
   # simply sells the held item to this shop at its configured buy price.
   global: Spawn
 
+sounds:
+  # Money-moment sound effects, played only to the one player who should hear it.
+  # Master switch: when false the whole feature is inert.
+  enabled: true
+  # Playback volume, 0.0 - 1.0.
+  volume: 1.0
+  # Which sound each moment plays. Use 1.8-era Sound names (e.g. NOTE_BASS,
+  # ORB_PICKUP, NOTE_PLING, LEVEL_UP, ANVIL_LAND); they are auto-translated to
+  # the modern spelling on 1.13+. An unknown name simply plays nothing.
+  pay-sent: NOTE_BASS
+  pay-received: ORB_PICKUP
+  request-received: NOTE_PLING
+
 money:
   # Denominations minted when the bank pays out physical cash (/bank withdraw).
   # The amount is split into these notes largest-first; any leftover that no

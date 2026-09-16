@@ -1,5 +1,6 @@
 package dev.minted.gui;
 
+import dev.minted.gui.theme.Design;
 import dev.minted.request.PaymentRequest;
 import dev.minted.request.RequestMessage;
 
@@ -20,7 +21,7 @@ public final class InteractionMenu extends Menu {
     private final Player target;
 
     public InteractionMenu(GuiContext ctx, Player viewer, Player target) {
-        super(ChatColor.DARK_GREEN + "Pay " + target.getName(), 3);
+        super(Design.title(Design.Accent.BANK, "Pay " + target.getName()), 3);
         this.ctx = ctx;
         this.viewer = viewer;
         this.target = target;
@@ -28,23 +29,27 @@ public final class InteractionMenu extends Menu {
 
     @Override
     protected void build() {
-        set(4, Icon.of(Material.PAPER, ChatColor.WHITE + target.getName(),
-                ChatColor.GRAY + "Send or request money."), null);
-        set(11, Icon.of(Material.GOLD_INGOT, ChatColor.GOLD + "Wallet",
-                ChatColor.GRAY + ctx.format().format(ctx.walletService().balance(viewer))), null);
-        set(13, Icon.of(Material.EMERALD, ChatColor.GREEN + "Bank",
-                ChatColor.GRAY + ctx.format().format(ctx.bank().bankBalance(viewer.getUniqueId()))), null);
+        Design d = ctx.design();
+        frame(d.border(Design.Accent.BANK));
+        set(4, Icon.of(Material.PAPER, Design.HEADING + "" + ChatColor.BOLD + target.getName(),
+                Design.lore("Send or request money.", null, null)), null);
+        set(11, d.wallet(ctx.walletService().balance(viewer), ctx.format()), null);
+        set(13, d.bank(ctx.bank().bankBalance(viewer.getUniqueId()), ctx.format()), null);
 
-        set(20, Icon.of(Material.GOLD_BLOCK, ChatColor.GOLD + "Send money"), new Consumer<Player>() {
+        set(20, Icon.of(Material.GOLD_BLOCK, Design.MONEY + "" + ChatColor.BOLD + "Send money",
+                Design.lore("Give money to " + target.getName() + ".", null, "Click to choose an amount.")),
+                new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new AmountMenu(ctx, ChatColor.DARK_GREEN + "Send money", "Send", send()).open(player);
+                new AmountMenu(ctx, Design.title(Design.Accent.BANK, "Send money"), "Send", send()).open(player);
             }
         });
-        set(24, Icon.of(Material.CHEST, ChatColor.YELLOW + "Request money"), new Consumer<Player>() {
+        set(24, Icon.of(Material.CHEST, Design.MONEY + "" + ChatColor.BOLD + "Request money",
+                Design.lore("Ask " + target.getName() + " to pay you.", null, "Click to choose an amount.")),
+                new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new AmountMenu(ctx, ChatColor.GOLD + "Request money", "Request", request()).open(player);
+                new AmountMenu(ctx, Design.title(Design.Accent.BANK, "Request money"), "Request", request()).open(player);
             }
         });
     }
@@ -65,6 +70,8 @@ public final class InteractionMenu extends Menu {
                         + ChatColor.GREEN + " to " + target.getName() + ".");
                 target.sendMessage(ChatColor.GREEN + "Received " + ChatColor.WHITE + ctx.format().format(amount)
                         + ChatColor.GREEN + " from " + viewer.getName() + ".");
+                ctx.sounds().paySent(viewer);
+                ctx.sounds().payReceived(target);
                 new InteractionMenu(ctx, viewer, target).open(player);
             }
         };
@@ -80,6 +87,7 @@ public final class InteractionMenu extends Menu {
                 }
                 PaymentRequest req = ctx.requests().create(viewer.getUniqueId(), target.getUniqueId(), amount);
                 RequestMessage.send(target, viewer.getName(), req, ctx.format());
+                ctx.sounds().requestReceived(target);
                 player.sendMessage(ChatColor.GREEN + "Requested " + ChatColor.WHITE + ctx.format().format(amount)
                         + ChatColor.GREEN + " from " + target.getName() + ".");
                 player.closeInventory();

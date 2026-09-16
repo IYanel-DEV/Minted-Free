@@ -2,6 +2,7 @@ package dev.minted.shop.menu;
 
 import dev.minted.gui.Icon;
 import dev.minted.gui.Menu;
+import dev.minted.gui.theme.Design;
 import dev.minted.shop.Shop;
 import dev.minted.shop.ShopContext;
 import dev.minted.shop.ShopItem;
@@ -35,13 +36,15 @@ public final class SlotEditorMenu extends Menu {
 
     @Override
     protected void build() {
+        frame(ctx.design().border(Design.Accent.SHOP));
         set(13, preview(), null);
         set(10, Icon.of(Material.GOLD_INGOT, ctx.messages().get("slot.set-buy")), price(true));
         set(11, Icon.of(Material.GOLD_NUGGET, ctx.messages().get("slot.set-sell")), price(false));
         set(12, Icon.of(Material.BOOK, ctx.messages().get("slot.set-category")), category());
         set(14, Icon.of(Material.CHEST, ctx.messages().get("slot.replace")), replace());
         set(15, Icon.of(Material.BARRIER, ctx.messages().get("slot.remove")), remove());
-        set(22, Icon.of(Material.ARROW, ctx.messages().get("slot.back")), back());
+        set(22, ctx.design().back(), back());
+        fillEmpty(ctx.design().filler());
     }
 
     private ItemStack preview() {

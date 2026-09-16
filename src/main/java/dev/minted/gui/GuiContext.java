@@ -7,8 +7,10 @@ import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.WalletService;
 import dev.minted.banknote.BanknoteManager;
 import dev.minted.banknote.NoteInventory;
+import dev.minted.gui.theme.Design;
 import dev.minted.lang.Messages;
 import dev.minted.request.RequestService;
+import dev.minted.sound.SoundFX;
 
 import java.util.UUID;
 
@@ -31,10 +33,13 @@ public final class GuiContext {
     private final BanknoteManager banknotes;
     private final Messages messages;
     private final CombatLock combatLock;
+    private final Design design;
+    private final SoundFX sounds;
 
     public GuiContext(EconomyService wallet, EconomyService bankEconomy, BankService bank, WalletService walletService,
                       NoteInventory notes, MoneyFormat format, ChatPrompt prompt, RequestService requests,
-                      double[] presets, BanknoteManager banknotes, Messages messages, CombatLock combatLock) {
+                      double[] presets, BanknoteManager banknotes, Messages messages, CombatLock combatLock,
+                      Design design, SoundFX sounds) {
         this.wallet = wallet;
         this.bankEconomy = bankEconomy;
         this.bank = bank;
@@ -47,6 +52,16 @@ public final class GuiContext {
         this.banknotes = banknotes;
         this.messages = messages;
         this.combatLock = combatLock;
+        this.design = design;
+        this.sounds = sounds;
+    }
+
+    public Design design() {
+        return design;
+    }
+
+    public SoundFX sounds() {
+        return sounds;
     }
 
     /** True once storage is open and this player's accounts are cached. */

@@ -2,6 +2,7 @@ package dev.minted.shop.menu;
 
 import dev.minted.gui.Icon;
 import dev.minted.gui.Menu;
+import dev.minted.gui.theme.Design;
 import dev.minted.shop.ShopContext;
 
 import org.bukkit.Material;
@@ -53,6 +54,7 @@ public final class QuantityMenu extends Menu {
                         askCustom(player);
                     }
                 });
+        fillEmpty(ctx.design().filler());
     }
 
     private void askCustom(final Player player) {

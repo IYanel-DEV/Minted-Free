@@ -60,6 +60,28 @@ public abstract class Menu implements InventoryHolder {
         }
     }
 
+    /** Draws the standard 1-slot border frame with the given pane. Call first. */
+    protected void frame(ItemStack pane) {
+        int size = inventory.getSize();
+        int rows = size / 9;
+        for (int slot = 0; slot < size; slot++) {
+            int row = slot / 9;
+            int col = slot % 9;
+            if (row == 0 || row == rows - 1 || col == 0 || col == 8) {
+                inventory.setItem(slot, pane);
+            }
+        }
+    }
+
+    /** Fills every still-empty slot with the given pane. Call last. */
+    protected void fillEmpty(ItemStack pane) {
+        for (int slot = 0; slot < inventory.getSize(); slot++) {
+            if (inventory.getItem(slot) == null) {
+                inventory.setItem(slot, pane);
+            }
+        }
+    }
+
     protected abstract void build();
 
     public final void open(Player player) {

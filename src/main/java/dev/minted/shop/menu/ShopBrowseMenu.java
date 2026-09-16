@@ -39,6 +39,7 @@ public final class ShopBrowseMenu extends Menu {
             set(slot, icon(shop), open(shop));
             slot++;
         }
+        fillEmpty(ctx.design().filler());
     }
 
     private org.bukkit.inventory.ItemStack icon(Shop shop) {

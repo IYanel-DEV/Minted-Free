@@ -2,6 +2,7 @@ package dev.minted.shop.menu;
 
 import dev.minted.gui.Icon;
 import dev.minted.gui.Menu;
+import dev.minted.gui.theme.Design;
 import dev.minted.shop.Shop;
 import dev.minted.shop.ShopContext;
 import dev.minted.shop.ShopItem;
@@ -57,6 +58,7 @@ public final class ShopMenu extends Menu {
         renderCategories();
         renderItems(items, current);
         renderNav(pages, current);
+        fillEmpty(ctx.design().filler());
     }
 
     private List<ShopItem> filtered() {
@@ -105,12 +107,12 @@ public final class ShopMenu extends Menu {
     }
 
     private void renderNav(int pages, final int current) {
-        set(NAV_PREV, Icon.of(Material.ARROW, ctx.messages().get("menu.prev-page")), openPage(current - 1, pages));
-        set(NAV_INFO, Icon.of(Material.PAPER, ctx.messages().get("menu.page-info",
-                "page", String.valueOf(current + 1), "pages", String.valueOf(pages))), null);
-        set(NAV_NEXT, Icon.of(Material.ARROW, ctx.messages().get("menu.next-page")), openPage(current + 1, pages));
+        Design d = ctx.design();
+        set(NAV_PREV, d.prev(), openPage(current - 1, pages));
+        set(NAV_INFO, d.pageInfo(current + 1, pages), null);
+        set(NAV_NEXT, d.next(), openPage(current + 1, pages));
         if (ctx.shops().all().size() > 1) {
-            set(NAV_BACK, Icon.of(Material.CHEST, ctx.messages().get("menu.back")), new Consumer<Player>() {
+            set(NAV_BACK, d.back(), new Consumer<Player>() {
                 @Override
                 public void accept(Player player) {
                     new ShopBrowseMenu(ctx).open(player);

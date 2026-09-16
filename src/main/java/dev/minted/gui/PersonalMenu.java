@@ -1,6 +1,7 @@
 package dev.minted.gui;
 
 import dev.minted.bank.BankAccount;
+import dev.minted.gui.theme.Design;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -24,7 +25,7 @@ public final class PersonalMenu extends Menu {
     private final Player viewer;
 
     public PersonalMenu(GuiContext ctx, Player viewer) {
-        super(ChatColor.DARK_GREEN + "Your bank", 3);
+        super(Design.title(Design.Accent.BANK, "Your bank"), 3);
         this.ctx = ctx;
         this.viewer = viewer;
     }
@@ -32,14 +33,14 @@ public final class PersonalMenu extends Menu {
     @Override
     protected void build() {
         boolean physical = ctx.walletService().isPhysical();
-        set(11, Icon.of(Material.GOLD_INGOT, ChatColor.GOLD + "Wallet",
-                ChatColor.GRAY + ctx.format().format(ctx.walletService().balance(viewer))), null);
-        set(15, Icon.of(Material.EMERALD, ChatColor.GREEN + "Bank",
-                ChatColor.GRAY + ctx.format().format(ctx.bank().bankBalance(viewer.getUniqueId()))), null);
+        Design d = ctx.design();
+        frame(d.border(Design.Accent.BANK));
+        set(11, d.wallet(ctx.walletService().balance(viewer), ctx.format()), null);
+        set(15, d.bank(ctx.bank().bankBalance(viewer.getUniqueId()), ctx.format()), null);
 
         String depositLore = physical ? "All banknotes in your inventory." : "Wallet into bank.";
-        set(21, Icon.of(Material.GOLD_BLOCK, ChatColor.GOLD + "Deposit",
-                ChatColor.GRAY + depositLore), new Consumer<Player>() {
+        set(21, Icon.of(Material.GOLD_BLOCK, Design.MONEY + "" + ChatColor.BOLD + "Deposit",
+                Design.lore(depositLore, null, "Click to deposit.")), new Consumer<Player>() {
             @Override
             public void accept(Player player) {
                 if (ctx.walletService().isPhysical()) {
@@ -51,15 +52,15 @@ public final class PersonalMenu extends Menu {
                     }
                     new PersonalMenu(ctx, viewer).open(player);
                 } else {
-                    new AmountMenu(ctx, ChatColor.DARK_GREEN + "Deposit", "Deposit", deposit()).open(player);
+                    new AmountMenu(ctx, Design.title(Design.Accent.BANK, "Deposit"), "Deposit", deposit()).open(player);
                 }
             }
         });
-        set(23, Icon.of(Material.IRON_INGOT, ChatColor.WHITE + "Withdraw",
-                ChatColor.GRAY + "Bank into cash."), new Consumer<Player>() {
+        set(23, Icon.of(Material.IRON_INGOT, Design.HEADING + "" + ChatColor.BOLD + "Withdraw",
+                Design.lore("Bank into cash.", null, "Click to withdraw.")), new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new AmountMenu(ctx, ChatColor.DARK_GREEN + "Withdraw", "Withdraw", withdraw()).open(player);
+                new AmountMenu(ctx, Design.title(Design.Accent.BANK, "Withdraw"), "Withdraw", withdraw()).open(player);
             }
         });
     }

@@ -2,6 +2,7 @@ package dev.minted.shop.menu;
 
 import dev.minted.gui.Icon;
 import dev.minted.gui.Menu;
+import dev.minted.gui.theme.Design;
 import dev.minted.shop.Shop;
 import dev.minted.shop.ShopContext;
 import dev.minted.shop.ShopItem;
@@ -34,6 +35,7 @@ public final class ItemDetailMenu extends Menu {
 
     @Override
     protected void build() {
+        frame(ctx.design().border(Design.Accent.SHOP));
         set(13, item.copy(), null);
 
         if (item.isBuyable()) {
@@ -52,7 +54,7 @@ public final class ItemDetailMenu extends Menu {
             set(15, Icon.of(Material.EMERALD, ctx.messages().get("item.not-sellable")), null);
         }
 
-        set(22, Icon.of(Material.ARROW, ctx.messages().get("menu.back")), new Consumer<Player>() {
+        set(22, ctx.design().back(), new Consumer<Player>() {
             @Override
             public void accept(Player player) {
                 new ShopMenu(ctx, shop, returnPage, null).open(player);
