@@ -33,6 +33,9 @@ public final class ShopBrowseMenu extends Menu {
         int slot = 0;
         int size = getInventory().getSize();
         for (Shop shop : ctx.shops().all()) {
+            if (shop.isCommunity()) {
+                continue;
+            }
             if (slot >= size) {
                 return;
             }
@@ -52,7 +55,7 @@ public final class ShopBrowseMenu extends Menu {
         return new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new ShopMenu(ctx, shop, 0, null).open(player);
+                new HomeMenu(ctx, shop, player).open(player);
             }
         };
     }

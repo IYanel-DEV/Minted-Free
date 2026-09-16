@@ -125,6 +125,39 @@ editor:
   removed: "&aRemoved the item."
   page-full: "&cThis page is full."
 
+community:
+  search:
+    prompt: "&7Type to search, or &fcancel&7."
+  list:
+    hold: "&cPick an item from your inventory to sell."
+    banknote: "&cBanknotes are money, not merchandise - you cannot list them."
+    price-invalid: "&cEnter a buy price greater than zero."
+    none: "&cYou do not have any of that item to list."
+    full: "&cThe community market is full right now."
+    created: "&aListed &f{quantity}x {item}&a at &f{price}&a each."
+    price-prompt: "&7Type the price buyers pay per unit, or &fcancel&7."
+    buyback-prompt: "&7Type the buy-back price per unit, &fnone&7 to close it, or &fcancel&7."
+  buy:
+    gone: "&cThat listing is no longer available."
+    own: "&cYou cannot buy from your own listing."
+    not-ready: "&cYour account is still loading, try again in a moment."
+    insufficient: "&cYou cannot afford that. It costs &f{price}&c."
+    success: "&aBought &f{quantity}x {item}&a for &f{price}&a."
+    overflow: "&7Your inventory was full, so some items dropped at your feet."
+  sell:
+    closed: "&cThis listing is not buying items back."
+    own: "&cYou cannot sell to your own listing."
+    owner-offline: "&cThe owner is offline, so their buy-back is closed."
+    owner-broke: "&cThe owner cannot afford to buy those back right now."
+    full: "&cThat listing is already full."
+    none: "&cYou have no &f{item}&c to sell."
+    success: "&aSold &f{quantity}x {item}&a for &f{earned}&a."
+  collect:
+    none: "&cThere is nothing to collect from that listing."
+    done: "&aCollected &f{amount}&a from your sales."
+  withdraw:
+    done: "&aWithdrew &f{quantity}&a units back to your inventory."
+
 slot:
   title: "&2Edit slot"
   set-buy: "&eSet buy price"

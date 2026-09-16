@@ -21,6 +21,7 @@ import dev.minted.command.CommandManager;
 import dev.minted.command.PayCommand;
 import dev.minted.command.SellCommand;
 import dev.minted.compat.Glass;
+import dev.minted.compat.MaterialLookup;
 import dev.minted.compat.ServerVersion;
 import dev.minted.gui.ChatPrompt;
 import dev.minted.gui.GuiContext;
@@ -30,6 +31,7 @@ import dev.minted.gui.theme.Design;
 import dev.minted.lang.Messages;
 import dev.minted.request.RequestService;
 import dev.minted.sound.SoundFX;
+import dev.minted.shop.Market;
 import dev.minted.shop.ShopContext;
 import dev.minted.shop.ShopService;
 import dev.minted.shop.Trade;
@@ -135,6 +137,7 @@ public final class MintedPlugin extends JavaPlugin {
 
         CombatLock combatLock = combatLock();
 
+        MaterialLookup materials = new MaterialLookup(serverVersion);
         Design design = new Design(new Glass(serverVersion));
         SoundFX sounds = new SoundFX(getConfig().getConfigurationSection("sounds"));
 
@@ -142,9 +145,11 @@ public final class MintedPlugin extends JavaPlugin {
         GuiContext gui = new GuiContext(walletEconomy, bankEconomy, bankService, walletService, noteInventory,
                 format, chatPrompt, requestService, presets(), banknotes, messages, combatLock, design, sounds);
 
-        this.shopService = new ShopService(this, new ShopDao(pool, dialect));
+        this.shopService = new ShopService(this, new ShopDao(pool, dialect), serverVersion, materials);
         Trade trade = new Trade(walletService, bankEconomy, format, messages);
-        ShopContext shopContext = new ShopContext(shopService, trade, messages, format, chatPrompt, design);
+        Market market = new Market(shopService, walletService, banknotes, format, messages);
+        ShopContext shopContext = new ShopContext(shopService, trade, market, messages, format, chatPrompt,
+                design, walletService, materials);
 
         registerListeners(chatPrompt, gui, banknotes, noteInventory, format, messages, physical, combatLock);
 

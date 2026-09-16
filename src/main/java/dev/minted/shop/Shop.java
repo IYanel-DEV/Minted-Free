@@ -25,15 +25,39 @@ public final class Shop {
     private String name;
     private ItemStack icon;
     private Currency currency;
+    private final ShopType type;
 
     // Keyed by page * SLOTS_PER_PAGE + slot, sorted so iteration is page-then-slot.
     private final TreeMap<Integer, ShopItem> items = new TreeMap<Integer, ShopItem>();
 
     public Shop(int id, String name, ItemStack icon, Currency currency) {
+        this(id, name, icon, currency, ShopType.GLOBAL);
+    }
+
+    public Shop(int id, String name, ItemStack icon, Currency currency, ShopType type) {
         this.id = id;
         this.name = name;
         this.icon = icon;
         this.currency = currency;
+        this.type = type;
+    }
+
+    public ShopType getType() {
+        return type;
+    }
+
+    public boolean isCommunity() {
+        return type == ShopType.COMMUNITY;
+    }
+
+    /** The next free (page, slot) address, or -1 when full - used by community listings. */
+    public int firstFreeAddress() {
+        for (int address = 0; address < SLOTS_PER_PAGE * 64; address++) {
+            if (!items.containsKey(address)) {
+                return address;
+            }
+        }
+        return -1;
     }
 
     public int getId() {

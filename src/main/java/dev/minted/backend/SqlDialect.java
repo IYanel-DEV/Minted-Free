@@ -75,7 +75,8 @@ public enum SqlDialect {
                 + "id INTEGER PRIMARY KEY, "
                 + "name VARCHAR(64) NOT NULL UNIQUE, "
                 + "icon TEXT NOT NULL, "
-                + "currency VARCHAR(16) NOT NULL)";
+                + "currency VARCHAR(16) NOT NULL, "
+                + "type VARCHAR(16) NOT NULL DEFAULT 'global')";
     }
 
     public String createShopItems() {
@@ -87,8 +88,26 @@ public enum SqlDialect {
                 + "buy_price DOUBLE NOT NULL, "
                 + "sell_price DOUBLE NOT NULL, "
                 + "category VARCHAR(64), "
+                + "owner VARCHAR(36), "
+                + "stock BIGINT NOT NULL DEFAULT 0, "
+                + "buy_back DOUBLE NOT NULL DEFAULT -1, "
+                + "earnings DOUBLE NOT NULL DEFAULT 0, "
                 + "PRIMARY KEY (shop_id, page, slot), "
                 + "FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE)";
+    }
+
+    /**
+     * In-place upgrades for a database created before v0.10.0. Each is wrapped
+     * by the DAO in a "duplicate column is fine" guard, so re-running is safe.
+     */
+    public String[] migrateShopColumns() {
+        return new String[] {
+                "ALTER TABLE shops ADD COLUMN type VARCHAR(16) NOT NULL DEFAULT 'global'",
+                "ALTER TABLE shop_items ADD COLUMN owner VARCHAR(36)",
+                "ALTER TABLE shop_items ADD COLUMN stock BIGINT NOT NULL DEFAULT 0",
+                "ALTER TABLE shop_items ADD COLUMN buy_back DOUBLE NOT NULL DEFAULT -1",
+                "ALTER TABLE shop_items ADD COLUMN earnings DOUBLE NOT NULL DEFAULT 0",
+        };
     }
 
     public String select(String table) {

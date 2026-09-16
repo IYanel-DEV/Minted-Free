@@ -3,9 +3,9 @@ package dev.minted.shop.command;
 import dev.minted.shop.Currency;
 import dev.minted.shop.Shop;
 import dev.minted.shop.ShopContext;
-import dev.minted.shop.menu.ShopBrowseMenu;
+import dev.minted.shop.menu.ChooseMenu;
+import dev.minted.shop.menu.HomeMenu;
 import dev.minted.shop.menu.ShopEditorMenu;
-import dev.minted.shop.menu.ShopMenu;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -61,11 +61,7 @@ public final class ShopCommand implements CommandExecutor {
             ctx.messages().send(player, "shop.no-shops");
             return true;
         }
-        if (ctx.shops().all().size() == 1) {
-            new ShopMenu(ctx, ctx.shops().first(), 0, null).open(player);
-        } else {
-            new ShopBrowseMenu(ctx).open(player);
-        }
+        new ChooseMenu(ctx, player).open(player);
         return true;
     }
 
@@ -79,7 +75,7 @@ public final class ShopCommand implements CommandExecutor {
             ctx.messages().send(player, "shop.unknown", "shop", name);
             return true;
         }
-        new ShopMenu(ctx, shop, 0, null).open(player);
+        new HomeMenu(ctx, shop, player).open(player);
         return true;
     }
 

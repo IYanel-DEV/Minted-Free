@@ -13,9 +13,14 @@ public final class ShopItemRow {
     private final double buyPrice;
     private final double sellPrice;
     private final String category;
+    private final String owner;
+    private final long stock;
+    private final double buyBack;
+    private final double earnings;
 
     public ShopItemRow(int shopId, int page, int slot, String itemData,
-                       double buyPrice, double sellPrice, String category) {
+                       double buyPrice, double sellPrice, String category,
+                       String owner, long stock, double buyBack, double earnings) {
         this.shopId = shopId;
         this.page = page;
         this.slot = slot;
@@ -23,6 +28,26 @@ public final class ShopItemRow {
         this.buyPrice = buyPrice;
         this.sellPrice = sellPrice;
         this.category = category;
+        this.owner = owner;
+        this.stock = stock;
+        this.buyBack = buyBack;
+        this.earnings = earnings;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public long getStock() {
+        return stock;
+    }
+
+    public double getBuyBack() {
+        return buyBack;
+    }
+
+    public double getEarnings() {
+        return earnings;
     }
 
     public int getShopId() {

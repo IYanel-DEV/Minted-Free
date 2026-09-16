@@ -2,11 +2,19 @@ package dev.minted.shop;
 
 import org.bukkit.inventory.ItemStack;
 
+import java.util.UUID;
+
 /**
  * One tradeable entry in a shop, pinned to a page and a slot in that page's
  * grid. A price of {@link #NOT_OFFERED} means that side of the trade is closed:
- * an item can be buy-only, sell-only, or both. The category is a free-form tag
- * used to group items on the shop's home page; {@code null} means uncategorised.
+ * an item can be buy-only, sell-only, or both. The category groups items on the
+ * home screen; {@code null} reads as {@code Misc}.
+ *
+ * <p>The last four fields matter only for community-marketplace listings: {@link
+ * #stock} is the real unit count a player deposited, {@link #buyBackPrice} the
+ * price the owner pays to buy units back ({@link #NOT_OFFERED} = closed), {@link
+ * #owner} the seller, and {@link #earnings} their uncollected takings. Global
+ * shop items leave them at their defaults and ignore them.
  */
 public final class ShopItem {
 
@@ -22,6 +30,11 @@ public final class ShopItem {
     private double sellPrice;
     private String category;
 
+    private long stock;
+    private double buyBackPrice = NOT_OFFERED;
+    private UUID owner;
+    private double earnings;
+
     public ShopItem(int shopId, int page, int slot, ItemStack item,
                     double buyPrice, double sellPrice, String category) {
         this.shopId = shopId;
@@ -31,6 +44,46 @@ public final class ShopItem {
         this.buyPrice = buyPrice;
         this.sellPrice = sellPrice;
         this.category = category;
+    }
+
+    public long getStock() {
+        return stock;
+    }
+
+    public void setStock(long stock) {
+        this.stock = Math.max(0L, stock);
+    }
+
+    public double getBuyBackPrice() {
+        return buyBackPrice;
+    }
+
+    public void setBuyBackPrice(double buyBackPrice) {
+        this.buyBackPrice = buyBackPrice;
+    }
+
+    public boolean buysBack() {
+        return buyBackPrice >= 0;
+    }
+
+    public UUID getOwner() {
+        return owner;
+    }
+
+    public void setOwner(UUID owner) {
+        this.owner = owner;
+    }
+
+    public double getEarnings() {
+        return earnings;
+    }
+
+    public void setEarnings(double earnings) {
+        this.earnings = Math.max(0.0D, earnings);
+    }
+
+    public void addEarnings(double amount) {
+        setEarnings(this.earnings + amount);
     }
 
     public int getShopId() {

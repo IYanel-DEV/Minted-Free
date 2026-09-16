@@ -45,7 +45,8 @@ final class ShopModelBuilder {
     private Shop toShop(ShopRow row) {
         try {
             ItemStack icon = ItemCodec.decode(row.getIconData());
-            return new Shop(row.getId(), row.getName(), icon, Currency.fromId(row.getCurrency()));
+            return new Shop(row.getId(), row.getName(), icon, Currency.fromId(row.getCurrency()),
+                    ShopType.fromId(row.getType()));
         } catch (ItemCodec.DecodeException e) {
             log.warning("Skipping shop '" + row.getName() + "': its icon could not be read.");
             return null;
@@ -59,11 +60,27 @@ final class ShopModelBuilder {
         }
         try {
             ItemStack item = ItemCodec.decode(row.getItemData());
-            shop.put(new ShopItem(shop.getId(), row.getPage(), row.getSlot(), item,
-                    row.getBuyPrice(), row.getSellPrice(), row.getCategory()));
+            ShopItem shopItem = new ShopItem(shop.getId(), row.getPage(), row.getSlot(), item,
+                    row.getBuyPrice(), row.getSellPrice(), row.getCategory());
+            shopItem.setStock(row.getStock());
+            shopItem.setBuyBackPrice(row.getBuyBack());
+            shopItem.setOwner(parseUuid(row.getOwner()));
+            shopItem.setEarnings(row.getEarnings());
+            shop.put(shopItem);
         } catch (ItemCodec.DecodeException e) {
             log.warning("Skipping an item in shop '" + shop.getName() + "' at page "
                     + row.getPage() + " slot " + row.getSlot() + ": it could not be read.");
+        }
+    }
+
+    private static java.util.UUID parseUuid(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return null;
+        }
+        try {
+            return java.util.UUID.fromString(raw);
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 

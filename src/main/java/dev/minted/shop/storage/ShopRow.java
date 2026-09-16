@@ -10,12 +10,14 @@ public final class ShopRow {
     private final String name;
     private final String iconData;
     private final String currency;
+    private final String type;
 
-    public ShopRow(int id, String name, String iconData, String currency) {
+    public ShopRow(int id, String name, String iconData, String currency, String type) {
         this.id = id;
         this.name = name;
         this.iconData = iconData;
         this.currency = currency;
+        this.type = type;
     }
 
     public int getId() {
@@ -32,5 +34,9 @@ public final class ShopRow {
 
     public String getCurrency() {
         return currency;
+    }
+
+    public String getType() {
+        return type;
     }
 }

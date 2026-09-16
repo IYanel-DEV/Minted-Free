@@ -1,5 +1,7 @@
 package dev.minted.shop;
 
+import dev.minted.compat.MaterialLookup;
+import dev.minted.compat.ServerVersion;
 import dev.minted.shop.storage.ShopDao;
 import dev.minted.shop.storage.ShopItemRow;
 import dev.minted.shop.storage.ShopRow;
@@ -29,6 +31,8 @@ public final class ShopService {
 
     private final Plugin plugin;
     private final ShopDao dao;
+    private final ServerVersion version;
+    private final MaterialLookup materials;
 
     // Keyed by lower-cased name; insertion order gives the browse order and the
     // "first shop is the default" rule.
@@ -49,9 +53,15 @@ public final class ShopService {
     private volatile boolean ready;
     private int nextId = 1;
 
-    public ShopService(Plugin plugin, ShopDao dao) {
+    public ShopService(Plugin plugin, ShopDao dao, ServerVersion version, MaterialLookup materials) {
         this.plugin = plugin;
         this.dao = dao;
+        this.version = version;
+        this.materials = materials;
+    }
+
+    public MaterialLookup materials() {
+        return materials;
     }
 
     public boolean isReady() {
@@ -98,8 +108,11 @@ public final class ShopService {
         shops.putAll(loaded.shops);
         nextId = loaded.nextId;
         ready = true;
-        if (seedIfEmpty && shops.isEmpty()) {
-            ShopSeeder.seed(this);
+        if (seedIfEmpty) {
+            // Seeds the global starter only on a truly empty install, and the
+            // community marketplace whenever it is missing (covers an upgrade
+            // from a pre-0.10.0 database that already has global shops).
+            ShopSeeder.seed(this, version, materials, shops.isEmpty());
         }
     }
 
@@ -129,19 +142,34 @@ public final class ShopService {
     }
 
     public Shop create(String name, ItemStack icon, Currency currency) {
+        return create(name, icon, currency, ShopType.GLOBAL);
+    }
+
+    public Shop create(String name, ItemStack icon, Currency currency, ShopType type) {
         final int id = nextId++;
-        Shop shop = new Shop(id, name, icon, currency);
+        Shop shop = new Shop(id, name, icon, currency, type);
         shops.put(key(name), shop);
         final String iconData = ItemCodec.encode(icon);
         final String currencyId = currency.id();
         final String stored = name;
+        final String typeId = type.id();
         async(new Runnable() {
             @Override
             public void run() {
-                dao.insertShop(id, stored, iconData, currencyId);
+                dao.insertShop(id, stored, iconData, currencyId, typeId);
             }
         });
         return shop;
+    }
+
+    /** The single community marketplace, or null before it is seeded. */
+    public Shop community() {
+        for (Shop shop : shops.values()) {
+            if (shop.isCommunity()) {
+                return shop;
+            }
+        }
+        return null;
     }
 
     public void delete(Shop shop) {
@@ -195,10 +223,14 @@ public final class ShopService {
         final double buy = item.getBuyPrice();
         final double sell = item.getSellPrice();
         final String category = item.getCategory();
+        final String owner = item.getOwner() == null ? null : item.getOwner().toString();
+        final long stock = item.getStock();
+        final double buyBack = item.getBuyBackPrice();
+        final double earnings = item.getEarnings();
         async(new Runnable() {
             @Override
             public void run() {
-                dao.saveItem(id, page, slot, data, buy, sell, category);
+                dao.saveItem(id, page, slot, data, buy, sell, category, owner, stock, buyBack, earnings);
             }
         });
     }
@@ -215,14 +247,23 @@ public final class ShopService {
     }
 
     private void async(Runnable task) {
-        writer.execute(task);
+        try {
+            writer.execute(task);
+        } catch (java.util.concurrent.RejectedExecutionException shuttingDown) {
+            // The writer is already stopping (server shutdown mid-seed). A lost
+            // write is fine: the seed re-runs next boot, and it beats crashing.
+        }
     }
 
-    /** Stops the writer, giving queued saves a moment to finish; call on disable. */
+    /**
+     * Stops the writer, waiting for queued saves to finish before the pool that
+     * backs them is closed. The window is generous because a fresh-install seed
+     * can enqueue dozens of writes; a normal shutdown drains in well under it.
+     */
     public void shutdown() {
         writer.shutdown();
         try {
-            writer.awaitTermination(5, TimeUnit.SECONDS);
+            writer.awaitTermination(20, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

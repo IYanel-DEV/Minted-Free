@@ -57,7 +57,7 @@ public final class ItemDetailMenu extends Menu {
         set(22, ctx.design().back(), new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new ShopMenu(ctx, shop, returnPage, null).open(player);
+                new HomeMenu(ctx, shop, player).open(player);
             }
         });
     }
