@@ -1,8 +1,7 @@
 package dev.minted.command;
 
-import dev.minted.bank.BankAccount;
-import dev.minted.bank.EconomyService;
 import dev.minted.bank.MoneyFormat;
+import dev.minted.bank.WalletService;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -11,17 +10,18 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * {@code /balance [player]} - shows your own balance, or another online
- * player's with the right permission. Reads straight from the in-memory cache,
- * so it answers instantly.
+ * {@code /balance [player]} - shows your own wallet, or another online player's
+ * with the right permission. In physical mode this is the value of the notes
+ * they are carrying, read straight from the inventory; in digital mode it is the
+ * cached wallet balance. Either way it answers instantly.
  */
 public final class BalanceCommand implements CommandExecutor {
 
-    private final EconomyService economy;
+    private final WalletService wallet;
     private final MoneyFormat format;
 
-    public BalanceCommand(EconomyService economy, MoneyFormat format) {
-        this.economy = economy;
+    public BalanceCommand(WalletService wallet, MoneyFormat format) {
+        this.wallet = wallet;
         this.format = format;
     }
 
@@ -31,7 +31,7 @@ public final class BalanceCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "No permission.");
             return true;
         }
-        if (!economy.isReady()) {
+        if (!wallet.isReady()) {
             sender.sendMessage(ChatColor.RED + "The economy is still starting up.");
             return true;
         }
@@ -42,12 +42,8 @@ public final class BalanceCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "Console must specify a player: /" + label + " <player>");
             return true;
         }
-        BankAccount account = economy.getCached(((Player) sender).getUniqueId());
-        if (account == null) {
-            sender.sendMessage(ChatColor.RED + "Your account is still loading, try again in a moment.");
-            return true;
-        }
-        sender.sendMessage(ChatColor.GRAY + "Balance: " + ChatColor.WHITE + format.format(account.getBalance()));
+        sender.sendMessage(ChatColor.GRAY + "Balance: " + ChatColor.WHITE
+                + format.format(wallet.balance((Player) sender)));
         return true;
     }
 
@@ -61,13 +57,8 @@ public final class BalanceCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "That player is not online.");
             return true;
         }
-        BankAccount account = economy.getCached(target.getUniqueId());
-        if (account == null) {
-            sender.sendMessage(ChatColor.RED + "That player's account is still loading, try again in a moment.");
-            return true;
-        }
         sender.sendMessage(ChatColor.GRAY + target.getName() + "'s balance: "
-                + ChatColor.WHITE + format.format(account.getBalance()));
+                + ChatColor.WHITE + format.format(wallet.balance(target)));
         return true;
     }
 }

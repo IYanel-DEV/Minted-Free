@@ -1,8 +1,7 @@
 package dev.minted.command;
 
-import dev.minted.bank.BankAccount;
-import dev.minted.bank.EconomyService;
 import dev.minted.bank.MoneyFormat;
+import dev.minted.bank.WalletService;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -11,17 +10,18 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * {@code /pay <player> <amount>} - moves funds to another online player. The
- * transfer happens in memory and the sender is told at once; the batch saver
- * persists it shortly after.
+ * {@code /pay <player> <amount>} - moves wallet money to another online player.
+ * In physical mode the sender's notes are consumed and the same value is paid to
+ * the receiver as cash; in digital mode it is an in-memory balance transfer. The
+ * sender is told at once and the batch saver persists any digital change later.
  */
 public final class PayCommand implements CommandExecutor {
 
-    private final EconomyService economy;
+    private final WalletService wallet;
     private final MoneyFormat format;
 
-    public PayCommand(EconomyService economy, MoneyFormat format) {
-        this.economy = economy;
+    public PayCommand(WalletService wallet, MoneyFormat format) {
+        this.wallet = wallet;
         this.format = format;
     }
 
@@ -39,7 +39,7 @@ public final class PayCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "Usage: /" + label + " <player> <amount>");
             return true;
         }
-        if (!economy.isReady()) {
+        if (!wallet.isReady()) {
             sender.sendMessage(ChatColor.RED + "The economy is still starting up.");
             return true;
         }
@@ -57,9 +57,7 @@ public final class PayCommand implements CommandExecutor {
             return true;
         }
 
-        BankAccount source = economy.getCached(from.getUniqueId());
-        BankAccount destination = economy.getCached(target.getUniqueId());
-        if (!economy.transfer(source, destination, amount)) {
+        if (!wallet.transfer(from, target, amount)) {
             sender.sendMessage(ChatColor.RED + "Transfer failed - check your balance and their limit.");
             return true;
         }

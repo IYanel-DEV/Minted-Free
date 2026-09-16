@@ -27,6 +27,11 @@ public final class HikariPool {
     }
 
     public DataSource start() {
+        // Idempotent: the wallet and bank storage share one pool, so whichever
+        // opens second reuses the datasource the first already built.
+        if (dataSource != null) {
+            return dataSource;
+        }
         HikariConfig config = new HikariConfig();
         config.setPoolName("Minted");
         config.setJdbcUrl(dialect.jdbcUrl(settings));

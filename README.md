@@ -1,7 +1,7 @@
 # Minted Free
 
 A GUI-first economy plugin for premium survival and roleplay servers.
-**Status:** `v0.2.0` - Economy Core (async storage, balances, banknotes).
+**Status:** `v0.4.0` - Core Shop (in-game shops, buy/sell, categories, currencies).
 
 Minted ships **1.8 through 1.26 in a single jar**. No separate JARs per
 version, no `api-version` legacy switch, no per-version shims duplicated in
@@ -26,6 +26,9 @@ Output: `target/Minted-<version>.jar`
 | `dev.minted.backend` | Async SQL storage (sqlite/mysql) over a shaded Hikari pool |
 | `dev.minted.bank` | Balances, transfers and the batched save loop |
 | `dev.minted.banknote` | Paper banknotes: mint, verify, redeem |
+| `dev.minted.gui` | Reusable inventory-menu framework and chat prompts |
+| `dev.minted.shop` | Shops: model, storage, `/eshop`, menus, buy/sell trade |
+| `dev.minted.lang` | Language bundle lookup with English fallback |
 | `dev.minted.compat` | `ServerVersion` - version parsing, NMS package detection |
 | `dev.minted.util` | Version-safe reflection helpers for NMS access |
 

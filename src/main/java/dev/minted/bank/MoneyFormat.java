@@ -12,15 +12,22 @@ import java.util.Locale;
  */
 public final class MoneyFormat {
 
+    // Suffix ladder for compact display, largest first. Kept tiny on purpose.
+    private static final double[] COMPACT_STEPS = {
+            1.0E15, 1.0E12, 1.0E9, 1.0E6, 1.0E3};
+    private static final String[] COMPACT_SUFFIXES = {"q", "t", "b", "m", "k"};
+
     private final String name;
     private final String singular;
     private final String symbol;
+    private final boolean compact;
     private final DecimalFormat number;
 
-    private MoneyFormat(String name, String singular, String symbol) {
+    private MoneyFormat(String name, String singular, String symbol, boolean compact) {
         this.name = name;
         this.singular = singular;
         this.symbol = symbol;
+        this.compact = compact;
         this.number = new DecimalFormat("#,##0.##", new DecimalFormatSymbols(Locale.ROOT));
     }
 
@@ -28,12 +35,27 @@ public final class MoneyFormat {
         return new MoneyFormat(
                 config.getString("currency.name", "Coins"),
                 config.getString("currency.singular", "Coin"),
-                config.getString("currency.symbol", "$"));
+                config.getString("currency.symbol", "$"),
+                config.getBoolean("currency.compact", false));
     }
 
     /** e.g. {@code $1,250 Coins}, or {@code $1 Coin} when the amount is one. */
     public String format(double amount) {
         String unit = amount == 1.0D ? singular : name;
-        return symbol + number.format(amount) + " " + unit;
+        return symbol + digits(amount) + " " + unit;
+    }
+
+    // Full digits, or a short suffixed form (10,000 -> 10k) when compact is on.
+    // Only the display changes; the value itself is never rounded away here.
+    private String digits(double amount) {
+        if (compact) {
+            double abs = Math.abs(amount);
+            for (int i = 0; i < COMPACT_STEPS.length; i++) {
+                if (abs >= COMPACT_STEPS[i]) {
+                    return number.format(amount / COMPACT_STEPS[i]) + COMPACT_SUFFIXES[i];
+                }
+            }
+        }
+        return number.format(amount);
     }
 }

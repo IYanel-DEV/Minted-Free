@@ -1,29 +1,37 @@
 package dev.minted.command;
 
 import dev.minted.MintedPlugin;
+import dev.minted.gui.GuiContext;
+import dev.minted.gui.PersonalMenu;
+import dev.minted.request.RequestService;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
- * Registers and dispatches the plugin's commands.
- *
- * <p>The economy commands ({@code /bank}, {@code /eco}) are intentionally
- * absent for now: they open the GUI hub, which ships in a later milestone.
+ * Registers and dispatches {@code /minted}. Besides {@code reload} it opens the
+ * personal GUI and carries the accept/decline actions behind the clickable
+ * request message.
  */
 public final class CommandManager implements CommandExecutor, TabCompleter {
 
     private final MintedPlugin plugin;
+    private final GuiContext gui;
+    private final RequestService requests;
 
-    public CommandManager(MintedPlugin plugin) {
+    public CommandManager(MintedPlugin plugin, GuiContext gui, RequestService requests) {
         this.plugin = plugin;
+        this.gui = gui;
+        this.requests = requests;
     }
 
     public void register() {
@@ -35,7 +43,8 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
         if (args.length == 0) {
             sender.sendMessage(ChatColor.GOLD + "Minted " + ChatColor.GRAY + plugin.getDescription().getVersion()
                     + ChatColor.DARK_GRAY + " | " + ChatColor.GRAY + "server " + plugin.getServerVersion());
-            sender.sendMessage(ChatColor.GRAY + "Tip: " + ChatColor.WHITE + "/minted reload");
+            sender.sendMessage(ChatColor.GRAY + "Tip: " + ChatColor.WHITE + "/minted gui" + ChatColor.GRAY
+                    + " or " + ChatColor.WHITE + "/minted reload");
             return true;
         }
 
@@ -48,18 +57,56 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
                 plugin.reloadConfig();
                 sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
                 return true;
+            case "gui":
+                return openGui(sender);
+            case "accept":
+                return resolveRequest(sender, args, true);
+            case "decline":
+                return resolveRequest(sender, args, false);
             default:
-                sender.sendMessage(ChatColor.RED + "Usage: /" + label + " [reload]");
+                sender.sendMessage(ChatColor.RED + "Usage: /" + label + " [gui|reload]");
                 return true;
         }
+    }
+
+    private boolean openGui(CommandSender sender) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Only players can open the menu.");
+            return true;
+        }
+        Player player = (Player) sender;
+        if (!gui.ready(player.getUniqueId())) {
+            sender.sendMessage(ChatColor.RED + "Your account is still loading, try again in a moment.");
+            return true;
+        }
+        new PersonalMenu(gui, player).open(player);
+        return true;
+    }
+
+    private boolean resolveRequest(CommandSender sender, String[] args, boolean accept) {
+        if (!(sender instanceof Player) || args.length != 2) {
+            return true;
+        }
+        UUID id;
+        try {
+            id = UUID.fromString(args[1]);
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
+        if (accept) {
+            requests.accept(id, (Player) sender);
+        } else {
+            requests.decline(id, (Player) sender);
+        }
+        return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return Collections.singletonList("reload");
+            return Arrays.asList("gui", "reload");
         }
-        return Collections.emptyList();
+        return java.util.Collections.emptyList();
     }
 
     private void register(String name, CommandExecutor executor) {

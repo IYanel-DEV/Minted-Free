@@ -19,15 +19,17 @@ final class AccountDao {
 
     private final DataSource dataSource;
     private final SqlDialect dialect;
+    private final String table;
 
-    AccountDao(DataSource dataSource, SqlDialect dialect) {
+    AccountDao(DataSource dataSource, SqlDialect dialect, String table) {
         this.dataSource = dataSource;
         this.dialect = dialect;
+        this.table = table;
     }
 
     void createTable() {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(dialect.createTable())) {
+             PreparedStatement statement = connection.prepareStatement(dialect.createTable(table))) {
             statement.execute();
         } catch (SQLException e) {
             throw new StorageException("Could not create accounts table", e);
@@ -36,7 +38,7 @@ final class AccountDao {
 
     Double load(UUID uuid) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(dialect.select())) {
+             PreparedStatement statement = connection.prepareStatement(dialect.select(table))) {
             statement.setString(1, uuid.toString());
             try (ResultSet rows = statement.executeQuery()) {
                 return rows.next() ? rows.getDouble(1) : null;
@@ -50,7 +52,7 @@ final class AccountDao {
         if (uuids.isEmpty()) {
             return new HashMap<UUID, Double>();
         }
-        String sql = "SELECT uuid, balance FROM minted_accounts WHERE uuid IN (" + placeholders(uuids.size()) + ")";
+        String sql = "SELECT uuid, balance FROM " + table + " WHERE uuid IN (" + placeholders(uuids.size()) + ")";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             bindUuids(statement, uuids);
@@ -62,7 +64,7 @@ final class AccountDao {
 
     void save(UUID uuid, double balance) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(dialect.upsert())) {
+             PreparedStatement statement = connection.prepareStatement(dialect.upsert(table))) {
             statement.setString(1, uuid.toString());
             statement.setDouble(2, balance);
             statement.executeUpdate();
@@ -73,7 +75,7 @@ final class AccountDao {
 
     void saveAll(Map<UUID, Double> balances) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(dialect.upsert())) {
+             PreparedStatement statement = connection.prepareStatement(dialect.upsert(table))) {
             connection.setAutoCommit(false);
             for (Entry<UUID, Double> entry : balances.entrySet()) {
                 statement.setString(1, entry.getKey().toString());

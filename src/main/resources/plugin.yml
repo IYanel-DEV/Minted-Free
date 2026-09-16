@@ -19,7 +19,7 @@ commands:
   minted:
     description: Main Minted command.
     aliases: [mint]
-    usage: /minted [reload]
+    usage: /minted [gui|reload]
   balance:
     description: Check a balance.
     aliases: [bal, money]
@@ -27,6 +27,16 @@ commands:
   pay:
     description: Pay another player.
     usage: /pay <player> <amount>
+  bank:
+    description: Open your bank, or deposit and withdraw.
+    usage: /bank [deposit|withdraw] <amount>
+  sell:
+    description: Sell the item in your hand to the global shop.
+    usage: /sell [amount]
+  eshop:
+    description: Browse the shops, or manage them as an admin.
+    aliases: [shop, shops]
+    usage: /eshop [shop|create|delete|edit|reload|setcurrency]
 
 permissions:
   minted.use:
@@ -44,3 +54,15 @@ permissions:
   minted.pay:
     description: Pay another player.
     default: true
+  minted.bank:
+    description: Use your bank.
+    default: true
+  minted.sell:
+    description: Sell held items to the global shop.
+    default: true
+  minted.shop.use:
+    description: Browse and trade at shops.
+    default: true
+  minted.shop.admin:
+    description: Create, edit and reload shops.
+    default: op

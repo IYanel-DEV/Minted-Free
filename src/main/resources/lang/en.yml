@@ -1,0 +1,149 @@
+# ---------------------------------------------------------------------------
+# Minted - English language bundle.
+#
+# This file is copied out on first run and is the built-in fallback for every
+# key, so a translation only needs the lines it wants to change. Use & colour
+# codes and {placeholder} tokens; the tokens are documented next to each line.
+# ---------------------------------------------------------------------------
+
+common:
+  none: "not set"
+
+shop:
+  player-only: "&cOnly players can browse shops."
+  not-ready: "&cShops are still loading, try again in a moment."
+  no-shops: "&cThere are no shops to open."
+  unknown: "&cThere is no shop called &f{shop}&c."
+  usage: "&cUsage: /{label} [shop]"
+  no-permission: "&cYou do not have permission to use shops here."
+
+  admin:
+    no-permission: "&cYou do not have permission to manage shops."
+    hold-item: "&cHold the item you want to use in your hand first."
+    create-usage: "&cUsage: /{label} create <name>"
+    exists: "&cA shop called &f{shop}&c already exists."
+    created: "&aCreated shop &f{shop}&a. Use &f/eshop edit {shop}&a to stock it."
+    delete-usage: "&cUsage: /{label} delete <name>"
+    deleted: "&aDeleted shop &f{shop}&a."
+    edit-usage: "&cUsage: /{label} edit <name>"
+    reloaded: "&aReloaded every shop from the database."
+    currency-usage: "&cUsage: /{label} setcurrency <shop> wallet|bank"
+    currency-invalid: "&cCurrency must be &fwallet&c or &fbank&c."
+    currency-changed: "&aShop &f{shop}&a now trades in the &f{currency}&a."
+
+browse:
+  title: "&2Shops"
+  open-lore: "&7Click to open."
+
+menu:
+  title: "&2{shop} &8| &7{currency}"
+  category-all: "&eAll items"
+  category-uncategorised: "&eUncategorised"
+  category: "&e{category}"
+  category-lore: "&7Category tag."
+  prev-page: "&ePrevious page"
+  next-page: "&eNext page"
+  page-info: "&7Page &f{page}&7 of &f{pages}"
+  back: "&7Back to shops"
+
+item:
+  buy-lore: "&7Buy: &a{price}"
+  sell-lore: "&7Sell: &a{price}"
+  not-buyable: "&7Buying: &cnot offered"
+  not-sellable: "&7Selling: &cnot offered"
+  hint: "&7Left buy | &eRight sell | &eShift+Right sell all | &8Shift+Left bulk"
+
+detail:
+  title: "&2{item}"
+  buy: "&aBuy"
+  sell: "&eSell"
+  buy-lore: "&7Price each: &a{price}"
+  sell-lore: "&7Payout each: &a{price}"
+
+quantity:
+  title: "&2{action}"
+  button: "&e{amount}"
+  custom: "&eCustom amount"
+  custom-lore: "&7Type a number in chat, or 'cancel'."
+  prompt: "&7Type an amount in chat, or &fcancel&7."
+  invalid: "&cThat is not a valid amount."
+  cancelled: "&7Cancelled."
+
+buy:
+  not-ready: "&cYour account is still loading, try again in a moment."
+  not-buyable: "&cThat item is not for sale here."
+  insufficient: "&cYou cannot afford that. It costs &f{price}&c."
+  success: "&aBought &f{quantity}x {item}&a for &f{price}&a. Balance: &f{balance}&a."
+  discount: "&7A &f{percent}%&7 discount was applied."
+  overflow: "&7Your inventory was full, so some items dropped at your feet."
+
+sell:
+  not-ready: "&cYour account is still loading, try again in a moment."
+  not-sellable: "&cThat item cannot be sold here."
+  none: "&cYou have no &f{item}&c to sell."
+  cap: "&cThat sale would pass your balance limit."
+  success: "&aSold &f{quantity}x {item}&a for &f{earned}&a. Balance: &f{balance}&a."
+  bonus: "&7A &f{factor}x&7 sell bonus was applied."
+  # /sell command
+  hold: "&cHold something to sell - money is not shop goods."
+  no-global: "&cThe global shop does not buy this item."
+  amount-invalid: "&cEnter an amount, &fall&c, or leave it blank."
+
+bank:
+  cash-out: "&aHere is &f{amount}&a in cash."
+  cash-out-dropped: "&aHere is &f{amount}&a in cash. &7Your inventory was full, so some notes are at your feet - pick them up."
+  deposited-notes: "&aBanked &f{amount}&a."
+  # Some notes were banked but the bank hit its limit; {left} is still with you.
+  deposited-partial: "&aBanked &f{banked}&a. &7Your bank is full - &f{left}&7 is still in your inventory."
+  no-notes: "&cYou are not holding any banknotes."
+  full: "&cYour bank is full."
+  # {seconds} is the whole seconds left on the combat lock.
+  combat-lock: "&cYou are in combat - you cannot deposit for another {seconds} seconds."
+
+editor:
+  title: "&2Edit {shop} &8| &7page {page}/{pages}"
+  add-hint: "&eAdd item"
+  add-hint-lore: "&7Hold an item and click an empty slot,"
+  add-hint-lore2: "&7or click here to drop it in the first free slot."
+  slot-hint: "&8Left-click a stocked slot to edit it."
+  rename: "&eRename shop"
+  rename-lore: "&7Type the new name in chat."
+  rename-prompt: "&7Type the new shop name, or &fcancel&7."
+  renamed: "&aRenamed the shop to &f{shop}&a."
+  set-icon: "&eSet menu icon"
+  set-icon-lore: "&7Uses the item in your hand."
+  icon-set: "&aUpdated the shop icon."
+  currency: "&eCurrency: &f{currency}"
+  currency-lore: "&7Click to switch wallet/bank."
+  currency-changed: "&aShop now trades in the &f{currency}&a."
+  add-page: "&eAdd page"
+  page-added: "&aAdded a new page."
+  prev-page: "&ePrevious page"
+  next-page: "&eNext page"
+  placed: "&aAdded &f{item}&a to the shop."
+  replaced: "&aReplaced the item with &f{item}&a."
+  removed: "&aRemoved the item."
+  page-full: "&cThis page is full."
+
+slot:
+  title: "&2Edit slot"
+  set-buy: "&eSet buy price"
+  set-sell: "&eSet sell price"
+  set-category: "&eSet category"
+  replace: "&eReplace with held item"
+  remove: "&cRemove item"
+  back: "&7Back"
+  buy-current: "&7Buy: &f{price}"
+  sell-current: "&7Sell: &f{price}"
+  category-current: "&7Category: &f{category}"
+  buy-prompt: "&7Type the buy price, &f-1&7 to disable, or &fcancel&7."
+  sell-prompt: "&7Type the sell price, &f-1&7 to disable, or &fcancel&7."
+  category-prompt: "&7Type a category, &fclear&7 to clear, or &fcancel&7."
+  price-invalid: "&cThat is not a valid price."
+  buy-set: "&aBuy price set to &f{price}&a."
+  buy-cleared: "&aBuying disabled for this item."
+  sell-set: "&aSell price set to &f{price}&a."
+  sell-cleared: "&aSelling disabled for this item."
+  category-set: "&aCategory set to &f{category}&a."
+  category-cleared: "&aCategory cleared."
+  replaced: "&aReplaced the item in this slot."

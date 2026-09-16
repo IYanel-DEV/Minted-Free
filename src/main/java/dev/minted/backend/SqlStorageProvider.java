@@ -9,17 +9,19 @@ public final class SqlStorageProvider implements StorageProvider {
 
     private final HikariPool pool;
     private final SqlDialect dialect;
+    private final String table;
 
     private volatile AccountDao dao;
 
-    public SqlStorageProvider(HikariPool pool, SqlDialect dialect) {
+    public SqlStorageProvider(HikariPool pool, SqlDialect dialect, String table) {
         this.pool = pool;
         this.dialect = dialect;
+        this.table = table;
     }
 
     @Override
     public void open() {
-        this.dao = new AccountDao(pool.start(), dialect);
+        this.dao = new AccountDao(pool.start(), dialect, table);
         dao.createTable();
     }
 

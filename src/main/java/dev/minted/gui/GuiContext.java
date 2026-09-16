@@ -1,0 +1,104 @@
+package dev.minted.gui;
+
+import dev.minted.bank.BankService;
+import dev.minted.bank.CombatLock;
+import dev.minted.bank.EconomyService;
+import dev.minted.bank.MoneyFormat;
+import dev.minted.bank.WalletService;
+import dev.minted.banknote.BanknoteManager;
+import dev.minted.banknote.NoteInventory;
+import dev.minted.lang.Messages;
+import dev.minted.request.RequestService;
+
+import java.util.UUID;
+
+/**
+ * The shared dependencies every menu needs, passed as one value so menu
+ * constructors stay about their own subject (a target player, an amount) rather
+ * than re-listing services.
+ */
+public final class GuiContext {
+
+    private final EconomyService wallet;
+    private final EconomyService bankEconomy;
+    private final BankService bank;
+    private final WalletService walletService;
+    private final NoteInventory notes;
+    private final MoneyFormat format;
+    private final ChatPrompt prompt;
+    private final RequestService requests;
+    private final double[] presets;
+    private final BanknoteManager banknotes;
+    private final Messages messages;
+    private final CombatLock combatLock;
+
+    public GuiContext(EconomyService wallet, EconomyService bankEconomy, BankService bank, WalletService walletService,
+                      NoteInventory notes, MoneyFormat format, ChatPrompt prompt, RequestService requests,
+                      double[] presets, BanknoteManager banknotes, Messages messages, CombatLock combatLock) {
+        this.wallet = wallet;
+        this.bankEconomy = bankEconomy;
+        this.bank = bank;
+        this.walletService = walletService;
+        this.notes = notes;
+        this.format = format;
+        this.prompt = prompt;
+        this.requests = requests;
+        this.presets = presets;
+        this.banknotes = banknotes;
+        this.messages = messages;
+        this.combatLock = combatLock;
+    }
+
+    /** True once storage is open and this player's accounts are cached. */
+    public boolean ready(UUID uuid) {
+        return bank.isReady() && bank.isLoaded(uuid);
+    }
+
+    EconomyService wallet() {
+        return wallet;
+    }
+
+    EconomyService bankEconomy() {
+        return bankEconomy;
+    }
+
+    BankService bank() {
+        return bank;
+    }
+
+    public WalletService walletService() {
+        return walletService;
+    }
+
+    NoteInventory notes() {
+        return notes;
+    }
+
+    BanknoteManager banknotes() {
+        return banknotes;
+    }
+
+    Messages messages() {
+        return messages;
+    }
+
+    CombatLock combatLock() {
+        return combatLock;
+    }
+
+    MoneyFormat format() {
+        return format;
+    }
+
+    ChatPrompt prompt() {
+        return prompt;
+    }
+
+    RequestService requests() {
+        return requests;
+    }
+
+    double[] presets() {
+        return presets;
+    }
+}

@@ -2,12 +2,24 @@
 # Minted configuration
 # ---------------------------------------------------------------------------
 
+lang:
+  # Language file to use from the lang/ folder (without the .yml). en ships
+  # built in and is copied out on first run; it is also the fallback for any
+  # key a translation leaves out.
+  code: en
+
 currency:
   # Display name of the currency unit used across all GUIs and messages.
   name: Coins
   singular: Coin
   # Symbol prepended to formatted balances.
   symbol: "$"
+  # Render big amounts with short suffixes instead of full digits: k=1,000,
+  # m=1,000,000, b=1,000,000,000, t=1,000,000,000,000, q=1,000,000,000,000,000
+  # (so 10,000 -> 10k, 1,000,000 -> 1m, 10,000,000,000,000,000 -> 10q). Display
+  # only - the stored value is always a plain number, and amount input (all,
+  # half, max, raw numbers) is unaffected. Off by default.
+  compact: false
 
 database:
   # Storage backend. sqlite ships zero-config; mysql requires the fields below
@@ -22,7 +34,59 @@ database:
   pool-size: 8
 
 economy:
-  # Starting balance granted to players on first join.
+  # Physical money. When true (the default) a player's wallet IS the signed
+  # banknotes in their inventory: shops pay and charge real cash, /bank deposit
+  # and right-clicking a note bank it, and money that is lost (dropped, died
+  # without keepInventory) is gone for good. Set to false for a classic digital
+  # wallet balance - then notes are just a way to carry money, redeemed back into
+  # the wallet on right-click, and shops move the digital balance. The bank is
+  # always a digital silo either way.
+  physical: true
+  # Starting balance granted to players on first join. In physical mode this is
+  # the digital wallet only, which is unused, so leave it at 0.
   starting-balance: 0
   # Hard cap for any single balance. Guards against overflow duplication bugs.
+  # Applies to the wallet and the bank alike.
   max-balance: 1000000000
+
+player_interact:
+  # How the payment menu opens when you interact with another player:
+  # shift_right_click (sneak + right-click) or right_click.
+  action: shift_right_click
+
+bank:
+  # Amount buttons shown in the send, request and bank menus.
+  presets: [50, 100, 500]
+  # How long a money request stays valid before it is dropped.
+  request-expiry-seconds: 60
+  # Combat lock. Taking a hit blocks bank deposits for a short window so players
+  # cannot stash their cash mid-fight. Only deposits are affected - withdrawals,
+  # /pay, shop trading and money requests all keep working.
+  hit-lock:
+    # Master switch. When false the feature is completely inert.
+    enabled: true
+    # How long the deposit block lasts after a hit. A fresh hit refreshes the
+    # window rather than extending it.
+    seconds: 8
+    # What counts as a hit: 'any' entity attack (mobs included) or only when the
+    # damager is another 'player'. Environmental damage (fall, lava, drowning)
+    # never triggers the lock either way.
+    trigger: any
+
+shops:
+  # Name of the shop that /sell trades against. This is an ordinary shop (the
+  # seeded starter shop by default); /sell never creates a second economy, it
+  # simply sells the held item to this shop at its configured buy price.
+  global: Spawn
+
+money:
+  # Denominations minted when the bank pays out physical cash (/bank withdraw).
+  # The amount is split into these notes largest-first; any leftover that no
+  # denomination divides becomes a single odd note of the remainder. The ladder
+  # climbs to the largest sane note so big payouts fit in a pocket instead of a
+  # flood of tiny paper; it mirrors economy.max-balance, so admins running an
+  # enormous economy should extend it further (the mint stays bounded regardless
+  # - amounts above the largest note are handed out as a few ad-hoc big notes).
+  # Invalid (<= 0) entries are dropped with a warning; an empty list falls back
+  # to the classic small set.
+  denominations: [1, 5, 10, 50, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]
