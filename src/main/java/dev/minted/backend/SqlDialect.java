@@ -26,6 +26,12 @@ public enum SqlDialect {
             return "INSERT INTO " + table + "(k, value) VALUES(?, ?)"
                     + " ON CONFLICT(k) DO UPDATE SET value = excluded.value";
         }
+
+        @Override
+        public String namesUpsert(String table) {
+            return "INSERT INTO " + table + "(uuid, name) VALUES(?, ?)"
+                    + " ON CONFLICT(uuid) DO UPDATE SET name = excluded.name";
+        }
     },
 
     MYSQL("dev.minted.libs.mysql.cj.jdbc.Driver") {
@@ -49,6 +55,12 @@ public enum SqlDialect {
         public String statsUpsert(String table) {
             return "INSERT INTO " + table + "(k, value) VALUES(?, ?)"
                     + " ON DUPLICATE KEY UPDATE value = VALUES(value)";
+        }
+
+        @Override
+        public String namesUpsert(String table) {
+            return "INSERT INTO " + table + "(uuid, name) VALUES(?, ?)"
+                    + " ON DUPLICATE KEY UPDATE name = VALUES(name)";
         }
     };
 
@@ -76,6 +88,9 @@ public enum SqlDialect {
     /** Statement that writes a stats counter, creating the row if missing. */
     public abstract String statsUpsert(String table);
 
+    /** Statement that writes a player's display name, creating the row if missing. */
+    public abstract String namesUpsert(String table);
+
     public String createTable(String table) {
         return "CREATE TABLE IF NOT EXISTS " + table + " ("
                 + "uuid VARCHAR(36) PRIMARY KEY, balance DOUBLE NOT NULL)";
@@ -86,6 +101,36 @@ public enum SqlDialect {
     public String createStats() {
         return "CREATE TABLE IF NOT EXISTS minted_stats ("
                 + "k VARCHAR(32) PRIMARY KEY, value DOUBLE NOT NULL)";
+    }
+
+    // Display names for the leaderboard and sales feed. Cosmetic, so a write is
+    // best-effort; REPLACE avoids needing a per-dialect upsert.
+    public String createNames() {
+        return "CREATE TABLE IF NOT EXISTS minted_names ("
+                + "uuid VARCHAR(36) PRIMARY KEY, name VARCHAR(16) NOT NULL)";
+    }
+
+    public String createSales() {
+        return "CREATE TABLE IF NOT EXISTS minted_sales ("
+                + "id INTEGER PRIMARY KEY, "
+                + "ts BIGINT NOT NULL, "
+                + "seller VARCHAR(36), "
+                + "buyer VARCHAR(36), "
+                + "item VARCHAR(64) NOT NULL, "
+                + "qty INT NOT NULL, "
+                + "price DOUBLE NOT NULL, "
+                + "kind VARCHAR(16) NOT NULL)";
+    }
+
+    public String createLoans() {
+        return "CREATE TABLE IF NOT EXISTS minted_loans ("
+                + "id INTEGER PRIMARY KEY, "
+                + "borrower VARCHAR(36) NOT NULL, "
+                + "amount DOUBLE NOT NULL, "
+                + "owed DOUBLE NOT NULL, "
+                + "taken_at BIGINT NOT NULL, "
+                + "due_at BIGINT NOT NULL, "
+                + "repaid INT NOT NULL DEFAULT 0)";
     }
 
     /** Whole-table total, the global view used by the economy stats menu. */

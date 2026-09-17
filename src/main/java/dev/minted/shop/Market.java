@@ -6,6 +6,7 @@ import dev.minted.bank.WalletService;
 import dev.minted.banknote.BanknoteManager;
 import dev.minted.lang.Messages;
 import dev.minted.shop.catalog.Category;
+import dev.minted.shop.log.SaleLog;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -33,14 +34,16 @@ public final class Market {
     private final BanknoteManager banknotes;
     private final MoneyFormat format;
     private final Messages messages;
+    private final SaleLog sales;
 
     public Market(ShopService shops, WalletService wallet, BanknoteManager banknotes,
-                  MoneyFormat format, Messages messages) {
+                  MoneyFormat format, Messages messages, SaleLog sales) {
         this.shops = shops;
         this.wallet = wallet;
         this.banknotes = banknotes;
         this.format = format;
         this.messages = messages;
+        this.sales = sales;
     }
 
     public boolean isBanknote(ItemStack item) {
@@ -121,6 +124,7 @@ public final class Market {
         listing.setStock(listing.getStock() - qty);
         listing.addEarnings(price);
         boolean dropped = Inventories.giveOrDrop(buyer, listing.copy(), qty);
+        sales.record("market", listing.getOwner(), buyer.getUniqueId(), name(listing.raw()), qty, price);
         persist(community, listing);
         messages.send(buyer, "community.buy.success",
                 "quantity", String.valueOf(qty), "item", name(listing.raw()), "price", format.format(price));
@@ -175,6 +179,7 @@ public final class Market {
             return;
         }
         listing.setStock(listing.getStock() + removed);
+        sales.record("market", seller.getUniqueId(), listing.getOwner(), name(listing.raw()), removed, earned);
         persist(community, listing);
         messages.send(seller, "community.sell.success",
                 "quantity", String.valueOf(removed), "item", name(listing.raw()),

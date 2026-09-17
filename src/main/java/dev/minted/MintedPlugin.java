@@ -2,6 +2,10 @@ package dev.minted;
 
 import dev.minted.backend.DatabaseSettings;
 import dev.minted.backend.HikariPool;
+import dev.minted.backend.LoansDao;
+import dev.minted.backend.NamesDao;
+import dev.minted.backend.NamesListener;
+import dev.minted.backend.SaleDao;
 import dev.minted.backend.SqlDialect;
 import dev.minted.backend.SqlStorageProvider;
 import dev.minted.backend.StorageException;
@@ -13,6 +17,8 @@ import dev.minted.bank.BankService;
 import dev.minted.bank.CombatLock;
 import dev.minted.bank.EconomyService;
 import dev.minted.bank.EconomyStats;
+import dev.minted.bank.InterestTask;
+import dev.minted.bank.LoanService;
 import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.WalletService;
 import dev.minted.banknote.BanknoteListener;
@@ -43,6 +49,7 @@ import dev.minted.shop.ShopService;
 import dev.minted.shop.Trade;
 import dev.minted.shop.command.ShopCommand;
 import dev.minted.shop.command.ShopTabCompleter;
+import dev.minted.shop.log.SaleLog;
 import dev.minted.shop.storage.ShopDao;
 
 import org.bukkit.command.CommandExecutor;
@@ -81,6 +88,12 @@ public final class MintedPlugin extends JavaPlugin {
     private ShopService shopService;
     private StatsDao statsDao;
     private EconomyStats stats;
+    private NamesDao namesDao;
+    private SaleLog saleLog;
+    private LoanService loanService;
+    private boolean interestEnabled;
+    private double interestRate;
+    private long interestTicks;
 
     public static MintedPlugin get() {
         return instance;
@@ -143,6 +156,17 @@ public final class MintedPlugin extends JavaPlugin {
         this.statsDao = new StatsDao(pool.start(), dialect);
         this.stats = new EconomyStats(this, bankEconomy, statsDao);
 
+        this.namesDao = new NamesDao(pool.start(), dialect);
+        this.saleLog = new SaleLog(this, new SaleDao(pool, dialect));
+        this.loanService = new LoanService(this, new LoansDao(pool, dialect), bankEconomy,
+                getConfig().getDouble("bank.loan.max", 5000),
+                getConfig().getDouble("bank.loan.fee-percent", 10),
+                getConfig().getLong("bank.loan.term-minutes", 10080) * 60000,
+                getConfig().getDouble("bank.loan.late-fee-percent", 2));
+        this.interestEnabled = getConfig().getBoolean("bank.interest.enabled", true);
+        this.interestRate = getConfig().getDouble("bank.interest.rate", 0.1);
+        this.interestTicks = 20L * 60L * getConfig().getLong("bank.interest.interval-minutes", 30);
+
         Messages messages = Messages.load(this);
         this.requestService = new RequestService(this, walletService, format,
                 getConfig().getLong("bank.request-expiry-seconds", 60));
@@ -155,11 +179,12 @@ public final class MintedPlugin extends JavaPlugin {
 
         ChatPrompt chatPrompt = new ChatPrompt(this);
         GuiContext gui = new GuiContext(walletEconomy, bankEconomy, bankService, walletService, noteInventory,
-                format, chatPrompt, requestService, presets(), banknotes, messages, combatLock, design, sounds, stats);
+                format, chatPrompt, requestService, presets(), banknotes, messages, combatLock, design, sounds, stats,
+                this, namesDao, saleLog, loanService);
 
         this.shopService = new ShopService(this, new ShopDao(pool, dialect), serverVersion, materials);
-        Trade trade = new Trade(walletService, bankEconomy, format, messages, stats);
-        Market market = new Market(shopService, walletService, banknotes, format, messages);
+        Trade trade = new Trade(walletService, bankEconomy, format, messages, stats, saleLog);
+        Market market = new Market(shopService, walletService, banknotes, format, messages, saleLog);
         ShopContext shopContext = new ShopContext(shopService, trade, market, messages, format, chatPrompt,
                 design, walletService, materials);
 
@@ -191,6 +216,7 @@ public final class MintedPlugin extends JavaPlugin {
         events.registerEvents(new BanknoteListener(walletEconomy, bankEconomy, banknotes, noteInventory,
                 format, messages, physical, combatLock), this);
         events.registerEvents(new LostCashListener(this, banknotes, stats), this);
+        events.registerEvents(new NamesListener(this, namesDao), this);
     }
 
     // Combat lock config: hit-triggered deposit block. Disabled -> inert.
@@ -233,6 +259,9 @@ public final class MintedPlugin extends JavaPlugin {
                     walletStorage.open();
                     bankStorage.open();
                     statsDao.createTable();
+                    namesDao.createTable();
+                    loanService.initialize();
+                    saleLog.initialize();
                 } catch (RuntimeException e) {
                     getLogger().severe("Minted could not open its database: " + e.getMessage());
                     return;
@@ -273,6 +302,12 @@ public final class MintedPlugin extends JavaPlugin {
                 requestService.purgeExpired();
             }
         }, REQUEST_SWEEP_TICKS, REQUEST_SWEEP_TICKS);
+        if (interestEnabled) {
+            InterestTask interest = new InterestTask(this, bankEconomy, interestRate, loanService);
+            getServer().getScheduler().runTaskTimerAsynchronously(this, interest, interestTicks, interestTicks);
+            getLogger().info("Bank interest enabled: " + getConfig().getDouble("bank.interest.rate", 0.1)
+                    + "% every " + getConfig().getLong("bank.interest.interval-minutes", 30) + " minutes.");
+        }
     }
 
     private double[] presets() {

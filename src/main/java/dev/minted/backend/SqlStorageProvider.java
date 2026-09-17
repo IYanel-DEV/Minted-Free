@@ -69,4 +69,14 @@ public final class SqlStorageProvider implements StorageProvider {
     public int countAccounts() {
         return dao().count();
     }
+
+    @Override
+    public java.util.List<RankedAccount> topAccounts(int limit) {
+        return dao().top(limit);
+    }
+
+    @Override
+    public Map<UUID, Double> allBalances() {
+        return dao().all();
+    }
 }

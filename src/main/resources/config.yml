@@ -72,6 +72,30 @@ bank:
     # damager is another 'player'. Environmental damage (fall, lava, drowning)
     # never triggers the lock either way.
     trigger: any
+  # The bank pays a small return on every stored balance, a reward for keeping
+  # money on deposit. Money it pays is newly created, so the economy grows.
+  interest:
+    # Master switch. When false the feature is completely inert.
+    enabled: true
+    # Percent of the balance added to each account at every payout.
+    rate: 0.1
+    # How often a payout happens, in minutes. 30 = every half hour.
+    interval-minutes: 30
+  # Loans: the bank prints money for a player now, and they repay principal
+  # plus a one-time fee later. Outstanding loans are repaid from the bank
+  # balance, so a loan adds money to the economy until it is settled.
+  loan:
+    # Largest single loan a player can take at once.
+    max: 5000
+    # One-time charge, as a percent of the principal, added to what must be
+    # repaid. 10 means a $1,000 loan costs $1,100 to settle.
+    fee-percent: 10
+    # How long a player has to repay before late fees kick in, in minutes.
+    # 10080 = one week.
+    term-minutes: 10080
+    # Late fee: percent added to the outstanding owed at every payout while the
+    # loan is overdue. It compounds, so an ignored loan keeps growing.
+    late-fee-percent: 2
 
 shops:
   # Name of the shop that /sell trades against. This is an ordinary shop (the

@@ -5,8 +5,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -81,6 +83,36 @@ final class AccountDao {
             return rows.next() ? rows.getInt(1) : 0;
         } catch (SQLException e) {
             throw new StorageException("Could not count accounts", e);
+        }
+    }
+
+    /** Richest accounts first, capped at {@code limit} rows. */
+    List<RankedAccount> top(int limit) {
+        List<RankedAccount> ranks = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT uuid, balance FROM " + table + " ORDER BY balance DESC LIMIT ?")) {
+            statement.setInt(1, limit);
+            try (ResultSet rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    ranks.add(new RankedAccount(UUID.fromString(rows.getString(1)), rows.getDouble(2)));
+                }
+            }
+        } catch (SQLException e) {
+            throw new StorageException("Could not load the richest accounts", e);
+        }
+        return ranks;
+    }
+
+    /** Snapshot of every stored (uuid, balance) pair, e.g. for interest payouts. */
+    Map<UUID, Double> all() {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT uuid, balance FROM " + table);
+             ResultSet rows = statement.executeQuery()) {
+            return readBalances(statement);
+        } catch (SQLException e) {
+            throw new StorageException("Could not list all balances", e);
         }
     }
 

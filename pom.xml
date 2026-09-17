@@ -6,7 +6,7 @@
 
     <groupId>dev.minted</groupId>
     <artifactId>minted-free</artifactId>
-    <version>0.12.4</version>
+    <version>0.13.0</version>
     <packaging>jar</packaging>
 
     <name>Minted-Free</name>

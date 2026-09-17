@@ -35,4 +35,10 @@ public interface StorageProvider {
 
     /** Number of accounts that hold a stored balance. */
     int countAccounts();
+
+    /** The richest accounts, richest first, up to {@code limit} rows. */
+    java.util.List<RankedAccount> topAccounts(int limit);
+
+    /** Snapshot of every stored (uuid, balance) pair. */
+    Map<UUID, Double> allBalances();
 }

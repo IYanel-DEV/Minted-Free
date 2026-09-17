@@ -64,6 +64,14 @@ public final class PersonalMenu extends Menu {
                 new EconomyMenu(ctx, viewer).open(player);
             }
         });
+        set(4, Icon.of(Material.BOOK, Design.HEADING + "" + ChatColor.BOLD + "Loans",
+                Design.lore("Borrow from the bank, or repay a loan.",
+                        null, "Click to open loans.")), new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                new LoansMenu(ctx, viewer).open(player);
+            }
+        });
         set(23, Icon.of(Material.IRON_INGOT, Design.HEADING + "" + ChatColor.BOLD + "Withdraw",
                 Design.lore("Bank into cash.", null, "Click to withdraw.")), new Consumer<Player>() {
             @Override

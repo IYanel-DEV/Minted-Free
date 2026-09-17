@@ -99,6 +99,21 @@ bank:
   full: "&cYour bank is full."
   # {seconds} is the whole seconds left on the combat lock.
   combat-lock: "&cYou are in combat - you cannot deposit for another {seconds} seconds."
+  loan:
+    # Shown when the player already has a loan outstanding.
+    active: "&cYou already have an outstanding loan."
+    # {amount} is the principal, {owed} the total to repay (principal + fee).
+    taken: "&aBorrowed &f{amount}&a from the bank. Repay &f{owed}&a by the deadline."
+    invalid: "&cEnter a loan amount greater than zero."
+    # {max} is the largest single loan allowed.
+    limit: "&cLoans are capped at &f{max}&a."
+    not-ready: "&cYour account is still loading, try again in a moment."
+    cap: "&cYour bank cannot hold that much - the loan would pass its limit."
+    # {owed} is the amount short when repaying.
+    short: "&cYou do not have enough in the bank - &f{owed}&c is owed."
+    # {owed} is what was settled, so the player sees the exact figure.
+    repaid: "&aRepaid your loan - &f{owed}&a settled."
+    none: "&cYou have no loan to repay."
 
 editor:
   title: "&2Edit {shop} &8| &7page {page}/{pages}"

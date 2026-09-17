@@ -46,6 +46,24 @@ public final class EconomyMenu extends Menu {
                         Arrays.asList(Design.HINT + ctx.format().brief(stats.burned())),
                         "Notes dropped that despawn, plus digital shop spends.")), null);
 
+        set(10, Icon.of(Material.DIAMOND, Design.HEADING + "" + ChatColor.BOLD + "Richest players",
+                Design.lore("Who holds the biggest bank balances.",
+                        null, "Click to see the ranking.")), new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                LeaderboardMenu.open(ctx, player);
+            }
+        });
+
+        set(13, Icon.of(Material.BOOK, Design.HEADING + "" + ChatColor.BOLD + "Recent sales",
+                Design.lore("The latest shop and marketplace trades.",
+                        null, "Click to see the sales feed.")), new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                SalesMenu.open(ctx, player);
+            }
+        });
+
         set(18, d.back(), new Consumer<Player>() {
             @Override
             public void accept(Player player) {

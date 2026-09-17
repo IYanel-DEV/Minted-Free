@@ -7,6 +7,7 @@ import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.Purse;
 import dev.minted.bank.WalletService;
 import dev.minted.lang.Messages;
+import dev.minted.shop.log.SaleLog;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -33,14 +34,16 @@ public final class Trade {
     private final MoneyFormat format;
     private final Messages messages;
     private final EconomyStats stats;
+    private final SaleLog sales;
 
     public Trade(WalletService wallet, EconomyService bank, MoneyFormat format, Messages messages,
-                 EconomyStats stats) {
+                 EconomyStats stats, SaleLog sales) {
         this.wallet = wallet;
         this.bank = bank;
         this.format = format;
         this.messages = messages;
         this.stats = stats;
+        this.sales = sales;
     }
 
     public void buy(Player player, Shop shop, ShopItem item, int quantity) {
@@ -70,6 +73,7 @@ public final class Trade {
             stats.burn(price);
         }
         boolean overflowed = giveOrDrop(player, item.copy(), quantity);
+        sales.record("shop", null, player.getUniqueId(), describe(item.raw()), quantity, price);
         messages.send(player, "buy.success",
                 "quantity", String.valueOf(quantity),
                 "item", describe(item.raw()),
@@ -112,6 +116,7 @@ public final class Trade {
             messages.send(player, "sell.cap");
             return;
         }
+        sales.record("shop", player.getUniqueId(), null, describe(item.raw()), quantitySold, earned);
         messages.send(player, "sell.success",
                 "quantity", String.valueOf(quantitySold),
                 "item", describe(item.raw()),

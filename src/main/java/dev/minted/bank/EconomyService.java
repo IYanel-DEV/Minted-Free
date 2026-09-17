@@ -1,11 +1,13 @@
 package dev.minted.bank;
 
+import dev.minted.backend.RankedAccount;
 import dev.minted.backend.StorageProvider;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,6 +72,30 @@ public final class EconomyService {
     /** Blocking; call from an async task only. */
     public int countAccounts() {
         return storage.countAccounts();
+    }
+
+    /** Richest accounts first, up to {@code limit}. Blocking; async callers only. */
+    public Map<UUID, Double> topBalances(int limit) {
+        Map<UUID, Double> top = new LinkedHashMap<UUID, Double>();
+        for (RankedAccount rank : storage.topAccounts(limit)) {
+            top.put(rank.getUuid(), rank.getBalance());
+        }
+        return top;
+    }
+
+    /** Snapshot of every stored (uuid, balance) pair. Blocking; async callers only. */
+    public Map<UUID, Double> allBalances() {
+        return storage.allBalances();
+    }
+
+    /** Writes the given balances for the listed accounts. Blocking; async callers only. */
+    public void persistBalances(Map<UUID, Double> balances) {
+        storage.saveBalances(balances);
+    }
+
+    /** The hard cap any single balance may reach. */
+    public double maxBalance() {
+        return maxBalance;
     }
 
     /** Loads an account into the cache, then runs the callback on the main thread. */
