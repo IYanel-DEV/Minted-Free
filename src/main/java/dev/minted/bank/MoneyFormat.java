@@ -45,15 +45,31 @@ public final class MoneyFormat {
         return symbol + digits(amount) + " " + unit;
     }
 
+    /**
+     * One short line regardless of the {@code currency.compact} config flag:
+     * {@code $200}, {@code $1m}, {@code $1.5t}. Used for headline numbers like
+     * the economy stats page, where the long form would be unreadable.
+     */
+    public String brief(double amount) {
+        return symbol + digitsBrief(amount);
+    }
+
     // Full digits, or a short suffixed form (10,000 -> 10k) when compact is on.
     // Only the display changes; the value itself is never rounded away here.
     private String digits(double amount) {
         if (compact) {
-            double abs = Math.abs(amount);
-            for (int i = 0; i < COMPACT_STEPS.length; i++) {
-                if (abs >= COMPACT_STEPS[i]) {
-                    return number.format(amount / COMPACT_STEPS[i]) + COMPACT_SUFFIXES[i];
-                }
+            return digitsBrief(amount);
+        }
+        return number.format(amount);
+    }
+
+    // The suffix ladder, always applied: 1,000 -> 1k, 1,000,000 -> 1m, and so
+    // on, largest first. Small amounts keep their full digits.
+    private String digitsBrief(double amount) {
+        double abs = Math.abs(amount);
+        for (int i = 0; i < COMPACT_STEPS.length; i++) {
+            if (abs >= COMPACT_STEPS[i]) {
+                return number.format(amount / COMPACT_STEPS[i]) + COMPACT_SUFFIXES[i];
             }
         }
         return number.format(amount);

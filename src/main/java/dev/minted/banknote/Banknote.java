@@ -1,9 +1,10 @@
 package dev.minted.banknote;
 
 /**
- * A physical banknote's data: how much it is worth and a per-note serial. The
- * serial exists so two notes of the same denomination still carry distinct,
- * signed payloads.
+ * A physical banknote's data: how much it is worth and a serial. The serial is
+ * derived from the denomination, so every note of the same face value shares an
+ * identical signed payload and the notes stack in the player's inventory like
+ * real change.
  */
 public final class Banknote {
 

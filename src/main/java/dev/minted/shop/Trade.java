@@ -2,6 +2,7 @@ package dev.minted.shop;
 
 import dev.minted.bank.BankAccount;
 import dev.minted.bank.EconomyService;
+import dev.minted.bank.EconomyStats;
 import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.Purse;
 import dev.minted.bank.WalletService;
@@ -31,12 +32,15 @@ public final class Trade {
     private final EconomyService bank;
     private final MoneyFormat format;
     private final Messages messages;
+    private final EconomyStats stats;
 
-    public Trade(WalletService wallet, EconomyService bank, MoneyFormat format, Messages messages) {
+    public Trade(WalletService wallet, EconomyService bank, MoneyFormat format, Messages messages,
+                 EconomyStats stats) {
         this.wallet = wallet;
         this.bank = bank;
         this.format = format;
         this.messages = messages;
+        this.stats = stats;
     }
 
     public void buy(Player player, Shop shop, ShopItem item, int quantity) {
@@ -57,6 +61,13 @@ public final class Trade {
         if (!purse.charge(price)) {
             messages.send(player, "buy.insufficient", "price", format.format(price));
             return;
+        }
+        // Buying from a digital shop destroys the money (nothing receives it),
+        // so it joins the burned total. Physical-cash spends are exempt by
+        // contract: a consumed banknote is untracked pocket money, not a burned
+        // digital balance.
+        if (shop.getCurrency() == Currency.BANK || !wallet.isPhysical()) {
+            stats.burn(price);
         }
         boolean overflowed = giveOrDrop(player, item.copy(), quantity);
         messages.send(player, "buy.success",

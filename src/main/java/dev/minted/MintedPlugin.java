@@ -4,22 +4,28 @@ import dev.minted.backend.DatabaseSettings;
 import dev.minted.backend.HikariPool;
 import dev.minted.backend.SqlDialect;
 import dev.minted.backend.SqlStorageProvider;
+import dev.minted.backend.StorageException;
+import dev.minted.backend.StorageProvider;
+import dev.minted.backend.StatsDao;
 import dev.minted.bank.AccountListener;
 import dev.minted.bank.AccountSaveTask;
 import dev.minted.bank.BankService;
 import dev.minted.bank.CombatLock;
 import dev.minted.bank.EconomyService;
+import dev.minted.bank.EconomyStats;
 import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.WalletService;
 import dev.minted.banknote.BanknoteListener;
 import dev.minted.banknote.BanknoteManager;
 import dev.minted.banknote.BanknoteParser;
+import dev.minted.banknote.LostCashListener;
 import dev.minted.banknote.NoteInventory;
 import dev.minted.command.BalanceCommand;
 import dev.minted.command.BankCommand;
 import dev.minted.command.CommandManager;
 import dev.minted.command.PayCommand;
 import dev.minted.command.SellCommand;
+import dev.minted.command.StatsCommand;
 import dev.minted.compat.Glass;
 import dev.minted.compat.MaterialLookup;
 import dev.minted.compat.ServerVersion;
@@ -61,6 +67,7 @@ public final class MintedPlugin extends JavaPlugin {
 
     private static final long SAVE_INTERVAL_TICKS = 20L * 60L;
     private static final long REQUEST_SWEEP_TICKS = 20L * 20L;
+    private static final long STATS_REFRESH_TICKS = 20L * 30L;
 
     private static MintedPlugin instance;
 
@@ -72,6 +79,8 @@ public final class MintedPlugin extends JavaPlugin {
     private EconomyService bankEconomy;
     private RequestService requestService;
     private ShopService shopService;
+    private StatsDao statsDao;
+    private EconomyStats stats;
 
     public static MintedPlugin get() {
         return instance;
@@ -131,6 +140,9 @@ public final class MintedPlugin extends JavaPlugin {
         NoteInventory noteInventory = new NoteInventory(banknotes);
         WalletService walletService = new WalletService(physical, walletEconomy, noteInventory);
 
+        this.statsDao = new StatsDao(pool.start(), dialect);
+        this.stats = new EconomyStats(this, bankEconomy, statsDao);
+
         Messages messages = Messages.load(this);
         this.requestService = new RequestService(this, walletService, format,
                 getConfig().getLong("bank.request-expiry-seconds", 60));
@@ -143,10 +155,10 @@ public final class MintedPlugin extends JavaPlugin {
 
         ChatPrompt chatPrompt = new ChatPrompt(this);
         GuiContext gui = new GuiContext(walletEconomy, bankEconomy, bankService, walletService, noteInventory,
-                format, chatPrompt, requestService, presets(), banknotes, messages, combatLock, design, sounds);
+                format, chatPrompt, requestService, presets(), banknotes, messages, combatLock, design, sounds, stats);
 
         this.shopService = new ShopService(this, new ShopDao(pool, dialect), serverVersion, materials);
-        Trade trade = new Trade(walletService, bankEconomy, format, messages);
+        Trade trade = new Trade(walletService, bankEconomy, format, messages, stats);
         Market market = new Market(shopService, walletService, banknotes, format, messages);
         ShopContext shopContext = new ShopContext(shopService, trade, market, messages, format, chatPrompt,
                 design, walletService, materials);
@@ -159,6 +171,7 @@ public final class MintedPlugin extends JavaPlugin {
         setExecutor("bank", new BankCommand(bankService, bankEconomy, banknotes, noteInventory, gui, format,
                 messages, physical, combatLock));
         setExecutor("sell", new SellCommand(shopContext, banknotes, getConfig().getString("shops.global", "Spawn")));
+        setExecutor("mstats", new StatsCommand(gui));
         registerShopCommand(shopContext);
 
         openStorageAsync();
@@ -177,6 +190,7 @@ public final class MintedPlugin extends JavaPlugin {
         events.registerEvents(new InteractionListener(gui, requireSneak()), this);
         events.registerEvents(new BanknoteListener(walletEconomy, bankEconomy, banknotes, noteInventory,
                 format, messages, physical, combatLock), this);
+        events.registerEvents(new LostCashListener(this, banknotes, stats), this);
     }
 
     // Combat lock config: hit-triggered deposit block. Disabled -> inert.
@@ -218,6 +232,7 @@ public final class MintedPlugin extends JavaPlugin {
                 try {
                     walletStorage.open();
                     bankStorage.open();
+                    statsDao.createTable();
                 } catch (RuntimeException e) {
                     getLogger().severe("Minted could not open its database: " + e.getMessage());
                     return;
@@ -240,10 +255,18 @@ public final class MintedPlugin extends JavaPlugin {
             bankEconomy.load(player.getUniqueId(), null);
         }
         shopService.initialize();
+        stats.load();
         getServer().getScheduler().runTaskTimerAsynchronously(this,
                 new AccountSaveTask(walletEconomy, walletStorage), SAVE_INTERVAL_TICKS, SAVE_INTERVAL_TICKS);
         getServer().getScheduler().runTaskTimerAsynchronously(this,
                 new AccountSaveTask(bankEconomy, bankStorage), SAVE_INTERVAL_TICKS, SAVE_INTERVAL_TICKS);
+        final EconomyStats statsRef = stats;
+        getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
+            @Override
+            public void run() {
+                statsRef.refresh();
+            }
+        }, STATS_REFRESH_TICKS, STATS_REFRESH_TICKS);
         getServer().getScheduler().runTaskTimer(this, new Runnable() {
             @Override
             public void run() {

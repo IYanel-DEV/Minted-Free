@@ -9,7 +9,11 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * All the ways money as physical banknotes touches a player's inventory: reading
@@ -24,6 +28,9 @@ import java.util.List;
 public final class NoteInventory {
 
     private static final double EPSILON = 1.0E-6;
+    // Ceiling (in cents) for the exact-payment subset search - enough for any
+    // sensible purchase, while keeping the search bounded.
+    private static final long EXACT_MATCH_MAX_CENTS = 100_000_000L;
 
     private final BanknoteManager notes;
 
@@ -46,10 +53,12 @@ public final class NoteInventory {
     }
 
     /**
-     * Charges {@code amount} from the notes the player holds: genuine notes are
-     * consumed largest-first until the price is covered, then the difference is
-     * minted back as change. If the held notes cannot cover the price nothing is
-     * taken.
+     * Charges {@code amount} from the notes the player holds. First the wallet
+     * looks for an exact combination of notes summing to the price, so paying
+     * with a $12 wad for a $12 item costs no change at all. If no exact set
+     * exists, genuine notes are consumed largest-first until the price is
+     * covered and the difference is minted back as change. If the held notes
+     * cannot cover the price nothing is taken.
      *
      * @return true when the charge went through
      */
@@ -62,6 +71,12 @@ public final class NoteInventory {
         List<Integer> slots = noteSlots(contents);
         if (total(contents, slots) + EPSILON < amount) {
             return false;
+        }
+
+        int[] exact = exactMatch(contents, slots, toCents(amount));
+        if (exact != null) {
+            applyTake(inventory, contents, exact);
+            return true;
         }
 
         double collected = 0;
@@ -85,6 +100,102 @@ public final class NoteInventory {
             credit(player, change);
         }
         return true;
+    }
+
+    /**
+     * Looks for a set of held notes that sums to exactly {@code amountCents}.
+     * Prefers the largest face values so as few slots as possible are touched.
+     *
+     * @return a per-slot {@code take} array, or null when no exact set exists
+     */
+    private int[] exactMatch(ItemStack[] contents, List<Integer> slots, long amountCents) {
+        // The subset search is bounded in cents; enormous purchases skip it and
+        // let the greedy take-with-change path mint proper notes instead.
+        if (amountCents <= 0 || amountCents > EXACT_MATCH_MAX_CENTS) {
+            return null;
+        }
+        Map<Long, List<Integer>> byValue = new HashMap<Long, List<Integer>>();
+        for (int slot : slots) {
+            long cents = toCents(notes.faceValue(contents[slot]));
+            if (cents <= 0) {
+                continue;
+            }
+            List<Integer> members = byValue.get(cents);
+            if (members == null) {
+                members = new ArrayList<Integer>();
+                byValue.put(cents, members);
+            }
+            members.add(slot);
+        }
+        if (byValue.isEmpty()) {
+            return null;
+        }
+        List<Long> values = new ArrayList<Long>(byValue.keySet());
+        Collections.sort(values, new Comparator<Long>() {
+            @Override
+            public int compare(Long a, Long b) {
+                return Long.compare(b, a);
+            }
+        });
+        long[] available = new long[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            long total = 0;
+            for (int slot : byValue.get(values.get(i))) {
+                total += contents[slot].getAmount();
+            }
+            available[i] = total;
+        }
+        long[] used = new long[values.size()];
+        if (!findExact(values, available, used, 0, amountCents, new HashSet<Long>())) {
+            return null;
+        }
+        int[] take = new int[contents.length];
+        for (int i = 0; i < values.size(); i++) {
+            long remaining = used[i];
+            for (int slot : byValue.get(values.get(i))) {
+                int held = contents[slot].getAmount();
+                int consume = (int) Math.min(remaining, held);
+                take[slot] = consume;
+                remaining -= consume;
+                if (remaining <= 0) {
+                    break;
+                }
+            }
+        }
+        return take;
+    }
+
+    // Recursive subset search over distinct face values, descending. Only exact
+    // sums matter, so each value can contribute at most remaining/value notes;
+    // the memo clips the exponential blow-up when the player holds many values.
+    private boolean findExact(List<Long> values, long[] available, long[] used,
+                              int index, long remainingCents, Set<Long> memo) {
+        if (remainingCents == 0) {
+            return true;
+        }
+        if (index >= values.size() || remainingCents < 0) {
+            return false;
+        }
+        long key = ((long) index << 32) | remainingCents;
+        if (memo.contains(key)) {
+            return false;
+        }
+        long value = values.get(index);
+        long cap = Math.min(available[index], remainingCents / value);
+        for (long count = cap; count >= 0; count--) {
+            used[index] = count;
+            if (findExact(values, available, used, index + 1,
+                    remainingCents - count * value, memo)) {
+                return true;
+            }
+        }
+        used[index] = 0;
+        memo.add(key);
+        return false;
+    }
+
+    private static long toCents(double value) {
+        return Math.round(value * 100.0);
     }
 
     /**

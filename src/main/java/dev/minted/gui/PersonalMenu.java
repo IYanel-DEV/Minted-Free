@@ -56,6 +56,14 @@ public final class PersonalMenu extends Menu {
                 }
             }
         });
+        set(22, Icon.of(Material.GOLD_INGOT, Design.MONEY + "" + ChatColor.BOLD + "Stats",
+                Design.lore("See the server-wide money totals.",
+                        null, "Click to view economy stats.")), new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                new EconomyMenu(ctx, viewer).open(player);
+            }
+        });
         set(23, Icon.of(Material.IRON_INGOT, Design.HEADING + "" + ChatColor.BOLD + "Withdraw",
                 Design.lore("Bank into cash.", null, "Click to withdraw.")), new Consumer<Player>() {
             @Override

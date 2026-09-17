@@ -3,6 +3,7 @@ package dev.minted.gui;
 import dev.minted.bank.BankService;
 import dev.minted.bank.CombatLock;
 import dev.minted.bank.EconomyService;
+import dev.minted.bank.EconomyStats;
 import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.WalletService;
 import dev.minted.banknote.BanknoteManager;
@@ -35,11 +36,12 @@ public final class GuiContext {
     private final CombatLock combatLock;
     private final Design design;
     private final SoundFX sounds;
+    private final EconomyStats stats;
 
     public GuiContext(EconomyService wallet, EconomyService bankEconomy, BankService bank, WalletService walletService,
                       NoteInventory notes, MoneyFormat format, ChatPrompt prompt, RequestService requests,
                       double[] presets, BanknoteManager banknotes, Messages messages, CombatLock combatLock,
-                      Design design, SoundFX sounds) {
+                      Design design, SoundFX sounds, EconomyStats stats) {
         this.wallet = wallet;
         this.bankEconomy = bankEconomy;
         this.bank = bank;
@@ -54,6 +56,7 @@ public final class GuiContext {
         this.combatLock = combatLock;
         this.design = design;
         this.sounds = sounds;
+        this.stats = stats;
     }
 
     public Design design() {
@@ -115,5 +118,9 @@ public final class GuiContext {
 
     double[] presets() {
         return presets;
+    }
+
+    EconomyStats stats() {
+        return stats;
     }
 }

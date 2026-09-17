@@ -62,6 +62,28 @@ final class AccountDao {
         }
     }
 
+    /** Sum of every stored balance: the table's whole column. */
+    double sum() {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(dialect.sum(table));
+             ResultSet rows = statement.executeQuery()) {
+            return rows.next() ? rows.getDouble(1) : 0;
+        } catch (SQLException e) {
+            throw new StorageException("Could not sum balances", e);
+        }
+    }
+
+    /** Number of rows that hold a balance. */
+    int count() {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(dialect.count(table));
+             ResultSet rows = statement.executeQuery()) {
+            return rows.next() ? rows.getInt(1) : 0;
+        } catch (SQLException e) {
+            throw new StorageException("Could not count accounts", e);
+        }
+    }
+
     void save(UUID uuid, double balance) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(dialect.upsert(table))) {

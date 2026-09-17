@@ -59,4 +59,14 @@ public final class SqlStorageProvider implements StorageProvider {
     public void saveBalances(Map<UUID, Double> balances) {
         dao().saveAll(balances);
     }
+
+    @Override
+    public double sumBalances() {
+        return dao().sum();
+    }
+
+    @Override
+    public int countAccounts() {
+        return dao().count();
+    }
 }

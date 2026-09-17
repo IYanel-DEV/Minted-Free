@@ -20,6 +20,12 @@ public enum SqlDialect {
             return "INSERT INTO " + table + "(uuid, balance) VALUES(?, ?)"
                     + " ON CONFLICT(uuid) DO UPDATE SET balance = excluded.balance";
         }
+
+        @Override
+        public String statsUpsert(String table) {
+            return "INSERT INTO " + table + "(k, value) VALUES(?, ?)"
+                    + " ON CONFLICT(k) DO UPDATE SET value = excluded.value";
+        }
     },
 
     MYSQL("dev.minted.libs.mysql.cj.jdbc.Driver") {
@@ -37,6 +43,12 @@ public enum SqlDialect {
             // every server the plugin promises to run on.
             return "INSERT INTO " + table + "(uuid, balance) VALUES(?, ?)"
                     + " ON DUPLICATE KEY UPDATE balance = VALUES(balance)";
+        }
+
+        @Override
+        public String statsUpsert(String table) {
+            return "INSERT INTO " + table + "(k, value) VALUES(?, ?)"
+                    + " ON DUPLICATE KEY UPDATE value = VALUES(value)";
         }
     };
 
@@ -61,9 +73,29 @@ public enum SqlDialect {
     /** Statement that writes a balance, creating the row if it is missing. */
     public abstract String upsert(String table);
 
+    /** Statement that writes a stats counter, creating the row if missing. */
+    public abstract String statsUpsert(String table);
+
     public String createTable(String table) {
         return "CREATE TABLE IF NOT EXISTS " + table + " ("
                 + "uuid VARCHAR(36) PRIMARY KEY, balance DOUBLE NOT NULL)";
+    }
+
+    // The economy-stats counters (e.g. money burned by shops) are a tiny
+    // key/value table; a VARCHAR key spells the same on sqlite and mysql.
+    public String createStats() {
+        return "CREATE TABLE IF NOT EXISTS minted_stats ("
+                + "k VARCHAR(32) PRIMARY KEY, value DOUBLE NOT NULL)";
+    }
+
+    /** Whole-table total, the global view used by the economy stats menu. */
+    public String sum(String table) {
+        return "SELECT COALESCE(SUM(balance), 0) FROM " + table;
+    }
+
+    /** How many rows the table holds, the number of accounts in use. */
+    public String count(String table) {
+        return "SELECT COUNT(*) FROM " + table;
     }
 
     // The shop schema is identical on both backends: ids are assigned in Java

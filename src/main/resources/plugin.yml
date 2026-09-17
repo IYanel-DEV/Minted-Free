@@ -33,6 +33,10 @@ commands:
   sell:
     description: Sell the item in your hand to the global shop.
     usage: /sell [amount]
+  mstats:
+    description: Open the server-wide economy stats.
+    aliases: [economy]
+    usage: /mstats
   eshop:
     description: Browse the shops, or manage them as an admin.
     aliases: [shop, shops]
@@ -59,6 +63,9 @@ permissions:
     default: true
   minted.sell:
     description: Sell held items to the global shop.
+    default: true
+  minted.stats:
+    description: View the server-wide economy stats.
     default: true
   minted.shop.use:
     description: Browse and trade at shops.

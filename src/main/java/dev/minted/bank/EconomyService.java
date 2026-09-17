@@ -50,6 +50,28 @@ public final class EconomyService {
         return accounts;
     }
 
+    /**
+     * Total stored balance across the whole table, corrected to the live
+     * in-memory balances of any accounts currently cached, so the global view
+     * reflects an online player's latest deposit the moment it happens even
+     * though the batch saver may not have written it to disk yet.
+     *
+     * <p>Blocking (talks to storage); call from an async task only.
+     */
+    public double liveSum() {
+        double total = storage.sumBalances();
+        for (BankAccount account : accounts.values()) {
+            Double stored = storage.loadBalance(account.getUuid());
+            total += account.getBalance() - (stored != null ? stored : startingBalance);
+        }
+        return total;
+    }
+
+    /** Blocking; call from an async task only. */
+    public int countAccounts() {
+        return storage.countAccounts();
+    }
+
     /** Loads an account into the cache, then runs the callback on the main thread. */
     public void load(final UUID uuid, final Consumer<BankAccount> callback) {
         if (accounts.containsKey(uuid)) {

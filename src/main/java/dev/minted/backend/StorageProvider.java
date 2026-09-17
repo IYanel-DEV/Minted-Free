@@ -29,4 +29,10 @@ public interface StorageProvider {
     void saveBalance(UUID uuid, double balance);
 
     void saveBalances(Map<UUID, Double> balances);
+
+    /** Sum of every stored balance in this table. */
+    double sumBalances();
+
+    /** Number of accounts that hold a stored balance. */
+    int countAccounts();
 }

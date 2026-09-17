@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Bridges banknotes and balances. Paper is the material: it is the one item
@@ -141,19 +140,29 @@ public final class BanknoteManager {
     }
 
     // Mints `count` notes of one denomination into as few stacks as the max
-    // stack size allows. Notes in a stack share a serial, so the stack collapses
-    // in the inventory the way real change does; distinct stacks get new serials.
+    // stack size allows. Every note of a given face value carries the same
+    // stable serial, so notes minted now are byte-identical to notes minted
+    // later and they collapse into one stack in the inventory the way real
+    // change does - a fresh random serial per payout was what made $1 notes
+    // from separate sales refuse to merge.
     private void stack(List<ItemStack> out, double denom, int modelIndex, int count) {
         int max = Material.PAPER.getMaxStackSize();
         int remaining = count;
         while (remaining > 0) {
             int size = Math.min(remaining, max);
             ItemStack note = new ItemStack(Material.PAPER);
-            note = parser.write(note, new Banknote(denom, UUID.randomUUID().toString()), modelIndex);
+            note = parser.write(note, new Banknote(denom, serialFor(denom)), modelIndex);
             note.setAmount(size);
             out.add(note);
             remaining -= size;
         }
+    }
+
+    // Stable, collision-free serial for a face value: the raw bits, base-36.
+    // Deterministic lookup only - the payload signature still binds the value,
+    // so a serial can be guessed freely without making a fake note validate.
+    private static String serialFor(double denomination) {
+        return "N" + Long.toString(Double.doubleToLongBits(denomination), 36);
     }
 
     private static double[] sortedDescending(List<Double> values) {
