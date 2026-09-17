@@ -165,12 +165,20 @@ public final class Market {
         // Remove the goods before crediting: paying cash mints notes into the
         // seller's inventory, and we must not scan the sold stack as still there.
         int removed = Inventories.remove(seller, listing.raw(), qty);
-        sellerPurse.credit(listing.getBuyBackPrice() * removed);
+        double earned = listing.getBuyBackPrice() * removed;
+        if (!sellerPurse.credit(earned)) {
+            // The seller hit their balance cap; hand the goods back and refund
+            // the owner, so neither side silently loses anything.
+            Inventories.giveOrDrop(seller, listing.copy(), removed);
+            ownerPurse.credit(payout);
+            messages.send(seller, "community.sell.cap");
+            return;
+        }
         listing.setStock(listing.getStock() + removed);
         persist(community, listing);
         messages.send(seller, "community.sell.success",
                 "quantity", String.valueOf(removed), "item", name(listing.raw()),
-                "earned", format.format(listing.getBuyBackPrice() * removed));
+                "earned", format.format(earned));
     }
 
     /** Mints the listing's earnings to the owner's purse and resets them to zero. */
@@ -185,7 +193,11 @@ public final class Market {
             return;
         }
         double amount = listing.getEarnings();
-        purse.credit(amount);
+        if (!purse.credit(amount)) {
+            // Balance cap reached; keep the earnings so they are never lost.
+            messages.send(owner, "community.collect.cap");
+            return;
+        }
         listing.setEarnings(0);
         persist(community, listing);
         messages.send(owner, "community.collect.done", "amount", format.format(amount));

@@ -149,12 +149,14 @@ community:
     own: "&cYou cannot sell to your own listing."
     owner-offline: "&cThe owner is offline, so their buy-back is closed."
     owner-broke: "&cThe owner cannot afford to buy those back right now."
+    cap: "&cThat sale would pass your balance limit - your items were returned."
     full: "&cThat listing is already full."
     none: "&cYou have no &f{item}&c to sell."
     success: "&aSold &f{quantity}x {item}&a for &f{earned}&a."
   collect:
     none: "&cThere is nothing to collect from that listing."
     done: "&aCollected &f{amount}&a from your sales."
+    cap: "&cThat collect would pass your balance limit - spend or bank some first."
   withdraw:
     done: "&aWithdrew &f{quantity}&a units back to your inventory."
 
