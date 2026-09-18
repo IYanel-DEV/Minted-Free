@@ -14,6 +14,8 @@ description: GUI-first economy for premium survival and roleplay servers.
 author: iyanel-dev
 website: https://github.com/IYanel-DEV/Minted-Free
 main: dev.minted.MintedPlugin
+# Optional hooks; Minted works fully without any of these present.
+softdepend: [Vault, PlaceholderAPI, Essentials]
 
 commands:
   minted:

@@ -3,6 +3,7 @@ package dev.minted.command;
 import dev.minted.MintedPlugin;
 import dev.minted.gui.GuiContext;
 import dev.minted.gui.PersonalMenu;
+import dev.minted.integration.IntegrationReport;
 import dev.minted.request.RequestService;
 
 import org.bukkit.ChatColor;
@@ -57,6 +58,8 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
                 plugin.reloadConfig();
                 sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
                 return true;
+            case "report":
+                return report(sender);
             case "gui":
                 return openGui(sender);
             case "accept":
@@ -64,7 +67,7 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
             case "decline":
                 return resolveRequest(sender, args, false);
             default:
-                sender.sendMessage(ChatColor.RED + "Usage: /" + label + " [gui|reload]");
+                sender.sendMessage(ChatColor.RED + "Usage: /" + label + " [gui|reload|report]");
                 return true;
         }
     }
@@ -101,10 +104,56 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean report(CommandSender sender) {
+        if (!sender.hasPermission("minted.admin")) {
+            sender.sendMessage(ChatColor.RED + "No permission.");
+            return true;
+        }
+        IntegrationReport r = plugin.integrationReport();
+        sender.sendMessage(ChatColor.GOLD + "Minted " + ChatColor.GRAY + "integrations report");
+        sender.sendMessage(line("API + events", r.apiReady));
+        sender.sendMessage(ChatColor.GRAY + "Primary balance: " + ChatColor.WHITE + r.primary);
+        sender.sendMessage(vaultLine(r));
+        sender.sendMessage(papiLine(r));
+        sender.sendMessage(essentialsLine(r));
+        return true;
+    }
+
+    private String line(String label, boolean active) {
+        return ChatColor.GRAY + label + ": " + (active ? ChatColor.GREEN + "ready" : ChatColor.RED + "off");
+    }
+
+    private String vaultLine(IntegrationReport r) {
+        if (!r.vaultInstalled) {
+            return ChatColor.GRAY + "Vault: " + ChatColor.RED + "not installed";
+        }
+        return ChatColor.GRAY + "Vault: " + (r.vaultRegistered ? ChatColor.GREEN + "Minted is the economy provider"
+                : ChatColor.RED + "installed but not registered (Vault was unavailable)");
+    }
+
+    private String papiLine(IntegrationReport r) {
+        if (!r.papiInstalled) {
+            return ChatColor.GRAY + "PlaceholderAPI: " + ChatColor.RED + "not installed";
+        }
+        return ChatColor.GRAY + "PlaceholderAPI: " + (r.papiRegistered ? ChatColor.GREEN + "%minted_*% registered"
+                : ChatColor.RED + "installed but not registered");
+    }
+
+    private String essentialsLine(IntegrationReport r) {
+        if (!r.essentialsInstalled) {
+            return ChatColor.GRAY + "Essentials: " + ChatColor.RED + "not installed";
+        }
+        if (r.essentialsEconomy) {
+            return ChatColor.YELLOW + "Essentials: its own economy is still active - disable it ("
+                    + "economy: disabled in Essentials' config.yml) to run it entirely on Minted.";
+        }
+        return ChatColor.GREEN + "Essentials: present, its built-in economy is off.";
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("gui", "reload");
+            return Arrays.asList("gui", "reload", "report");
         }
         return java.util.Collections.emptyList();
     }

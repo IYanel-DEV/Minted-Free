@@ -2,6 +2,7 @@ package dev.minted.gui.theme;
 
 import dev.minted.bank.MoneyFormat;
 import dev.minted.compat.Glass;
+import dev.minted.compat.Heads;
 import dev.minted.gui.Icon;
 
 import org.bukkit.ChatColor;
@@ -34,8 +35,8 @@ public final class Design {
     /** A menu's single accent: its heading tint and its border glass colour. */
     public enum Accent {
         SHOP(ChatColor.GREEN, Glass.Tone.GREEN),
-        BANK(ChatColor.AQUA, Glass.Tone.LIGHT_BLUE),
-        COMMUNITY(ChatColor.YELLOW, Glass.Tone.YELLOW),
+        BANK(ChatColor.AQUA, Glass.Tone.BLACK),
+        COMMUNITY(ChatColor.YELLOW, Glass.Tone.ORANGE),
         NEUTRAL(ChatColor.WHITE, Glass.Tone.GRAY);
 
         public final ChatColor colour;
@@ -65,26 +66,29 @@ public final class Design {
         return Icon.of(pane, " ");
     }
 
-    // --- Furniture. Materials here are unchanged across 1.8 -> 1.26. ---
+    // --- Furniture. Vault theme: textured heads where a glyph exists, with the
+    // unchanged cross-version material as the fallback so nothing can break. ---
 
     public ItemStack back() {
-        return Icon.of(Material.ARROW, HINT + "Back");
+        return Icon.of(head(Heads.backSkin(), Material.ARROW), HINT + "Back");
     }
 
     public ItemStack prev() {
-        return Icon.of(Material.ARROW, HINT + "Previous page");
+        return Icon.of(head(Heads.backSkin(), Material.ARROW), HINT + "Previous page");
     }
 
     public ItemStack next() {
-        return Icon.of(Material.ARROW, HINT + "Next page");
+        return Icon.of(head(Heads.nextSkin(), Material.ARROW), HINT + "Next page");
     }
 
     public ItemStack pageInfo(int page, int pages) {
-        return Icon.of(Material.PAPER, HEADING + "" + ChatColor.BOLD + "Page " + page + " / " + pages);
+        return Icon.of(head(Heads.bookSkin(), Material.PAPER),
+                HEADING + "" + ChatColor.BOLD + "Page " + page + " / " + pages);
     }
 
     public ItemStack home() {
-        return Icon.of(Material.CHEST, HEADING + "" + ChatColor.BOLD + "Categories",
+        return Icon.of(head(Heads.homeSkin(), Material.CHEST),
+                HEADING + "" + ChatColor.BOLD + "Categories",
                 HINT + "Click to browse by category.");
     }
 
@@ -100,32 +104,40 @@ public final class Design {
     }
 
     public ItemStack close() {
-        return Icon.of(Material.BARRIER, OUT + "" + ChatColor.BOLD + "Close");
+        return Icon.of(head(Heads.noneSkin(), Material.BARRIER), OUT + "" + ChatColor.BOLD + "Close");
     }
 
     public ItemStack confirm(String label) {
-        return Icon.of(Material.EMERALD, IN + "" + ChatColor.BOLD + label);
+        return Icon.of(head(Heads.confirmSkin(), Material.EMERALD), IN + "" + ChatColor.BOLD + label);
     }
 
     public ItemStack cancel() {
-        return Icon.of(Material.BARRIER, OUT + "" + ChatColor.BOLD + "Cancel");
+        return Icon.of(head(Heads.noneSkin(), Material.BARRIER), OUT + "" + ChatColor.BOLD + "Cancel");
     }
 
     public ItemStack money(String label, double value, MoneyFormat format) {
-        return Icon.of(Material.GOLD_INGOT, MONEY + "" + ChatColor.BOLD + label,
+        return Icon.of(head(Heads.moneySkin(), Material.GOLD_INGOT),
+                MONEY + "" + ChatColor.BOLD + label,
                 HINT + format.format(value));
     }
 
     /** Wallet balance tile, identical in every menu that shows a balance strip. */
     public ItemStack wallet(double value, MoneyFormat format) {
-        return Icon.of(Material.GOLD_INGOT, MONEY + "" + ChatColor.BOLD + "Wallet",
+        return Icon.of(head(Heads.walletSkin(), Material.GOLD_INGOT),
+                MONEY + "" + ChatColor.BOLD + "Wallet",
                 HINT + format.format(value));
     }
 
     /** Bank balance tile, the green counterpart to {@link #wallet}. */
     public ItemStack bank(double value, MoneyFormat format) {
-        return Icon.of(Material.EMERALD, IN + "" + ChatColor.BOLD + "Bank",
+        return Icon.of(head(Heads.bankSkin(), Material.EMERALD),
+                IN + "" + ChatColor.BOLD + "Bank",
                 HINT + format.format(value));
+    }
+
+    /** A textured head for a themed glyph, falling back to the plain material. */
+    public static ItemStack head(String skin, Material fallback) {
+        return Heads.icon(skin, fallback);
     }
 
     /**

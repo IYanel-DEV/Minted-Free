@@ -1,5 +1,6 @@
 package dev.minted.gui;
 
+import dev.minted.compat.Heads;
 import dev.minted.gui.theme.Design;
 import dev.minted.request.PaymentRequest;
 import dev.minted.request.RequestMessage;
@@ -36,7 +37,8 @@ public final class InteractionMenu extends Menu {
         set(11, d.wallet(ctx.walletService().balance(viewer), ctx.format()), null);
         set(13, d.bank(ctx.bank().bankBalance(viewer.getUniqueId()), ctx.format()), null);
 
-        set(20, Icon.of(Material.GOLD_BLOCK, Design.MONEY + "" + ChatColor.BOLD + "Send money",
+        set(20, Icon.of(Heads.icon(Heads.moneySkin(), Material.GOLD_BLOCK),
+                Design.MONEY + "" + ChatColor.BOLD + "Send money",
                 Design.lore("Give money to " + target.getName() + ".", null, "Click to choose an amount.")),
                 new Consumer<Player>() {
             @Override
@@ -44,7 +46,8 @@ public final class InteractionMenu extends Menu {
                 new AmountMenu(ctx, Design.title(Design.Accent.BANK, "Send money"), "Send", send()).open(player);
             }
         });
-        set(24, Icon.of(Material.CHEST, Design.MONEY + "" + ChatColor.BOLD + "Request money",
+        set(24, Icon.of(Heads.icon(Heads.pouchSkin(), Material.CHEST),
+                Design.MONEY + "" + ChatColor.BOLD + "Request money",
                 Design.lore("Ask " + target.getName() + " to pay you.", null, "Click to choose an amount.")),
                 new Consumer<Player>() {
             @Override

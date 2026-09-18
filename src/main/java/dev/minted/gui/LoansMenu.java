@@ -3,6 +3,7 @@ package dev.minted.gui;
 import dev.minted.bank.BankAccount;
 import dev.minted.bank.Loan;
 import dev.minted.bank.LoanService;
+import dev.minted.compat.Heads;
 import dev.minted.gui.theme.Design;
 
 import org.bukkit.ChatColor;
@@ -38,7 +39,8 @@ public final class LoansMenu extends Menu {
         Loan loan = ctx.loans().activeLoan(uuid);
 
         if (loan == null) {
-            set(11, Icon.of(Material.GOLD_INGOT, Design.MONEY + "" + ChatColor.BOLD + "Take a loan",
+            set(11, Icon.of(Heads.icon(Heads.moneySkin(), Material.GOLD_INGOT),
+                    Design.MONEY + "" + ChatColor.BOLD + "Take a loan",
                     Design.lore("Borrow cash straight into your bank.",
                             Arrays.asList(Design.LABEL + "Cap: " + Design.MONEY + ctx.format().brief(ctx.loans().maxLoan()),
                                     Design.LABEL + "Fee: " + Design.HINT + feePercent() + "%",
@@ -52,14 +54,16 @@ public final class LoansMenu extends Menu {
             });
         } else {
             boolean overdue = loan.timeLeft() < 0;
-            set(11, Icon.of(Material.BOOK, Design.HEADING + "" + ChatColor.BOLD + "Open loan",
+            set(11, Icon.of(Heads.icon(Heads.bookSkin(), Material.BOOK),
+                    Design.HEADING + "" + ChatColor.BOLD + "Open loan",
                     Design.lore("Your current loan with the bank.",
                             Arrays.asList(Design.LABEL + "Borrowed: " + Design.MONEY + ctx.format().brief(loan.amount()),
                                     Design.LABEL + "To repay: " + Design.OUT + ctx.format().brief(loan.owed()),
                                     Design.LABEL + (overdue ? "Overdue" : "Due")
                                             + ": " + Design.HINT + relative(loan.timeLeft())),
                             "Pay it off outright to close it.")), null);
-            set(13, Icon.of(Material.EMERALD, Design.IN + "" + ChatColor.BOLD + "Repay",
+            set(13, Icon.of(Heads.icon(Heads.bankSkin(), Material.EMERALD),
+                    Design.IN + "" + ChatColor.BOLD + "Repay",
                     Design.lore("Pay the full owed balance from your bank.",
                             Arrays.asList(Design.OUT + ctx.format().brief(loan.owed())),
                             "Click to repay.")), new Consumer<Player>() {

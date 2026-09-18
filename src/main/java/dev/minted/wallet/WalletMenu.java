@@ -1,5 +1,6 @@
 package dev.minted.wallet;
 
+import dev.minted.compat.Heads;
 import dev.minted.gui.Icon;
 import dev.minted.gui.Menu;
 import dev.minted.gui.theme.Design;
@@ -45,7 +46,8 @@ public final class WalletMenu extends Menu {
         frame(design.border(Design.Accent.NEUTRAL));
 
         set(0, balance(design), null);
-        set(36, Icon.of(Material.CHEST, Design.HEADING + "" + ChatColor.BOLD + "Deposit notes",
+        set(36, Icon.of(Heads.icon(Heads.homeSkin(), Material.CHEST),
+                        Design.HEADING + "" + ChatColor.BOLD + "Deposit notes",
                         Design.lore("Moves the banknotes you carry", null, "into this wallet.")),
                 new Consumer<Player>() {
                     @Override
@@ -53,7 +55,8 @@ public final class WalletMenu extends Menu {
                         deposit(p);
                     }
                 });
-        set(37, Icon.of(Material.BARRIER, Design.OUT + "" + ChatColor.BOLD + "Empty wallet",
+        set(37, Icon.of(Heads.icon(Heads.noneSkin(), Material.BARRIER),
+                        Design.OUT + "" + ChatColor.BOLD + "Empty wallet",
                         Design.lore("Takes everything out of the wallet.", null, "into your inventory.")),
                 new Consumer<Player>() {
                     @Override
@@ -103,7 +106,8 @@ public final class WalletMenu extends Menu {
             count = wallets.contents(hand).noteCount();
         }
         String hint = count == 1 ? "1 note inside" : count + " notes inside";
-        return Icon.of(Material.GOLD_INGOT, Design.MONEY + "" + ChatColor.BOLD + "Wallet",
+        return Icon.of(Heads.icon(Heads.walletSkin(), Material.GOLD_INGOT),
+                Design.MONEY + "" + ChatColor.BOLD + "Wallet",
                 Design.lore(null, Collections.singletonList(Design.HINT + wallets.format().format(value)),
                         Design.HINT + hint));
     }

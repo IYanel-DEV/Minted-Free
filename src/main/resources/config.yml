@@ -21,6 +21,31 @@ currency:
   # half, max, raw numbers) is unaffected. Off by default.
   compact: false
 
+# --- Third-party integrations ---
+integrations:
+  # Fire dev.minted.api.event.MintedBalanceChangeEvent for every wallet/bank
+  # change, so other plugins can observe Minted's economy. Costs one event per
+  # balance movement; turn off only if a profiler says it matters.
+  events: true
+  # Which balance external APIs (Vault, placeholders, MintedEconomy#getBalance)
+  # read and write: 'bank' (recommended) or 'wallet'. The bank is a digital
+  # account that works for offline players; the wallet may be physical notes.
+  primary-balance: bank
+  # Register Minted as the server's Vault economy so EssentialsX, shops, Towny
+  # and every other Vault-aware plugin read and move money through Minted.
+  # Ignored when Vault is not installed. Set false to stay self-contained.
+  vault:
+    register: true
+  # Register the %minted_*% placeholders with PlaceholderAPI. Ignored when
+  # PlaceholderAPI is not installed. Set false to turn them off.
+  placeholders:
+    register: true
+  # EssentialsX runs a duplicate economy by default. When it is installed,
+  # Minted logs one startup message explaining how to point Essentials at
+  # Minted (via Vault). Pure awareness - disable it if the message is noise.
+  essentials:
+    warn: true
+
 database:
   # Storage backend. sqlite ships zero-config; mysql requires the fields below
   # and enables cross-server syncing on BungeeCord/Velocity networks.

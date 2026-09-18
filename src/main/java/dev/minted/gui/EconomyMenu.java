@@ -1,6 +1,7 @@
 package dev.minted.gui;
 
 import dev.minted.bank.EconomyStats;
+import dev.minted.compat.Heads;
 import dev.minted.gui.theme.Design;
 
 import org.bukkit.ChatColor;
@@ -35,18 +36,21 @@ public final class EconomyMenu extends Menu {
         Design d = ctx.design();
         frame(d.border(Design.Accent.BANK));
 
-        set(11, Icon.of(Material.GOLD_INGOT, Design.MONEY + "" + ChatColor.BOLD + "Total in Banks",
+        set(11, Icon.of(Heads.icon(Heads.moneySkin(), Material.GOLD_INGOT),
+                Design.MONEY + "" + ChatColor.BOLD + "Total in Banks",
                 Design.lore("All money stored in bank accounts across the server.",
                         Arrays.asList(Design.HINT + ctx.format().brief(stats.banked()),
                                 Design.LABEL + String.valueOf(stats.accountCount()) + " bank accounts in use."),
                         null)), null);
 
-        set(15, Icon.of(Material.LAVA_BUCKET, Design.OUT + "" + ChatColor.BOLD + "Burned / Lost",
+        set(15, Icon.of(Heads.icon(Heads.flameSkin(), Material.LAVA_BUCKET),
+                Design.OUT + "" + ChatColor.BOLD + "Burned / Lost",
                 Design.lore("Money that left the economy for good.",
                         Arrays.asList(Design.HINT + ctx.format().brief(stats.burned())),
                         "Notes dropped that despawn, plus digital shop spends.")), null);
 
-        set(10, Icon.of(Material.DIAMOND, Design.HEADING + "" + ChatColor.BOLD + "Richest players",
+        set(10, Icon.of(Heads.icon(Heads.crownSkin(), Material.DIAMOND),
+                Design.HEADING + "" + ChatColor.BOLD + "Richest players",
                 Design.lore("Who holds the biggest bank balances.",
                         null, "Click to see the ranking.")), new Consumer<Player>() {
             @Override
@@ -55,7 +59,8 @@ public final class EconomyMenu extends Menu {
             }
         });
 
-        set(13, Icon.of(Material.BOOK, Design.HEADING + "" + ChatColor.BOLD + "Recent sales",
+        set(13, Icon.of(Heads.icon(Heads.booksSkin(), Material.BOOK),
+                Design.HEADING + "" + ChatColor.BOLD + "Recent sales",
                 Design.lore("The latest shop and marketplace trades.",
                         null, "Click to see the sales feed.")), new Consumer<Player>() {
             @Override

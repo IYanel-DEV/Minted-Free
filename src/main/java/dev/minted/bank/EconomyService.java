@@ -28,12 +28,37 @@ public final class EconomyService {
 
     private final Map<UUID, BankAccount> accounts = new ConcurrentHashMap<UUID, BankAccount>();
     private volatile boolean ready;
+    private volatile BalanceChangeSink changeSink;
 
     public EconomyService(Plugin plugin, StorageProvider storage, double startingBalance, double maxBalance) {
         this.plugin = plugin;
         this.storage = storage;
         this.startingBalance = startingBalance;
         this.maxBalance = maxBalance;
+    }
+
+    /**
+     * Attaches the observer that is notified of every balance change on every
+     * account this service owns, now and in the future. Set once at startup.
+     */
+    public void setChangeSink(BalanceChangeSink sink) {
+        this.changeSink = sink;
+    }
+
+    /**
+     * The account for {@code uuid}, creating it from storage when it is not
+     * cached. Unlike {@link #load(UUID, Consumer)} this <em>blocks</em> on
+     * storage, so it exists only for the third-party integration layer (Vault
+     * and friends call us synchronously and cannot wait for a callback). Never
+     * call it from a hot path.
+     */
+    public BankAccount account(UUID uuid) {
+        BankAccount cached = accounts.get(uuid);
+        if (cached != null) {
+            return cached;
+        }
+        Double stored = storage.loadBalance(uuid);
+        return adopt(uuid, stored);
     }
 
     public boolean isReady() {
@@ -177,7 +202,7 @@ public final class EconomyService {
 
     private BankAccount adopt(UUID uuid, Double stored) {
         double balance = stored != null ? stored : startingBalance;
-        BankAccount account = new BankAccount(uuid, balance, maxBalance);
+        BankAccount account = new BankAccount(uuid, balance, maxBalance, changeSink);
         // A brand-new account has nothing on disk yet; flag it so the first
         // batch save writes the starting balance.
         if (stored == null) {

@@ -1,6 +1,7 @@
 package dev.minted.gui;
 
 import dev.minted.bank.BankAccount;
+import dev.minted.compat.Heads;
 import dev.minted.gui.theme.Design;
 
 import org.bukkit.ChatColor;
@@ -39,7 +40,8 @@ public final class PersonalMenu extends Menu {
         set(15, d.bank(ctx.bank().bankBalance(viewer.getUniqueId()), ctx.format()), null);
 
         String depositLore = physical ? "All banknotes in your inventory." : "Wallet into bank.";
-        set(21, Icon.of(Material.GOLD_BLOCK, Design.MONEY + "" + ChatColor.BOLD + "Deposit",
+        set(21, Icon.of(Heads.icon(Heads.moneySkin(), Material.GOLD_BLOCK),
+                Design.MONEY + "" + ChatColor.BOLD + "Deposit",
                 Design.lore(depositLore, null, "Click to deposit.")), new Consumer<Player>() {
             @Override
             public void accept(Player player) {
@@ -56,7 +58,8 @@ public final class PersonalMenu extends Menu {
                 }
             }
         });
-        set(22, Icon.of(Material.GOLD_INGOT, Design.MONEY + "" + ChatColor.BOLD + "Stats",
+        set(22, Icon.of(Heads.icon(Heads.crownSkin(), Material.GOLD_INGOT),
+                Design.MONEY + "" + ChatColor.BOLD + "Stats",
                 Design.lore("See the server-wide money totals.",
                         null, "Click to view economy stats.")), new Consumer<Player>() {
             @Override
@@ -64,7 +67,8 @@ public final class PersonalMenu extends Menu {
                 new EconomyMenu(ctx, viewer).open(player);
             }
         });
-        set(4, Icon.of(Material.BOOK, Design.HEADING + "" + ChatColor.BOLD + "Loans",
+        set(4, Icon.of(Heads.icon(Heads.bookSkin(), Material.BOOK),
+                Design.HEADING + "" + ChatColor.BOLD + "Loans",
                 Design.lore("Borrow from the bank, or repay a loan.",
                         null, "Click to open loans.")), new Consumer<Player>() {
             @Override
@@ -72,7 +76,8 @@ public final class PersonalMenu extends Menu {
                 new LoansMenu(ctx, viewer).open(player);
             }
         });
-        set(23, Icon.of(Material.IRON_INGOT, Design.HEADING + "" + ChatColor.BOLD + "Withdraw",
+        set(23, Icon.of(Heads.icon(Heads.silverSkin(), Material.IRON_INGOT),
+                Design.HEADING + "" + ChatColor.BOLD + "Withdraw",
                 Design.lore("Bank into cash.", null, "Click to withdraw.")), new Consumer<Player>() {
             @Override
             public void accept(Player player) {

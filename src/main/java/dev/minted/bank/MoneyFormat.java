@@ -45,6 +45,29 @@ public final class MoneyFormat {
         return symbol + digits(amount) + " " + unit;
     }
 
+    /** The currency's display name, e.g. {@code Coins}. */
+    public String name() {
+        return name;
+    }
+
+    /** The currency's singular name, e.g. {@code Coin}. */
+    public String singular() {
+        return singular;
+    }
+
+    /** The symbol prepended to amounts, e.g. {@code $}. */
+    public String symbol() {
+        return symbol;
+    }
+
+    /**
+     * Digits shown after the decimal point. Minted stores whole hundredths, so
+     * this is always 2.
+     */
+    public int fractionalDigits() {
+        return 2;
+    }
+
     /**
      * One short line regardless of the {@code currency.compact} config flag:
      * {@code $200}, {@code $1m}, {@code $1.5t}. Used for headline numbers like

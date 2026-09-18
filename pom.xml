@@ -6,7 +6,7 @@
 
     <groupId>dev.minted</groupId>
     <artifactId>minted-free</artifactId>
-    <version>0.15.0</version>
+    <version>0.20.0</version>
     <packaging>jar</packaging>
 
     <name>Minted-Free</name>
@@ -25,6 +25,15 @@
         <repository>
             <id>sonatype-ossrh</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </repository>
+        <!-- VaultAPI: the economy interface other plugins talk to. Provided only. -->
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>extendedclip-repo</id>
+            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
     </repositories>
 
@@ -66,6 +75,31 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.33</version>
+        </dependency>
+
+        <!--
+            Optional integration APIs. Every one is `provided`: the host server
+            supplies it at runtime and the hooks are guarded, so the jar never
+            contains a competing copy and never breaks when the plugin is
+            absent.
+        -->
+        <dependency>
+            <groupId>com.github.MilkBowl</groupId>
+            <artifactId>VaultAPI</artifactId>
+            <version>1.7</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bukkit</groupId>
+                    <artifactId>bukkit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.11.6</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

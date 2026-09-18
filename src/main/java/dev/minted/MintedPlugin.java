@@ -11,8 +11,12 @@ import dev.minted.backend.SqlStorageProvider;
 import dev.minted.backend.StorageException;
 import dev.minted.backend.StorageProvider;
 import dev.minted.backend.StatsDao;
+import dev.minted.api.MintedEconomy;
+import dev.minted.api.MintedEconomyImpl;
+import dev.minted.api.event.MintedBalanceChangeEvent;
 import dev.minted.bank.AccountListener;
 import dev.minted.bank.AccountSaveTask;
+import dev.minted.bank.BalanceChangeSink;
 import dev.minted.bank.BankService;
 import dev.minted.bank.CombatLock;
 import dev.minted.bank.EconomyService;
@@ -60,11 +64,13 @@ import org.bukkit.Material;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Minted plugin entry point.
@@ -100,6 +106,8 @@ public final class MintedPlugin extends JavaPlugin {
     private double interestRate;
     private long interestTicks;
     private dev.minted.bounty.BountyService bountyService;
+    private boolean vaultRegistered;
+    private boolean papiRegistered;
 
     public static MintedPlugin get() {
         return instance;
@@ -155,6 +163,7 @@ public final class MintedPlugin extends JavaPlugin {
         BankService bankService = new BankService(walletEconomy, bankEconomy, max);
 
         MoneyFormat format = MoneyFormat.from(getConfig());
+        wireIntegrations(format);
         Messages messages = Messages.load(this);
         BanknoteManager banknotes = new BanknoteManager(new BanknoteParser(format, serverVersion), denominations());
         NoteInventory noteInventory = new NoteInventory(banknotes);
@@ -225,6 +234,9 @@ public final class MintedPlugin extends JavaPlugin {
             setExecutor("bounty", new dev.minted.command.BountyCommand(gui));
         }
         registerShopCommand(shopContext);
+        hookVault();
+        hookPapi();
+        hookEssentials();
 
         openStorageAsync();
     }
@@ -250,6 +262,142 @@ public final class MintedPlugin extends JavaPlugin {
         }
         events.registerEvents(new LostCashListener(this, banknotes, stats), this);
         events.registerEvents(new NamesListener(this, namesDao), this);
+    }
+
+    /**
+     * Publishes the public API and connects the balance-change events. The
+     * event sink is attached before any account is adopted, so it sees every
+     * change from the first join onwards. Nothing here depends on a third-party
+     * plugin being present: the service is always registered and the events
+     * always fire, which is what lets other plugins hook Minted.
+     */
+    private void wireIntegrations(MoneyFormat format) {
+        if (getConfig().getBoolean("integrations.events", true)) {
+            this.walletEconomy.setChangeSink(sink(MintedBalanceChangeEvent.Account.WALLET));
+            this.bankEconomy.setChangeSink(sink(MintedBalanceChangeEvent.Account.BANK));
+        }
+
+        boolean walletPrimary = "wallet".equalsIgnoreCase(
+                getConfig().getString("integrations.primary-balance", "bank"));
+        MintedEconomyImpl.Primary primary = walletPrimary
+                ? MintedEconomyImpl.Primary.WALLET : MintedEconomyImpl.Primary.BANK;
+        getServer().getServicesManager().register(MintedEconomy.class,
+                new MintedEconomyImpl(walletEconomy, bankEconomy, format, primary),
+                this, ServicePriority.Normal);
+    }
+
+    private BalanceChangeSink sink(final MintedBalanceChangeEvent.Account account) {
+        return new BalanceChangeSink() {
+            @Override
+            public void changed(UUID uuid, double oldBalance, double newBalance) {
+                postBalanceEvent(uuid, account, oldBalance, newBalance);
+            }
+        };
+    }
+
+    // Bukkit events must fire on the main thread; interest and other async
+    // savers can trigger a balance change off it, so bounce those back.
+    private void postBalanceEvent(final UUID uuid, final MintedBalanceChangeEvent.Account account,
+                                  final double oldBalance, final double newBalance) {
+        final MintedBalanceChangeEvent event =
+                new MintedBalanceChangeEvent(uuid, account, oldBalance, newBalance);
+        if (org.bukkit.Bukkit.isPrimaryThread()) {
+            getServer().getPluginManager().callEvent(event);
+        } else {
+            getServer().getScheduler().runTask(this, new Runnable() {
+                @Override
+                public void run() {
+                    getServer().getPluginManager().callEvent(event);
+                }
+            });
+        }
+    }
+
+    /**
+     * Essentials runs its own economy by default. When both are live the two
+     * never disagree for Vault callers - Minted registers at the higher
+     * priority - but the duplicated balances confuse players, so this warns
+     * once at startup and points at the fix. Discovered through the live Vault
+     * resolution, never through a hard Essentials dependency.
+     */
+    private void hookEssentials() {
+        if (getServer().getPluginManager().getPlugin("Essentials") == null) {
+            return;
+        }
+        boolean mintedHolding = isMintedTheEconomy();
+        boolean essentialsLiving = essentialsEconomyActive();
+        if (!getConfig().getBoolean("integrations.essentials.warn", true)) {
+            return;
+        }
+        if (mintedHolding && essentialsLiving) {
+            getLogger().info("EssentialsX is running its own economy next to Minted. Vault callers resolve"
+                    + " to Minted, but /bal and /pay-style balances shown by Essentials use that second"
+                    + " economy. To run Essentials entirely on Minted, disable Essentials' built-in"
+                    + " economy (economy: disabled in its config.yml).");
+        } else if (essentialsLiving && !mintedHolding) {
+            getLogger().info("EssentialsX has the Vault economy. Set integrations.primary-balance in Minted's"
+                    + " config and ensure Minted is the Vault priority if you want Essentials to use Minted.");
+        }
+    }
+
+    public dev.minted.integration.IntegrationReport integrationReport() {
+        boolean vault = getServer().getPluginManager().getPlugin("Vault") != null;
+        boolean papi = getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
+        boolean essentials = getServer().getPluginManager().getPlugin("Essentials") != null;
+        boolean ready = walletEconomy != null && walletEconomy.isReady()
+                && bankEconomy != null && bankEconomy.isReady();
+        return new dev.minted.integration.IntegrationReport(ready, vault, vaultRegistered,
+                papi, papiRegistered, essentials, essentials && essentialsEconomyActive(),
+                getConfig().getString("integrations.primary-balance", "bank"));
+    }
+
+    /** @return true when Minted itself is the active Vault economy provider. */
+    private boolean isMintedTheEconomy() {
+        Object provider = vaultProvider();
+        return provider != null && provider.getClass().getName().contains("VaultEconomy");
+    }
+
+    /** @return true when Essentials' own economy service is registered with Vault. */
+    private boolean essentialsEconomyActive() {
+        List<?> registrations = economyRegistrations();
+        if (registrations == null) {
+            return false;
+        }
+        for (Object registration : registrations) {
+            try {
+                Object provider = registration.getClass().getMethod("getProvider").invoke(registration);
+                if (provider.getClass().getName().toLowerCase(java.util.Locale.ROOT).contains("essential")) {
+                    return true;
+                }
+            } catch (Throwable ignored) {
+                // one broken registration must never take Minted down
+            }
+        }
+        return false;
+    }
+
+    // Reflection through Vault's Economy interface so this never becomes a hard
+    // dependency: a server without Vault simply has no registration to find.
+    private Object vaultProvider() {
+        try {
+            Class<?> economy = Class.forName("net.milkbowl.vault.economy.Economy");
+            Object registration = getServer().getServicesManager().getRegistration(economy);
+            return registration == null ? null
+                    : registration.getClass().getMethod("getProvider").invoke(registration);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private List<?> economyRegistrations() {
+        try {
+            Class<?> economy = Class.forName("net.milkbowl.vault.economy.Economy");
+            return (List<?>) getServer().getServicesManager().getClass()
+                    .getMethod("getRegistrations", Class.class)
+                    .invoke(getServer().getServicesManager(), economy);
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     // Combat lock config: hit-triggered deposit block. Disabled -> inert.
@@ -386,6 +534,54 @@ public final class MintedPlugin extends JavaPlugin {
         }
         getCommand("eshop").setExecutor(new ShopCommand(shopContext));
         getCommand("eshop").setTabCompleter(new ShopTabCompleter(shopContext));
+    }
+
+    /**
+     * Registers Minted with Vault when it is installed and enabled in config.
+     * The Vault types live in a separate class so they are only resolved after
+     * this guard passes; any failure is logged and ignored rather than taking
+     * the plugin down.
+     */
+    private void hookVault() {
+        if (!getConfig().getBoolean("integrations.vault.register", true)) {
+            return;
+        }
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return;
+        }
+        try {
+            dev.minted.integration.vault.VaultHook.register(this, dev.minted.api.MintedAPI.economy());
+            this.vaultRegistered = true;
+        } catch (Throwable failure) {
+            getLogger().warning("Could not hook Vault (" + failure.getClass().getSimpleName()
+                    + ": " + failure.getMessage() + "); continuing without it.");
+        }
+    }
+
+    /**
+     * Registers the {@code %minted_*%} placeholders when PlaceholderAPI is
+     * installed and enabled in config. Like the Vault hook, all PlaceholderAPI
+     * references live in a separate class that is only loaded once this guard
+     * passes; a failure is logged and ignored.
+     */
+    private void hookPapi() {
+        if (!getConfig().getBoolean("integrations.placeholders.register", true)) {
+            return;
+        }
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
+            return;
+        }
+        try {
+            dev.minted.integration.placeholder.MintedExpansion expansion =
+                    new dev.minted.integration.placeholder.MintedExpansion(
+                            dev.minted.api.MintedAPI.economy(), stats, getDescription().getVersion());
+            expansion.register();
+            this.papiRegistered = true;
+            getLogger().info("Hooked PlaceholderAPI: %minted_*% placeholders are available.");
+        } catch (Throwable failure) {
+            getLogger().warning("Could not hook PlaceholderAPI (" + failure.getClass().getSimpleName()
+                    + ": " + failure.getMessage() + "); continuing without it.");
+        }
     }
 
     public ServerVersion getServerVersion() {
