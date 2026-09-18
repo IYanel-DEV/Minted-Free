@@ -17,6 +17,7 @@ public final class SoundFX {
     private final Sound paySent;
     private final Sound payReceived;
     private final Sound requestReceived;
+    private final Sound bountyCollected;
 
     public SoundFX(ConfigurationSection config) {
         boolean on = config != null && config.getBoolean("enabled", true);
@@ -25,6 +26,7 @@ public final class SoundFX {
         this.paySent = on ? Sounds.resolve(name(config, "pay-sent", "NOTE_BASS")) : null;
         this.payReceived = on ? Sounds.resolve(name(config, "pay-received", "ORB_PICKUP")) : null;
         this.requestReceived = on ? Sounds.resolve(name(config, "request-received", "NOTE_PLING")) : null;
+        this.bountyCollected = on ? Sounds.resolve(name(config, "bounty-collected", "ANVIL_LAND")) : null;
     }
 
     public void paySent(Player sender) {
@@ -37,6 +39,10 @@ public final class SoundFX {
 
     public void requestReceived(Player receiver) {
         play(receiver, requestReceived, 1.2F);
+    }
+
+    public void bountyCollected(Player killer) {
+        play(killer, bountyCollected, 1.0F);
     }
 
     private void play(Player player, Sound sound, float pitch) {

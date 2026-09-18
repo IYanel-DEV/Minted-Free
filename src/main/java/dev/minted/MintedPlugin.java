@@ -26,6 +26,10 @@ import dev.minted.banknote.BanknoteManager;
 import dev.minted.banknote.BanknoteParser;
 import dev.minted.banknote.LostCashListener;
 import dev.minted.banknote.NoteInventory;
+import dev.minted.resourcepack.ResourcePackListener;
+import dev.minted.wallet.WalletCommand;
+import dev.minted.wallet.WalletListener;
+import dev.minted.wallet.WalletManager;
 import dev.minted.command.BalanceCommand;
 import dev.minted.command.BankCommand;
 import dev.minted.command.CommandManager;
@@ -52,6 +56,7 @@ import dev.minted.shop.command.ShopTabCompleter;
 import dev.minted.shop.log.SaleLog;
 import dev.minted.shop.storage.ShopDao;
 
+import org.bukkit.Material;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
@@ -94,6 +99,7 @@ public final class MintedPlugin extends JavaPlugin {
     private boolean interestEnabled;
     private double interestRate;
     private long interestTicks;
+    private dev.minted.bounty.BountyService bountyService;
 
     public static MintedPlugin get() {
         return instance;
@@ -149,9 +155,13 @@ public final class MintedPlugin extends JavaPlugin {
         BankService bankService = new BankService(walletEconomy, bankEconomy, max);
 
         MoneyFormat format = MoneyFormat.from(getConfig());
+        Messages messages = Messages.load(this);
         BanknoteManager banknotes = new BanknoteManager(new BanknoteParser(format, serverVersion), denominations());
         NoteInventory noteInventory = new NoteInventory(banknotes);
-        WalletService walletService = new WalletService(physical, walletEconomy, noteInventory);
+        boolean walletEnabled = getConfig().getBoolean("wallet.enabled", true);
+        WalletManager wallets = new WalletManager(serverVersion, noteInventory, banknotes, format, messages,
+                walletEnabled, walletMaterial());
+        WalletService walletService = new WalletService(physical, walletEconomy, noteInventory, wallets);
 
         this.statsDao = new StatsDao(pool.start(), dialect);
         this.stats = new EconomyStats(this, bankEconomy, statsDao);
@@ -167,7 +177,17 @@ public final class MintedPlugin extends JavaPlugin {
         this.interestRate = getConfig().getDouble("bank.interest.rate", 0.1);
         this.interestTicks = 20L * 60L * getConfig().getLong("bank.interest.interval-minutes", 30);
 
-        Messages messages = Messages.load(this);
+        if (getConfig().getBoolean("bounty.enabled", true)) {
+            this.bountyService = new dev.minted.bounty.BountyService(this,
+                    new dev.minted.backend.BountyDao(pool, dialect),
+                    bankEconomy,
+                    getConfig().getDouble("bounty.min", 100),
+                    getConfig().getDouble("bounty.max", 1000000));
+            this.bountyService.initialize();
+        } else {
+            getLogger().info("Bounties are disabled in config.yml.");
+        }
+
         this.requestService = new RequestService(this, walletService, format,
                 getConfig().getLong("bank.request-expiry-seconds", 60));
 
@@ -180,7 +200,7 @@ public final class MintedPlugin extends JavaPlugin {
         ChatPrompt chatPrompt = new ChatPrompt(this);
         GuiContext gui = new GuiContext(walletEconomy, bankEconomy, bankService, walletService, noteInventory,
                 format, chatPrompt, requestService, presets(), banknotes, messages, combatLock, design, sounds, stats,
-                this, namesDao, saleLog, loanService);
+                this, namesDao, saleLog, loanService, bountyService);
 
         this.shopService = new ShopService(this, new ShopDao(pool, dialect), serverVersion, materials);
         Trade trade = new Trade(walletService, bankEconomy, format, messages, stats, saleLog);
@@ -188,15 +208,22 @@ public final class MintedPlugin extends JavaPlugin {
         ShopContext shopContext = new ShopContext(shopService, trade, market, messages, format, chatPrompt,
                 design, walletService, materials);
 
-        registerListeners(chatPrompt, gui, banknotes, noteInventory, format, messages, physical, combatLock);
+        registerListeners(chatPrompt, gui, banknotes, noteInventory, format, messages, physical, combatLock, bountyService, sounds);
+        getServer().getPluginManager().registerEvents(new WalletListener(wallets), this);
+        getServer().getPluginManager().registerEvents(
+                new ResourcePackListener(getConfig().getConfigurationSection("resource-pack")), this);
 
         new CommandManager(this, gui, requestService).register();
         setExecutor("balance", new BalanceCommand(walletService, format));
+        setExecutor("wallet", new WalletCommand(wallets));
         setExecutor("pay", new PayCommand(walletService, format, sounds));
         setExecutor("bank", new BankCommand(bankService, bankEconomy, banknotes, noteInventory, gui, format,
                 messages, physical, combatLock));
         setExecutor("sell", new SellCommand(shopContext, banknotes, getConfig().getString("shops.global", "Spawn")));
         setExecutor("mstats", new StatsCommand(gui));
+        if (bountyService != null) {
+            setExecutor("bounty", new dev.minted.command.BountyCommand(gui));
+        }
         registerShopCommand(shopContext);
 
         openStorageAsync();
@@ -204,8 +231,9 @@ public final class MintedPlugin extends JavaPlugin {
 
     private void registerListeners(ChatPrompt chatPrompt, GuiContext gui, BanknoteManager banknotes,
                                    NoteInventory noteInventory, MoneyFormat format, Messages messages,
-                                   boolean physical, CombatLock combatLock) {
+                                   boolean physical, CombatLock combatLock, dev.minted.bounty.BountyService bounties, SoundFX sounds) {
         PluginManager events = getServer().getPluginManager();
+
         events.registerEvents(new AccountListener(walletEconomy), this);
         events.registerEvents(new AccountListener(bankEconomy), this);
         events.registerEvents(new MenuListener(), this);
@@ -215,6 +243,11 @@ public final class MintedPlugin extends JavaPlugin {
         events.registerEvents(new InteractionListener(gui, requireSneak()), this);
         events.registerEvents(new BanknoteListener(walletEconomy, bankEconomy, banknotes, noteInventory,
                 format, messages, physical, combatLock), this);
+        if (bounties != null) {
+            dev.minted.bounty.LastHitterTracker tracker = new dev.minted.bounty.LastHitterTracker();
+            events.registerEvents(tracker, this);
+            events.registerEvents(new dev.minted.bounty.BountyListener(bounties, format, messages, sounds, combatLock, tracker), this);
+        }
         events.registerEvents(new LostCashListener(this, banknotes, stats), this);
         events.registerEvents(new NamesListener(this, namesDao), this);
     }
@@ -246,6 +279,18 @@ public final class MintedPlugin extends JavaPlugin {
                     1_000_000.0, 10_000_000.0, 100_000_000.0, 1_000_000_000.0);
         }
         return valid;
+    }
+
+    // Wallet item material from config, resolved by name so an old config's
+    // value or a renamed enum never crashes; LEATHER is always the final fallback.
+    private Material walletMaterial() {
+        String name = getConfig().getString("wallet.material", "LEATHER");
+        try {
+            return Material.valueOf(name);
+        } catch (IllegalArgumentException notAConstant) {
+            Material material = Material.getMaterial(name);
+            return material != null ? material : Material.LEATHER;
+        }
     }
 
     // storage.open() touches disk/network, so both tables are opened off the main

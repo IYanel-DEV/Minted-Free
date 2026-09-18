@@ -175,6 +175,7 @@ community:
   withdraw:
     done: "&aWithdrew &f{quantity}&a units back to your inventory."
 
+
 slot:
   title: "&2Edit slot"
   set-buy: "&eSet buy price"
@@ -197,3 +198,38 @@ slot:
   category-set: "&aCategory set to &f{category}&a."
   category-cleared: "&aCategory cleared."
   replaced: "&aReplaced the item in this slot."
+
+bounty:
+  usage: "&cUsage: /{label} <player> <amount> [note]"
+  no-permission: "&cYou do not have permission to use bounties."
+  placed: "&aPlaced a bounty of &f{amount}&a on &f{target}&a."
+  self: "&cYou cannot place a bounty on yourself."
+  invalid: "&cThat is not a valid player or amount."
+  min: "&cThe minimum bounty is &f{min}&c."
+  max: "&cThe maximum bounty is &f{max}&c."
+  short: "&cYou do not have &f{amount}&c in your bank."
+  not-ready: "&cYour account is still loading."
+  collected: "&aYou collected &f{amount}&a from the bounty on &f{target}&a!"
+  claimed-broadcast: "&e{killer}&c claimed the bounty on &f{target}&c: &f{amount}&a!"
+  cap: "&cYou hit your bank limit - the bounty could not be paid."
+  refunded: "&aRefunded &f{amount}&a back into your bank."
+  refund-failed: "&cThat bounty could not be refunded."
+  none-mine: "&7You have no bounty to refund on this player."
+
+wallet:
+  disabled: "&cWallets are disabled on this server."
+  # Shown when a fresh wallet is handed out (it drops if the inventory is full).
+  give: "&aHere is your wallet - it counts your cash while you hold it. &fRight-click it to open."
+  give-full: "&aHere is your wallet - &7your inventory was full, so it dropped at your feet."
+  # Shown only when the server cannot write the wallet's NBT at all.
+  cannot-store: "&cThis server cannot store wallet contents - wallets are unavailable."
+  deposit-none: "&cYou are not carrying any banknotes."
+  # {amount} into the wallet; {banked}/{left} on a partial fit.
+  deposit: "&aBanked &f{amount}&a into your wallet."
+  deposit-partial: "&aBanked &f{banked}&a. &7Your wallet is full - &f{left}&7 stays in your inventory."
+  empty: "&aTook everything out of your wallet."
+  # {note} is the face value, {count} how many (withdraw-all).
+  withdraw-one: "&aTook &f{note}&a out of your wallet."
+  withdraw-all: "&aTook &f{count}x {note}&a out of your wallet."
+  dropped: "&7Your inventory was full, so some notes dropped at your feet."
+

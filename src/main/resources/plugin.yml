@@ -27,6 +27,9 @@ commands:
   pay:
     description: Pay another player.
     usage: /pay <player> <amount>
+  wallet:
+    description: Get your wallet, or open the one you hold.
+    usage: /wallet
   bank:
     description: Open your bank, or deposit and withdraw.
     usage: /bank [deposit|withdraw] <amount>
@@ -37,6 +40,9 @@ commands:
     description: Open the server-wide economy stats.
     aliases: [economy]
     usage: /mstats
+  bounty:
+    description: Place or view player bounties.
+    usage: /bounty [player] [amount] [note]
   eshop:
     description: Browse the shops, or manage them as an admin.
     aliases: [shop, shops]
@@ -58,6 +64,9 @@ permissions:
   minted.pay:
     description: Pay another player.
     default: true
+  minted.wallet:
+    description: Get and use a wallet item.
+    default: true
   minted.bank:
     description: Use your bank.
     default: true
@@ -66,6 +75,9 @@ permissions:
     default: true
   minted.stats:
     description: View the server-wide economy stats.
+    default: true
+  minted.bounty:
+    description: Place, view and refund player bounties.
     default: true
   minted.shop.use:
     description: Browse and trade at shops.

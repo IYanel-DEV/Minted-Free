@@ -1,7 +1,7 @@
 # Minted Free
 
 A GUI-first economy plugin for premium survival and roleplay servers.
-**Status:** `v0.4.0` - Core Shop (in-game shops, buy/sell, categories, currencies).
+**Status:** `v0.15.0` - Bounties (player bounties with board, kill-claims and refunds).
 
 Minted ships **1.8 through 1.26 in a single jar**. No separate JARs per
 version, no `api-version` legacy switch, no per-version shims duplicated in
@@ -28,6 +28,11 @@ Output: `target/Minted-<version>.jar`
 | `dev.minted.banknote` | Paper banknotes: mint, verify, redeem |
 | `dev.minted.gui` | Reusable inventory-menu framework and chat prompts |
 | `dev.minted.shop` | Shops: model, storage, `/eshop`, menus, buy/sell trade |
+| `dev.minted.bounty` | Player bounties: post, board, kill-claims and refunds |
+| `dev.minted.wallet` | The wallet item: carry and pay directly from banknotes |
+| `dev.minted.resourcepack` | Optional banknote custom-texture prompt (1.14+) |
+| `dev.minted.sound` | Version-safe money moment sounds |
+| `dev.minted.request` | Player-to-player money requests |
 | `dev.minted.lang` | Language bundle lookup with English fallback |
 | `dev.minted.compat` | `ServerVersion` - version parsing, NMS package detection |
 | `dev.minted.util` | Version-safe reflection helpers for NMS access |

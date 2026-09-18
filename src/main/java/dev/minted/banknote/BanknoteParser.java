@@ -3,13 +3,11 @@ package dev.minted.banknote;
 import dev.minted.bank.MoneyFormat;
 import dev.minted.compat.NotePayloadNbt;
 import dev.minted.compat.ServerVersion;
-import dev.minted.util.Reflection;
 
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -75,11 +73,8 @@ public final class BanknoteParser {
         meta.setLore(lore);
         item.setItemMeta(meta);
 
-        applyModelData(meta, MODEL_DATA_BASE + modelIndex);
-        item.setItemMeta(meta);
-
         String payload = payload(note);
-        ItemStack stored = NotePayloadNbt.write(version, item, payload);
+        ItemStack stored = NotePayloadNbt.write(version, item, "minted", payload, MODEL_DATA_BASE + modelIndex);
         if (stored != null) {
             return stored;
         }
@@ -147,17 +142,9 @@ public final class BanknoteParser {
         }
     }
 
-    // custom-model-data arrived in 1.14; reach it by reflection so resource-pack
-    // servers can skin notes while older servers just ignore it.
-    private void applyModelData(ItemMeta meta, int modelData) {
-        try {
-            Method setter = Reflection.getMethod(meta.getClass(), "setCustomModelData", int.class);
-            Reflection.invoke(setter, meta, Integer.valueOf(modelData));
-        } catch (Reflection.ReflectionException ignored) {
-            // Pre-1.14 server; nothing to skin.
-        }
-    }
-
+    // custom-model-data skins the note for the resource pack; since 0.5.1 it is
+    // written straight into NBT (see NotePayloadNbt) so it also reaches modern
+    // clients connecting to 1.13 servers through Via.
     private static String toHex(byte[] bytes) {
         StringBuilder builder = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) {

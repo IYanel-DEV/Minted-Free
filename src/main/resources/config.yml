@@ -97,6 +97,35 @@ bank:
     # loan is overdue. It compounds, so an ignored loan keeps growing.
     late-fee-percent: 2
 
+# Player bounties. Posting a bounty draws the reward out of the placer's bank
+# and escrows it on the posting; whoever kills the target collects every open
+# bounty on them into their bank. From the board (/bounty) the placer - or an
+# admin - can pull a bounty back for a full refund at any time.
+bounty:
+  # Master switch. When false the whole feature is inert and /bounty is gone.
+  enabled: true
+  # Smallest and largest amounts a single posting may be. The running total on
+  # one player is also capped at the maximum.
+  min: 100
+  max: 1000000
+
+# --- Resource Pack & Visuals ---
+# When enabled, the plugin will prompt players to download a resource pack
+# that gives banknotes and checks their own custom textures (1.14+).
+resource-pack:
+  enabled: true
+  # URL to the .zip file and its SHA-1 hash for verification.
+  url: "https://example.com/minted-pack.zip"
+  hash: ""
+
+# --- Physical Wallet ---
+# When enabled, players can use a "Wallet" item to store banknotes and checks,
+# saving inventory space while still being able to pay directly from it.
+wallet:
+  enabled: true
+  # Material used for the wallet item.
+  material: "LEATHER"
+
 shops:
   # Name of the shop that /sell trades against. This is an ordinary shop (the
   # seeded starter shop by default); /sell never creates a second economy, it
@@ -115,6 +144,8 @@ sounds:
   pay-sent: NOTE_BASS
   pay-received: ORB_PICKUP
   request-received: NOTE_PLING
+  # A bounty reward being paid out to a killer.
+  bounty-collected: ANVIL_LAND
 
 money:
   # Denominations minted when the bank pays out physical cash (/bank withdraw).

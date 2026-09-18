@@ -15,3 +15,6 @@ Thumbs.db
 
 # Runtime
 *.log
+
+# Built resource pack (source lives in pack/)
+Minted-ResourcePack.zip

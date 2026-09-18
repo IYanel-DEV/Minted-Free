@@ -2,6 +2,7 @@ package dev.minted.gui;
 
 import dev.minted.backend.NamesDao;
 import dev.minted.bank.BankService;
+import dev.minted.bounty.BountyService;
 import dev.minted.bank.CombatLock;
 import dev.minted.bank.EconomyService;
 import dev.minted.bank.EconomyStats;
@@ -46,12 +47,13 @@ public final class GuiContext {
     private final NamesDao names;
     private final SaleLog sales;
     private final LoanService loans;
+    private final BountyService bounties;
 
     public GuiContext(EconomyService wallet, EconomyService bankEconomy, BankService bank, WalletService walletService,
                       NoteInventory notes, MoneyFormat format, ChatPrompt prompt, RequestService requests,
                       double[] presets, BanknoteManager banknotes, Messages messages, CombatLock combatLock,
                       Design design, SoundFX sounds, EconomyStats stats, Plugin plugin,
-                      NamesDao names, SaleLog sales, LoanService loans) {
+                      NamesDao names, SaleLog sales, LoanService loans, BountyService bounties) {
         this.wallet = wallet;
         this.bankEconomy = bankEconomy;
         this.bank = bank;
@@ -71,6 +73,7 @@ public final class GuiContext {
         this.names = names;
         this.sales = sales;
         this.loans = loans;
+        this.bounties = bounties;
     }
 
     public Design design() {
@@ -110,7 +113,7 @@ public final class GuiContext {
         return banknotes;
     }
 
-    Messages messages() {
+    public Messages messages() {
         return messages;
     }
 
@@ -152,5 +155,9 @@ public final class GuiContext {
 
     LoanService loans() {
         return loans;
+    }
+
+    public BountyService bounties() {
+        return bounties;
     }
 }

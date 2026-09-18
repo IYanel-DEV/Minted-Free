@@ -1,6 +1,7 @@
 package dev.minted.bank;
 
 import dev.minted.banknote.NoteInventory;
+import dev.minted.wallet.WalletManager;
 
 import org.bukkit.entity.Player;
 
@@ -19,11 +20,17 @@ public final class WalletService {
     private final boolean physical;
     private final EconomyService walletEconomy;
     private final NoteInventory notes;
+    private final WalletManager wallets;
 
     public WalletService(boolean physical, EconomyService walletEconomy, NoteInventory notes) {
+        this(physical, walletEconomy, notes, null);
+    }
+
+    public WalletService(boolean physical, EconomyService walletEconomy, NoteInventory notes, WalletManager wallets) {
         this.physical = physical;
         this.walletEconomy = walletEconomy;
         this.notes = notes;
+        this.wallets = wallets;
     }
 
     public boolean isPhysical() {
@@ -37,6 +44,11 @@ public final class WalletService {
     /** @return the player's purse, or null if their digital account is still loading */
     public Purse purseFor(Player player) {
         if (physical) {
+            // A wallet item, when enabled, is part of the physical purse: the notes
+            // inside count for /pay, shops and requests while the player holds it.
+            if (wallets != null && wallets.isEnabled()) {
+                return wallets.purse(player);
+            }
             return Purse.physical(player, notes);
         }
         BankAccount account = walletEconomy.getCached(player.getUniqueId());

@@ -29,29 +29,53 @@ public final class NotePayloadNbt {
      *     cannot be reached reflectively (caller falls back to a lore line)
      */
     public static ItemStack write(ServerVersion version, ItemStack item, String payload) {
+        return write(version, item, TAG, payload, 0);
+    }
+
+    /**
+     * Stores {@code payload} under {@code tag} and optionally skins the item with
+     * {@code modelData} via a raw {@code CustomModelData} int in NBT. Writing the
+     * tag directly (instead of Bukkit's {@code setCustomModelData}) keeps the skin
+     * working on 1.13 servers whose players connect through Via - the int rides on
+     * the item tag and modern clients read it natively, while a 1.14+ server
+     * surfaces it the usual way. Model data is purely cosmetic; {@code modelData}
+     * {@code <= 0} simply writes nothing.
+     *
+     * @return the item with its data in NBT, or null when NMS is unreachable
+     */
+    public static ItemStack write(ServerVersion version, ItemStack item, String tag, String payload, int modelData) {
         try {
             Class<?> itemStack = itemStackClass(version);
             Class<?> tagType = tagClass(version);
 
             Object nms = asNmsCopy(item, version);
-            Object tag = Reflection.invoke(Reflection.getMethod(itemStack, "getTag"), nms);
-            if (tag == null) {
-                tag = newTag(tagType);
-                if (tag == null) {
+            Object nbt = Reflection.invoke(Reflection.getMethod(itemStack, "getTag"), nms);
+            if (nbt == null) {
+                nbt = newTag(tagType);
+                if (nbt == null) {
                     return null;
                 }
             }
             Reflection.invoke(Reflection.getMethod(tagType, "setString", String.class, String.class),
-                    tag, TAG, payload);
-            Reflection.invoke(Reflection.getMethod(itemStack, "setTag", tagType), nms, tag);
+                    nbt, tag, payload);
+            if (modelData > 0) {
+                Reflection.invoke(Reflection.getMethod(tagType, "setInt", String.class, int.class),
+                        nbt, "CustomModelData", modelData);
+            }
+            Reflection.invoke(Reflection.getMethod(itemStack, "setTag", tagType), nms, nbt);
             return asBukkitCopy(version, nms);
         } catch (Reflection.ReflectionException e) {
             return null;
         }
     }
 
-    /** @return the hidden payload, or null when there is none or NMS is unreachable */
+    /** @return the hidden payload under the default tag, or null if there is none */
     public static String read(ServerVersion version, ItemStack item) {
+        return read(version, item, TAG);
+    }
+
+    /** @return the hidden payload under {@code tag}, or null when there is none */
+    public static String read(ServerVersion version, ItemStack item, String tag) {
         if (item == null) {
             return null;
         }
@@ -59,17 +83,17 @@ public final class NotePayloadNbt {
             Class<?> itemStack = itemStackClass(version);
             Class<?> tagType = tagClass(version);
             Object nms = asNmsCopy(item, version);
-            Object tag = Reflection.invoke(Reflection.getMethod(itemStack, "getTag"), nms);
-            if (tag == null) {
+            Object nbt = Reflection.invoke(Reflection.getMethod(itemStack, "getTag"), nms);
+            if (nbt == null) {
                 return null;
             }
             Boolean has = (Boolean) Reflection.invoke(
-                    Reflection.getMethod(tagType, "hasKey", String.class), tag, TAG);
+                    Reflection.getMethod(tagType, "hasKey", String.class), nbt, tag);
             if (!Boolean.TRUE.equals(has)) {
                 return null;
             }
             return (String) Reflection.invoke(
-                    Reflection.getMethod(tagType, "getString", String.class), tag, TAG);
+                    Reflection.getMethod(tagType, "getString", String.class), nbt, tag);
         } catch (Reflection.ReflectionException e) {
             return null;
         }

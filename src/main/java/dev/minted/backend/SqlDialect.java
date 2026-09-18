@@ -133,6 +133,19 @@ public enum SqlDialect {
                 + "repaid INT NOT NULL DEFAULT 0)";
     }
 
+    public String createBounties() {
+        return "CREATE TABLE IF NOT EXISTS minted_bounties ("
+                + "id INTEGER PRIMARY KEY, "
+                + "target VARCHAR(36) NOT NULL, "
+                + "placer VARCHAR(36) NOT NULL, "
+                + "amount DOUBLE NOT NULL, "
+                + "note VARCHAR(64), "
+                + "placed_at BIGINT NOT NULL, "
+                + "claimed_by VARCHAR(36), "
+                + "claimed_at BIGINT, "
+                + "status INT NOT NULL DEFAULT 0)";
+    }
+
     /** Whole-table total, the global view used by the economy stats menu. */
     public String sum(String table) {
         return "SELECT COALESCE(SUM(balance), 0) FROM " + table;

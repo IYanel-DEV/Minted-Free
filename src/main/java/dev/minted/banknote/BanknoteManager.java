@@ -84,6 +84,30 @@ public final class BanknoteManager {
     }
 
     /**
+     * Mints {@code count} notes of exactly one face value, without splitting.
+     * This is the withdrawal path for wallets and other item storage, where the
+     * amounts already exist as notes and must come back out unchanged (a split
+     * would turn a stored $3 bill into three $1 notes).
+     */
+    public List<ItemStack> mint(double denomination, int count) {
+        List<ItemStack> out = new ArrayList<ItemStack>();
+        if (denomination <= 0 || count <= 0) {
+            return out;
+        }
+        stack(out, denomination, modelIndex(denomination), count);
+        return out;
+    }
+
+    private int modelIndex(double denomination) {
+        for (int i = 0; i < denominations.length; i++) {
+            if (Math.abs(denominations[i] - denomination) < EPSILON) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Verifies the note and, if genuine, credits its value to the account. The
      * caller consumes the item only when this returns true.
      *
