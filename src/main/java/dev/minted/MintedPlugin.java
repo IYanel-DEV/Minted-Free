@@ -48,6 +48,8 @@ import dev.minted.gui.GuiContext;
 import dev.minted.gui.InteractionListener;
 import dev.minted.gui.MenuListener;
 import dev.minted.gui.theme.Design;
+import dev.minted.integration.npc.NpcManager;
+import dev.minted.integration.npc.NpcStore;
 import dev.minted.lang.Messages;
 import dev.minted.request.RequestService;
 import dev.minted.sound.SoundFX;
@@ -108,6 +110,8 @@ public final class MintedPlugin extends JavaPlugin {
     private dev.minted.bounty.BountyService bountyService;
     private boolean vaultRegistered;
     private boolean papiRegistered;
+    private NpcManager npcManager;
+    private boolean npcsActive;
 
     public static MintedPlugin get() {
         return instance;
@@ -140,6 +144,9 @@ public final class MintedPlugin extends JavaPlugin {
         }
         if (shopService != null) {
             shopService.shutdown();
+        }
+        if (npcManager != null) {
+            npcManager.shutdown();
         }
         if (pool != null) {
             pool.close();
@@ -222,7 +229,7 @@ public final class MintedPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new ResourcePackListener(getConfig().getConfigurationSection("resource-pack")), this);
 
-        new CommandManager(this, gui, requestService).register();
+        new CommandManager(this, gui, requestService, npcManager).register();
         setExecutor("balance", new BalanceCommand(walletService, format));
         setExecutor("wallet", new WalletCommand(wallets));
         setExecutor("pay", new PayCommand(walletService, format, sounds));
@@ -234,11 +241,43 @@ public final class MintedPlugin extends JavaPlugin {
             setExecutor("bounty", new dev.minted.command.BountyCommand(gui));
         }
         registerShopCommand(shopContext);
+        hookNpcs(gui);
         hookVault();
         hookPapi();
         hookEssentials();
 
         openStorageAsync();
+    }
+
+    /**
+     * Enables the self-built bank tellers when ProtocolLib is installed and
+     * {@code integrations.npcs.enabled} is on. All ProtocolLib references live
+     * behind this guard: without the plugin nothing in the npc package is ever
+     * loaded, and the tellers degrade silently to "not available".
+     */
+    private void hookNpcs(GuiContext gui) {
+        if (!getConfig().getBoolean("integrations.npcs.enabled", true)) {
+            return;
+        }
+        if (getServer().getPluginManager().getPlugin("ProtocolLib") == null) {
+            getLogger().info("ProtocolLib is not installed; bank tellers are disabled.");
+            return;
+        }
+        try {
+            this.npcManager = new NpcManager(this, serverVersion, gui,
+                    new NpcStore(getDataFolder()),
+                    getConfig().getLong("integrations.npcs.tab-hide-seconds", 5));
+            this.npcManager.initialize();
+            getServer().getPluginManager().registerEvents(this.npcManager, this);
+            this.npcsActive = true;
+            getLogger().info("Hooked ProtocolLib: bank tellers are available (/minted npc).");
+        } catch (Throwable failure) {
+            this.npcManager = null;
+            this.npcsActive = false;
+            getLogger().warning("Could not hook ProtocolLib for bank tellers ("
+                    + failure.getClass().getSimpleName() + ": " + failure.getMessage()
+                    + "); tellers are disabled.");
+        }
     }
 
     private void registerListeners(ChatPrompt chatPrompt, GuiContext gui, BanknoteManager banknotes,
@@ -344,10 +383,12 @@ public final class MintedPlugin extends JavaPlugin {
         boolean vault = getServer().getPluginManager().getPlugin("Vault") != null;
         boolean papi = getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
         boolean essentials = getServer().getPluginManager().getPlugin("Essentials") != null;
+        boolean protocolLib = getServer().getPluginManager().getPlugin("ProtocolLib") != null;
         boolean ready = walletEconomy != null && walletEconomy.isReady()
                 && bankEconomy != null && bankEconomy.isReady();
         return new dev.minted.integration.IntegrationReport(ready, vault, vaultRegistered,
                 papi, papiRegistered, essentials, essentials && essentialsEconomyActive(),
+                protocolLib, npcsActive,
                 getConfig().getString("integrations.primary-balance", "bank"));
     }
 

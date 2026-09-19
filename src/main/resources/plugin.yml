@@ -15,7 +15,7 @@ author: iyanel-dev
 website: https://github.com/IYanel-DEV/Minted-Free
 main: dev.minted.MintedPlugin
 # Optional hooks; Minted works fully without any of these present.
-softdepend: [Vault, PlaceholderAPI, Essentials]
+softdepend: [Vault, PlaceholderAPI, Essentials, ProtocolLib]
 
 commands:
   minted:

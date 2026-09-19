@@ -45,6 +45,17 @@ integrations:
   # Minted (via Vault). Pure awareness - disable it if the message is noise.
   essentials:
     warn: true
+  # Self-built bank tellers: fake players rendered entirely with ProtocolLib,
+  # no Citizens and no real entity. Right-clicking a teller opens the player's
+  # own bank menu. Tellers are placed with /minted npc create|here and their
+  # definitions live in npcs.yml (not here). The whole feature is inert when
+  # disabled or when ProtocolLib is absent.
+  npcs:
+    enabled: true
+    # How long a teller stays in the player list (tab) before being hidden.
+    # Keeping it there for a moment lets the client download the skin, so the
+    # teller never flashes as a default Steve/Alex.
+    tab-hide-seconds: 5
 
 database:
   # Storage backend. sqlite ships zero-config; mysql requires the fields below

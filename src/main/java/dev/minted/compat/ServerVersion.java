@@ -78,6 +78,19 @@ public final class ServerVersion {
     }
 
     /**
+     * @return true if this server is at or above the given full release
+     */
+    public boolean isAtLeast(int major, int minor, int patch) {
+        if (this.major != major) {
+            return this.major > major;
+        }
+        if (this.minor != minor) {
+            return this.minor > minor;
+        }
+        return this.patch >= patch;
+    }
+
+    /**
      * @return true if this server is strictly below the given release
      */
     public boolean isBelow(int major, int minor) {

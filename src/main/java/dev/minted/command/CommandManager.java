@@ -4,6 +4,8 @@ import dev.minted.MintedPlugin;
 import dev.minted.gui.GuiContext;
 import dev.minted.gui.PersonalMenu;
 import dev.minted.integration.IntegrationReport;
+import dev.minted.integration.npc.BankNpc;
+import dev.minted.integration.npc.NpcManager;
 import dev.minted.request.RequestService;
 
 import org.bukkit.ChatColor;
@@ -13,7 +15,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -21,18 +25,21 @@ import java.util.UUID;
 /**
  * Registers and dispatches {@code /minted}. Besides {@code reload} it opens the
  * personal GUI and carries the accept/decline actions behind the clickable
- * request message.
+ * request message. The {@code npc} subtree manages the bank tellers when
+ * ProtocolLib is installed; otherwise it explains why they are unavailable.
  */
 public final class CommandManager implements CommandExecutor, TabCompleter {
 
     private final MintedPlugin plugin;
     private final GuiContext gui;
     private final RequestService requests;
+    private final NpcManager npcs;
 
-    public CommandManager(MintedPlugin plugin, GuiContext gui, RequestService requests) {
+    public CommandManager(MintedPlugin plugin, GuiContext gui, RequestService requests, NpcManager npcs) {
         this.plugin = plugin;
         this.gui = gui;
         this.requests = requests;
+        this.npcs = npcs;
     }
 
     public void register() {
@@ -62,6 +69,8 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
                 return report(sender);
             case "gui":
                 return openGui(sender);
+            case "npc":
+                return npc(sender, args);
             case "accept":
                 return resolveRequest(sender, args, true);
             case "decline":
@@ -116,6 +125,95 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
         sender.sendMessage(vaultLine(r));
         sender.sendMessage(papiLine(r));
         sender.sendMessage(essentialsLine(r));
+        sender.sendMessage(npcsLine(r));
+        return true;
+    }
+
+    private String npcsLine(IntegrationReport r) {
+        if (!r.protocolLibInstalled) {
+            return ChatColor.GRAY + "Bank tellers: " + ChatColor.RED + "not installed (no ProtocolLib)";
+        }
+        if (r.npcsActive) {
+            return ChatColor.GREEN + "Bank tellers: ProtocolLib hooked, /minted npc available.";
+        }
+        return ChatColor.YELLOW + "Bank tellers: ProtocolLib present but the hook failed to start.";
+    }
+
+    /** {@code /minted npc create|remove|here|list}. */
+    private boolean npc(CommandSender sender, String[] args) {
+        if (npcs == null) {
+            sender.sendMessage(ChatColor.RED + "Bank tellers are not available: install ProtocolLib "
+                    + "and set integrations.npcs.enabled to true.");
+            return true;
+        }
+        if (args.length == 1) {
+            sender.sendMessage(ChatColor.GOLD + "Minted " + ChatColor.GRAY + "bank tellers");
+            sender.sendMessage(ChatColor.GRAY + "Usage: /minted npc [create <name> [skinPlayer]|remove <name>|here <name>|list]");
+            return true;
+        }
+        if (!sender.hasPermission("minted.admin")) {
+            sender.sendMessage(ChatColor.RED + "No permission.");
+            return true;
+        }
+        String sub = args[1].toLowerCase(Locale.ROOT);
+        if ("list".equals(sub)) {
+            return npcList(sender);
+        }
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Only players can place or move a teller.");
+            return true;
+        }
+        Player player = (Player) sender;
+        if ("create".equals(sub)) {
+            if (args.length < 3) {
+                player.sendMessage(ChatColor.RED + "Usage: /minted npc create <name> [skinPlayer]");
+                return true;
+            }
+            String error = npcs.create(player, args[2], args.length > 3 ? args[3] : null);
+            if (error != null) {
+                player.sendMessage(ChatColor.RED + error);
+            } else {
+                player.sendMessage(ChatColor.GREEN + "Teller '" + args[2] + "' placed where you stand. "
+                        + ChatColor.GRAY + "Right-click it to open the bank.");
+                player.sendMessage(ChatColor.GRAY + "To use a real player's skin: "
+                        + ChatColor.WHITE + "/minted npc create " + args[2] + " <playerName>");
+            }
+            return true;
+        }
+        if ("remove".equals(sub) || "here".equals(sub)) {
+            if (args.length != 3) {
+                player.sendMessage(ChatColor.RED + "Usage: /minted npc " + sub + " <name>");
+                return true;
+            }
+            String error = "here".equals(sub)
+                    ? npcs.here(player, args[2])
+                    : npcs.remove(args[2]);
+            if (error != null) {
+                player.sendMessage(ChatColor.RED + error);
+            } else {
+                player.sendMessage(ChatColor.GREEN + "Teller '" + args[2] + "' "
+                        + ("here".equals(sub) ? "moved here." : "removed."));
+            }
+            return true;
+        }
+        sender.sendMessage(ChatColor.RED + "Usage: /minted npc [create <name> [skinPlayer]|remove <name>|here <name>|list]");
+        return true;
+    }
+
+    private boolean npcList(CommandSender sender) {
+        List<BankNpc> all = npcs.npcs();
+        sender.sendMessage(ChatColor.GOLD + "Minted " + ChatColor.GRAY + "bank tellers ("
+                + all.size() + ")");
+        if (all.isEmpty()) {
+            sender.sendMessage(ChatColor.GRAY + "None placed yet. Stand where you want one and run "
+                    + ChatColor.WHITE + "/minted npc create <name>");
+            return true;
+        }
+        for (BankNpc npc : all) {
+            sender.sendMessage(ChatColor.GRAY + npc.name() + ChatColor.DARK_GRAY + " | "
+                    + ChatColor.WHITE + npc.world() + " " + Math.round(npc.x()) + " "
+                    + Math.round(npc.y()) + " " + Math.round(npc.z()));
+        }
         return true;
     }
 
@@ -153,9 +251,22 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("gui", "reload", "report");
+            return Arrays.asList("gui", "reload", "report", "npc");
         }
-        return java.util.Collections.emptyList();
+        if (args.length == 2 && "npc".equalsIgnoreCase(args[0])) {
+            return Arrays.asList("create", "remove", "here", "list");
+        }
+        if (args.length == 3 && (args[1].equalsIgnoreCase("remove") || args[1].equalsIgnoreCase("here"))) {
+            if (npcs == null) {
+                return Collections.emptyList();
+            }
+            List<String> names = new ArrayList<String>();
+            for (BankNpc npc : npcs.npcs()) {
+                names.add(npc.name());
+            }
+            return names;
+        }
+        return Collections.emptyList();
     }
 
     private void register(String name, CommandExecutor executor) {

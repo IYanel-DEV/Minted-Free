@@ -15,11 +15,14 @@ public final class IntegrationReport {
     public final boolean papiRegistered;
     public final boolean essentialsInstalled;
     public final boolean essentialsEconomy;
+    public final boolean protocolLibInstalled;
+    public final boolean npcsActive;
     public final String primary;
 
     public IntegrationReport(boolean apiReady, boolean vaultInstalled, boolean vaultRegistered,
                              boolean papiInstalled, boolean papiRegistered,
-                             boolean essentialsInstalled, boolean essentialsEconomy, String primary) {
+                             boolean essentialsInstalled, boolean essentialsEconomy,
+                             boolean protocolLibInstalled, boolean npcsActive, String primary) {
         this.apiReady = apiReady;
         this.vaultInstalled = vaultInstalled;
         this.vaultRegistered = vaultRegistered;
@@ -27,6 +30,8 @@ public final class IntegrationReport {
         this.papiRegistered = papiRegistered;
         this.essentialsInstalled = essentialsInstalled;
         this.essentialsEconomy = essentialsEconomy;
+        this.protocolLibInstalled = protocolLibInstalled;
+        this.npcsActive = npcsActive;
         this.primary = primary;
     }
 }

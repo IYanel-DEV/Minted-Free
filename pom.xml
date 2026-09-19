@@ -6,7 +6,7 @@
 
     <groupId>dev.minted</groupId>
     <artifactId>minted-free</artifactId>
-    <version>0.20.0</version>
+    <version>0.21.0</version>
     <packaging>jar</packaging>
 
     <name>Minted-Free</name>
@@ -34,6 +34,11 @@
         <repository>
             <id>extendedclip-repo</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
+        <!-- ProtocolLib 5.x: the wire library behind the self-built bank tellers. -->
+        <repository>
+            <id>dmulloy2-repo</id>
+            <url>https://repo.dmulloy2.net/repository/releases/</url>
         </repository>
     </repositories>
 
@@ -99,6 +104,31 @@
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
             <version>2.11.6</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+            ProtocolLib 5.3.0 drives the self-built bank tellers. Provided and
+            never shaded: the host server supplies it at runtime and the whole
+            feature is guarded, so Minted degrades cleanly when it is absent.
+            The modern player-list structures it exposes on 1.19.3+ are the
+            only reason this is not the 4.8 line.
+        -->
+        <dependency>
+            <groupId>com.comphenix.protocol</groupId>
+            <artifactId>ProtocolLib</artifactId>
+            <version>5.3.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <!--
+            WrappedGameProfile#getProperties returns guava's Multimap, so javac
+            needs guava on the compile classpath. Bukkit ships guava on every
+            supported server, hence provided; it is never bundled.
+        -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>21.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
