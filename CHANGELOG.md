@@ -4,6 +4,28 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.45.1] - 2026-09-23 - Slimmed jar for resource upload
+
+- The fat jar dropped from ~11 MB to ~3.5 MB so it fits SpigotMC's ~4 MB
+  resource-upload limit, without removing any feature:
+  - sqlite-jdbc natives are now shipped only for the platforms Spigot/Paper
+    actually run on (Linux x86_64, Linux aarch64, Windows x86_64); the SQLite
+    backend behaves exactly as before on every supported host.
+  - MySQL is now served by MariaDB Connector/J 2.7 instead of the upstream
+    driver: same `jdbc:mysql://` URL, full MySQL 8 (incl.
+    `caching_sha2_password`) and MariaDB support, no protobuf dependency.
+    The relocated driver class is now `dev.minted.libs.mysql.jdbc.Driver`.
+
+## [0.45.0] - 2026-09-23 - Anonymous usage stats (bStats)
+
+- bStats metrics (plugin id 34228) now report anonymous server/player counts
+  and server-version distribution to <https://bstats.org>.
+- Bundled and relocated into `dev.minted.libs.bstats` (official bStats
+  integration), so it never collides with other plugins carrying their own
+  copy; server owners can opt out via their bStats config file.
+- Custom charts: economy mode (physical/digital), storage backend
+  (sqlite/mysql) and whether the bank teller NPCs are enabled.
+
 ## [0.44.0] - 2026-09-23 - Configurable bank tellers
 
 - New tellers default to the yellow `Banker` name and a mustachioed

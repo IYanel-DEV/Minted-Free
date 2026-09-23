@@ -76,6 +76,9 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import org.bstats.bukkit.Metrics;
+import org.bstats.charts.SimplePie;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -146,9 +149,30 @@ public final class MintedPlugin extends JavaPlugin {
         }
 
         saveDefaultConfig();
+        setupMetrics();
         wire();
 
         getLogger().info("Minted " + getDescription().getVersion() + " enabled (server " + serverVersion + ").");
+    }
+
+    /**
+     * bStats (plugin id 34228): anonymous install/version counts on
+     * bstats.org. Bundled and relocated into dev.minted.libs.bstats by the
+     * shade plugin; server owners can opt out in their bStats config. Chart
+     * callbacks only read config values, so they never risk an async race.
+     */
+    private void setupMetrics() {
+        try {
+            Metrics metrics = new Metrics(this, 34228);
+            metrics.addCustomChart(new SimplePie("economyMode",
+                    () -> getConfig().getBoolean("economy.physical", true) ? "physical" : "digital"));
+            metrics.addCustomChart(new SimplePie("storageBackend",
+                    () -> getConfig().getString("database.type", "sqlite")));
+            metrics.addCustomChart(new SimplePie("bankTellers",
+                    () -> getConfig().getBoolean("integrations.npcs.enabled", true) ? "enabled" : "disabled"));
+        } catch (Throwable failure) {
+            getLogger().warning("Could not start bStats metrics: " + failure);
+        }
     }
 
     @Override

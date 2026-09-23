@@ -6,7 +6,7 @@
 
     <groupId>dev.minted</groupId>
     <artifactId>minted-free</artifactId>
-    <version>0.44.0</version>
+    <version>0.45.1</version>
     <packaging>jar</packaging>
 
     <name>Minted-Free</name>
@@ -80,19 +80,42 @@
         </dependency>
 
         <!--
-            JDBC drivers are bundled for a reason: the server classpath has no
-            driver for the default sqlite setup (or any driver, on modern
-            Paper). Bundling both keeps the jar self-sufficient from 1.8 up.
+            sqlite-jdbc is bundled because the server classpath has no driver
+            for the default sqlite setup (or any driver, on modern Paper). Its
+            native libraries are pruned to Spigot's actual host platforms in the
+            shade plugin so the fat jar stays small enough for resource upload.
         -->
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.28.0</version>
         </dependency>
+
+        <!--
+            MariaDB Connector/J speaks plain "jdbc:mysql://" and supports both
+            MySQL 8 (incl. caching_sha2_password auth) and MariaDB servers,
+            while being a fraction of the upstream mysql-connector-j size and
+            needing no protobuf. Bundled and relocated to dev.minted.libs.mysql
+            like the old driver, so the 1.8 -> 1.26 promise stays intact.
+        -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.33</version>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>2.7.12</version>
+        </dependency>
+
+        <!--
+            bStats metrics (plugin id 34228). Unlike the plugin APIs below,
+            bStats is a metrics client library, not a server plugin, so it
+            must be bundled - relocated into dev.minted.libs.bstats so a
+            second plugin shipping its own copy never collides. It is silent,
+            opt-out for server owners (plugins/<DataFolder>/bStats/config.yml)
+            and never blocks startup on failure.
+        -->
+        <dependency>
+            <groupId>org.bstats</groupId>
+            <artifactId>bstats-bukkit</artifactId>
+            <version>3.2.1</version>
         </dependency>
 
         <!--
@@ -185,20 +208,42 @@
                                     <shadedPattern>dev.minted.libs.slf4j</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.mysql</pattern>
+                                    <pattern>org.mariadb</pattern>
                                     <shadedPattern>dev.minted.libs.mysql</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.google.protobuf</pattern>
-                                    <shadedPattern>dev.minted.libs.protobuf</shadedPattern>
+                                    <pattern>org.bstats</pattern>
+                                    <shadedPattern>dev.minted.libs.bstats</shadedPattern>
                                 </relocation>
                             </relocations>
                             <!--
-                                Other jdbc driver is deliberately NOT relocated: sqlite-jdbc's native
-                                library (JNI) hard-codes org.sqlite.core.*, so "org.sqlite" has to
-                                keep its name. The plugin classloader is child-first, so our bundled
-                                copy shadows anything the host server ships.
+                                The sqlite driver is deliberately NOT relocated: its native
+                                library (JNI) hard-codes org.sqlite.core.*, so "org.sqlite"
+                                has to keep its name. The plugin classloader is child-first,
+                                so our bundled copy shadows anything the host server ships.
                             -->
+                            <filters>
+                                <filter>
+                                    <artifact>org.xerial:sqlite-jdbc</artifact>
+                                    <excludes>
+                                        <!--
+                                            Natives for the platforms Spigot/Paper actually run on
+                                            would make a fat jar too big for resource upload. Only
+                                            Linux x86_64 / aarch64 and Windows x86_64 stay; the
+                                            rest are dead weight on a Minecraft server.
+                                        -->
+                                        <exclude>org/sqlite/native/FreeBSD/**</exclude>
+                                        <exclude>org/sqlite/native/Mac/**</exclude>
+                                        <exclude>org/sqlite/native/Linux/ppc64/**</exclude>
+                                        <exclude>org/sqlite/native/Linux/android-arm/**</exclude>
+                                        <exclude>org/sqlite/native/Linux/armv7/**</exclude>
+                                        <exclude>org/sqlite/native/Linux/armv6/**</exclude>
+                                        <exclude>org/sqlite/native/Linux/x86/**</exclude>
+                                        <exclude>org/sqlite/native/Linux/arm/**</exclude>
+                                        <exclude>org/sqlite/native/Windows/x86/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>

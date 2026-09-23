@@ -39,12 +39,12 @@ public enum SqlDialect {
         }
     },
 
-    MYSQL("dev.minted.libs.mysql.cj.jdbc.Driver") {
+    MYSQL("dev.minted.libs.mysql.jdbc.Driver") {
         @Override
         public String jdbcUrl(DatabaseSettings settings) {
             return "jdbc:mysql://" + settings.getHost() + ":" + settings.getPort()
                     + "/" + settings.getDatabase()
-                    + "?useSSL=false&autoReconnect=true&serverTimezone=UTC";
+                    + "?useSSL=false&autoReconnect=true";
         }
 
         @Override
