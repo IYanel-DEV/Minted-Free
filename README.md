@@ -3,6 +3,10 @@
 A GUI-first economy plugin for premium survival and roleplay servers.
 **Status:** `v0.44.0`
 
+<p align="center">
+  <img src="assets/banner-header.jpg" alt="Minted - GUI-first economy plugin" />
+</p>
+
 Minted ships **1.8 through 1.26 in a single jar**. No separate JARs per
 version, no per-version shims duplicated in feature code. Everything
 version-sensitive routes through the `compat` layer, and `api-version: 1.13`
@@ -15,6 +19,10 @@ names resolve everywhere. On startup Minted self-checks the whole alias table
 Latest release (with jar attached): <https://github.com/IYanel-DEV/Minted-Free/releases>
 
 ## Features
+
+<p align="center">
+  <img src="assets/banner-features.jpg" alt="Minted features" />
+</p>
 
 - **Bank tellers** - self-built ProtocolLib NPCs (`/minted npc`). No Citizens
   dependency. New tellers default to a yellow *Banker* name and a
