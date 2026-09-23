@@ -1,5 +1,6 @@
 package dev.minted.api;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -61,6 +62,13 @@ public interface MintedEconomy {
      * @return true if applied; false if the amount is negative or over the cap
      */
     boolean setBalance(UUID player, double amount);
+
+    /**
+     * All stored primary balances, uuid -> balance, overlaid with the live
+     * balances of any currently cached accounts so a migration export never
+     * loses an unsaved deposit. Blocking; call from an async task only.
+     */
+    Map<UUID, Double> snapshot();
 
     /** Formats an amount the way Minted shows it, e.g. {@code $1,250 Coins}. */
     String format(double amount);

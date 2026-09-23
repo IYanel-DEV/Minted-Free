@@ -69,6 +69,9 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
                 return report(sender);
             case "gui":
                 return openGui(sender);
+            case "dashboard":
+            case "admin":
+                return dashboard(sender);
             case "npc":
                 return npc(sender, args);
             case "accept":
@@ -76,7 +79,7 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
             case "decline":
                 return resolveRequest(sender, args, false);
             default:
-                sender.sendMessage(ChatColor.RED + "Usage: /" + label + " [gui|reload|report]");
+                sender.sendMessage(ChatColor.RED + "Usage: /" + label + " [gui|dashboard|reload|report|npc]");
                 return true;
         }
     }
@@ -92,6 +95,20 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
             return true;
         }
         new PersonalMenu(gui, player).open(player);
+        return true;
+    }
+
+    /** {@code /minted dashboard} - the op-only admin overview. */
+    private boolean dashboard(CommandSender sender) {
+        if (!sender.hasPermission("minted.admin")) {
+            sender.sendMessage(ChatColor.RED + "No permission.");
+            return true;
+        }
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Only players can open the dashboard.");
+            return true;
+        }
+        new dev.minted.gui.AdminMenu(gui, (Player) sender).open((Player) sender);
         return true;
     }
 
@@ -126,7 +143,16 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
         sender.sendMessage(papiLine(r));
         sender.sendMessage(essentialsLine(r));
         sender.sendMessage(npcsLine(r));
+        sender.sendMessage(viaLine(r));
         return true;
+    }
+
+    private String viaLine(IntegrationReport r) {
+        if (!r.viaInstalled) {
+            return ChatColor.GRAY + "ViaVersion: " + ChatColor.RED + "not installed"
+                    + ChatColor.DARK_GRAY + " (catalog uses the server version only)";
+        }
+        return ChatColor.GREEN + "ViaVersion: hooked, catalog items follow each client's own version.";
     }
 
     private String npcsLine(IntegrationReport r) {
@@ -136,7 +162,10 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
         if (r.npcsActive) {
             return ChatColor.GREEN + "Bank tellers: ProtocolLib hooked, /minted npc available.";
         }
-        return ChatColor.YELLOW + "Bank tellers: ProtocolLib present but the hook failed to start.";
+        String detail = r.npcHookError != null && !r.npcHookError.isEmpty()
+                ? ChatColor.DARK_GRAY + " (" + r.npcHookError + ")"
+                : "";
+        return ChatColor.YELLOW + "Bank tellers: ProtocolLib present but the hook failed to start." + detail;
     }
 
     /** {@code /minted npc create|remove|here|list}. */
@@ -144,11 +173,13 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
         if (npcs == null) {
             sender.sendMessage(ChatColor.RED + "Bank tellers are not available: install ProtocolLib "
                     + "and set integrations.npcs.enabled to true.");
+            sender.sendMessage(ChatColor.GRAY + "If both are set, run /minted report to see why the "
+                    + "hook failed (usually a ProtocolLib build that does not match the server version).");
             return true;
         }
         if (args.length == 1) {
             sender.sendMessage(ChatColor.GOLD + "Minted " + ChatColor.GRAY + "bank tellers");
-            sender.sendMessage(ChatColor.GRAY + "Usage: /minted npc [create <name> [skinPlayer]|remove <name>|here <name>|list]");
+            sender.sendMessage(ChatColor.GRAY + "Usage: /minted npc [create [name] [skinPlayer]|remove <name>|here <name>|list]");
             return true;
         }
         if (!sender.hasPermission("minted.admin")) {
@@ -165,18 +196,18 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
         }
         Player player = (Player) sender;
         if ("create".equals(sub)) {
-            if (args.length < 3) {
-                player.sendMessage(ChatColor.RED + "Usage: /minted npc create <name> [skinPlayer]");
-                return true;
-            }
-            String error = npcs.create(player, args[2], args.length > 3 ? args[3] : null);
+            String nameArg = args.length > 2 ? args[2] : null;
+            String error = npcs.create(player, nameArg, args.length > 3 ? args[3] : null);
             if (error != null) {
                 player.sendMessage(ChatColor.RED + error);
             } else {
-                player.sendMessage(ChatColor.GREEN + "Teller '" + args[2] + "' placed where you stand. "
+                String shown = nameArg != null ? nameArg : ChatColor.stripColor(
+                        ChatColor.translateAlternateColorCodes('&',
+                                plugin.getConfig().getString("integrations.npcs.name", "&eBanker")));
+                player.sendMessage(ChatColor.GREEN + "Teller '" + shown + "' placed where you stand. "
                         + ChatColor.GRAY + "Right-click it to open the bank.");
                 player.sendMessage(ChatColor.GRAY + "To use a real player's skin: "
-                        + ChatColor.WHITE + "/minted npc create " + args[2] + " <playerName>");
+                        + ChatColor.WHITE + "/minted npc create [" + shown + "] <playerName>");
             }
             return true;
         }
@@ -196,7 +227,7 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
             }
             return true;
         }
-        sender.sendMessage(ChatColor.RED + "Usage: /minted npc [create <name> [skinPlayer]|remove <name>|here <name>|list]");
+        sender.sendMessage(ChatColor.RED + "Usage: /minted npc [create [name] [skinPlayer]|remove <name>|here <name>|list]");
         return true;
     }
 
@@ -206,11 +237,11 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
                 + all.size() + ")");
         if (all.isEmpty()) {
             sender.sendMessage(ChatColor.GRAY + "None placed yet. Stand where you want one and run "
-                    + ChatColor.WHITE + "/minted npc create <name>");
+                    + ChatColor.WHITE + "/minted npc create [name]");
             return true;
         }
         for (BankNpc npc : all) {
-            sender.sendMessage(ChatColor.GRAY + npc.name() + ChatColor.DARK_GRAY + " | "
+            sender.sendMessage(ChatColor.stripColor(npc.display()) + ChatColor.DARK_GRAY + " | "
                     + ChatColor.WHITE + npc.world() + " " + Math.round(npc.x()) + " "
                     + Math.round(npc.y()) + " " + Math.round(npc.z()));
         }
@@ -251,7 +282,7 @@ public final class CommandManager implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("gui", "reload", "report", "npc");
+            return Arrays.asList("gui", "dashboard", "reload", "report", "npc");
         }
         if (args.length == 2 && "npc".equalsIgnoreCase(args[0])) {
             return Arrays.asList("create", "remove", "here", "list");

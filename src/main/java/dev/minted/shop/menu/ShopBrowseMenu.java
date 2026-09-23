@@ -16,10 +16,12 @@ import java.util.function.Consumer;
 public final class ShopBrowseMenu extends Menu {
 
     private final ShopContext ctx;
+    private final Player viewer;
 
-    public ShopBrowseMenu(ShopContext ctx) {
-        super(ctx.messages().get("browse.title"), rows(ctx));
+    public ShopBrowseMenu(ShopContext ctx, Player viewer) {
+        super(ctx.messages().get(viewer, "browse.title"), rows(ctx));
         this.ctx = ctx;
+        this.viewer = viewer;
     }
 
     private static int rows(ShopContext ctx) {
@@ -47,8 +49,8 @@ public final class ShopBrowseMenu extends Menu {
 
     private org.bukkit.inventory.ItemStack icon(Shop shop) {
         return Display.withLore(shop.getIcon(), Arrays.asList(
-                ctx.messages().get("menu.title", "shop", shop.getName(), "currency", shop.getCurrency().display()),
-                ctx.messages().get("browse.open-lore")));
+                ctx.messages().get(viewer, "menu.title", "shop", shop.getName(), "currency", shop.getCurrency().display()),
+                ctx.messages().get(viewer, "browse.open-lore")));
     }
 
     private Consumer<Player> open(final Shop shop) {

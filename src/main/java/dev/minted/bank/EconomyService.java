@@ -113,6 +113,15 @@ public final class EconomyService {
         return storage.allBalances();
     }
 
+    /** Live balances of every currently cached account. Never blocks. */
+    public Map<UUID, Double> cachedBalances() {
+        Map<UUID, Double> result = new HashMap<UUID, Double>();
+        for (BankAccount account : accounts.values()) {
+            result.put(account.getUuid(), account.getBalance());
+        }
+        return result;
+    }
+
     /** Writes the given balances for the listed accounts. Blocking; async callers only. */
     public void persistBalances(Map<UUID, Double> balances) {
         storage.saveBalances(balances);
@@ -214,5 +223,18 @@ public final class EconomyService {
 
     private BukkitScheduler scheduler() {
         return plugin.getServer().getScheduler();
+    }
+
+    /**
+     * Deposits amount to the player's balance. Loads account if not cached.
+     * Non-blocking - runs async.
+     */
+    public void deposit(UUID uuid, double amount) {
+        if (amount <= 0) return;
+        load(uuid, account -> {
+            if (account != null) {
+                account.deposit(amount);
+            }
+        });
     }
 }

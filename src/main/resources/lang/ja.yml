@@ -1,0 +1,302 @@
+# ---------------------------------------------------------------------------
+# Minted - Japanese language bundle (日本語)
+#
+# Copy this file to lang/ja.yml and translate the values.
+# The __meta section tells the plugin the display name.
+# Keys must match English exactly - only change the text after the colon.
+# Use & color codes and {placeholder} tokens.
+# ---------------------------------------------------------------------------
+
+__meta:
+  name: "日本語"
+
+common:
+  none: "未設定"
+
+shop:
+  player-only: "&cプレイヤーのみがショップを閲覧できます。"
+  not-ready: "&cショップはまだ読み込み中です。しばらくしてからもう一度お試しください。"
+  no-shops: "&c開けるショップがありません。"
+  unknown: "&c「&f{shop}&c」というショップは存在しません。"
+  usage: "&c使い方: /{label} [shop]"
+  no-permission: "&cここでのショップ利用権限がありません。"
+
+  admin:
+    no-permission: "&cショップを管理する権限がありません。"
+    hold-item: "&c先に使用したいアイテムを手に持ってください。"
+    create-usage: "&c使い方: /{label} create <名前>"
+    exists: "&c「&f{shop}&c」というショップは既に存在します。"
+    created: "&aショップ &f{shop}&a を作成しました。&f/eshop edit {shop}&a で商品を仕入れてください。"
+    delete-usage: "&c使い方: /{label} delete <名前>"
+    deleted: "&aショップ &f{shop}&a を削除しました。"
+    edit-usage: "&c使い方: /{label} edit <名前>"
+    reloaded: "&a全ショップをデータベースから再読み込みしました。"
+    currency-usage: "&c使い方: /{label} setcurrency <shop> wallet|bank"
+    currency-invalid: "&c通貨は &fwallet&c または &fbank&c でなければなりません。"
+    currency-changed: "&aショップ &f{shop}&a は現在 &f{currency}&a で取引します。"
+
+browse:
+  title: "&2ショップ"
+  open-lore: "&7クリックで開きます。"
+
+menu:
+  title: "&2{shop} &8| &7{currency}"
+  category-all: "&eすべてのアイテム"
+  category-uncategorised: "&e未分類"
+  category: "&e{category}"
+  category-lore: "&7カテゴリタグ。"
+  prev-page: "&e前のページ"
+  next-page: "&e次のページ"
+  page-info: "&7ページ &f{page}&7 / &f{pages}"
+  back: "&7ショップ一覧に戻る"
+
+item:
+  buy-lore: "&7購入: &a{price}"
+  sell-lore: "&7売却: &a{price}"
+  not-buyable: "&7購入: &c利用不可"
+  not-sellable: "&7売却: &c利用不可"
+  hint: "&7左クリックで購入 | &e右クリックで売却 | &eShift+右で全部売却 | &8Shift+左で数量"
+
+detail:
+  title: "&2{item}"
+  buy: "&a購入"
+  sell: "&e売却"
+  buy-lore: "&7単価: &a{price}"
+  sell-lore: "&7単価の支払い: &a{price}"
+
+quantity:
+  title: "&2{action}"
+  button: "&e{amount}"
+  custom: "&eカスタム数量"
+  custom-lore: "&7チャットで数字を入力するか 'cancel'。"
+  prompt: "&7チャットで数量を入力するか &fcancel&7。"
+  invalid: "&c有効な数量ではありません。"
+  cancelled: "&7キャンセルしました。"
+
+buy:
+  not-ready: "&cアカウントはまだ読み込み中です。しばらくしてからもう一度お試しください。"
+  not-buyable: "&cこのアイテムはここでは販売されていません。"
+  insufficient: "&cそれは買えません。価格は &f{price}&c です。"
+  success: "&a&f{quantity}x {item}&a を &f{price}&a で購入しました。残高: &f{balance}&a。"
+  discount: "&7&f{percent}%&7 の割引が適用されました。"
+  overflow: "&7インベントリがいっぱいだったため、一部のアイテムは足元に落ちました。"
+
+sell:
+  not-ready: "&cアカウントはまだ読み込み中です。しばらくしてからもう一度お試しください。"
+  not-sellable: "&cこのアイテムはここでは売却できません。"
+  none: "&c売却する &f{item}&c がありません。"
+  cap: "&cこの売却は残高上限を超えてしまいます。"
+  success: "&a&f{quantity}x {item}&a を &f{earned}&a で売却しました。残高: &f{balance}&a。"
+  bonus: "&7&f{factor}x&7 の売却ボーナスが適用されました。"
+  hold: "&c売るものを手に持ってください - お金は商品ではありません。"
+  no-global: "&cグローバルショップはこのアイテムを買い取りません。"
+  amount-invalid: "&c数量、&fall&c、または空欄を入力してください。"
+
+bank:
+  cash-out: "&a现金で &f{amount}&a お渡ししました。"
+  cash-out-dropped: "&a现金で &f{amount}&a お渡ししました。&7インベントリがいっぱいだったため、一部の紙幣は足元にあります - 掴んでください。"
+  deposited-notes: "&a&f{amount}&a を預け入れました。"
+  deposited-partial: "&a&f{banked}&a を預け入れました。&7銀行はいっぱいです - &f{left}&a はインベントリに残ります。"
+  no-notes: "&c紙幣を所持していません。"
+  full: "&c銀行はいっぱいです。"
+  fee: "&7手数料 &f{amount}&7 が差し引かれました。"
+  combat-lock: "&c戦闘中です - あと {seconds} 秒間は預け入れできません。"
+  loan:
+    active: "&c既に返済中のローンがあります。"
+    taken: "&a銀行から &f{amount}&a を借りました。期限までに &f{owed}&a を返済してください。"
+    invalid: "&c0より大きいローン金額を入力してください。"
+    limit: "&cローンは &f{max}&a が上限です。"
+    not-ready: "&cアカウントはまだ読み込み中です。しばらくしてからもう一度お試しください。"
+    cap: "&c銀行があまりにも少なく、ローンが上限を超えてしまいます。"
+    short: "&c銀行の残高が足りません - &f{owed}&c の返済が必要です。"
+    repaid: "&aローンを完済しました - &f{owed}&a は清算済みです。"
+    none: "&c返済するローンがありません。"
+
+editor:
+  title: "&2{shop} を編集 &8| &7ページ {page}/{pages}"
+  add-hint: "&eアイテムを追加"
+  add-hint-lore: "&7アイテムを持ったまま空きスロットをクリック、"
+  add-hint-lore2: "&7またはここをクリックして最初の空きスロットに入れます。"
+  slot-hint: "&8在庫のあるスロットを左クリックで編集。"
+  rename: "&eショップ名を変更"
+  rename-lore: "&7チャットで新しい名前を入力。"
+  rename-prompt: "&7新しいショップ名を入力するか &fcancel&7。"
+  renamed: "&aショップ名を &f{shop}&a に変更しました。"
+  set-icon: "&eメニューアイコンを設定"
+  set-icon-lore: "&7手に持っているアイテムを使用します。"
+  icon-set: "&aショップアイコンを更新しました。"
+  currency: "&e通貨: &f{currency}"
+  currency-lore: "&7クリックで wallet/bank を切り替え。"
+  currency-changed: "&aショップは現在 &f{currency}&a で取引します。"
+  add-page: "&eページを追加"
+  page-added: "&a新しいページを追加しました。"
+  prev-page: "&e前のページ"
+  next-page: "&e次のページ"
+  placed: "&a&f{item}&a をショップに追加しました。"
+  replaced: "&aアイテムを &f{item}&a に置き換えました。"
+  removed: "&aアイテムを削除しました。"
+  page-full: "&cこのページはいっぱいです。"
+
+community:
+  search:
+    prompt: "&7検索するか &fcancel&7。"
+  list:
+    hold: "&cインベントリから販売するアイテムを選んでください。"
+    banknote: "&c紙幣はお金であり商品ではありません - 出品できません。"
+    price-invalid: "&c0より大きい購入価格を入力してください。"
+    none: "&c出品するアイテムがありません。"
+    full: "&cコミュニティマーケットは現在いっぱいです。"
+    created: "&a&f{quantity}x {item}&a を単価 &f{price}&a で出品しました。"
+    price-prompt: "&7購入者が支払う単価を入力するか &fcancel&7。"
+    buyback-prompt: "&7単価の買取価格を入力、&fnone&7 で買取終了、または &fcancel&7。"
+  buy:
+    gone: "&cその出品はもう利用できません。"
+    own: "&c自分の出品からは購入できません。"
+    not-ready: "&cアカウントはまだ読み込み中です。しばらくしてからもう一度お試しください。"
+    insufficient: "&cそれは買えません。価格は &f{price}&c です。"
+    success: "&a&f{quantity}x {item}&a を &f{price}&a で購入しました。"
+    overflow: "&7インベントリがいっぱいだったため、一部のアイテムは足元に落ちました。"
+  sell:
+    closed: "&cその出品はアイテムを買い取りません。"
+    own: "&c自分の出品には売れません。"
+    owner-offline: "&cオーナーがオフラインのため、買取は閉じています。"
+    owner-broke: "&cオーナーは今は買取できません。"
+    cap: "&cこの売却は残高上限を超えてしまいます - アイテムは返却されました。"
+    full: "&cその出品はすでにいっぱいです。"
+    none: "&c売却する &f{item}&c がありません。"
+    success: "&a&f{quantity}x {item}&a を &f{earned}&a で売却しました。"
+  collect:
+    none: "&cその出品から回収できるものはありません。"
+    done: "&a売上から &f{amount}&a を回収しました。"
+    cap: "&cこの回収は残高上限を超えてしまいます - 先に消費または預け入れしてください。"
+  withdraw:
+    done: "&a&f{quantity}&a 個をインベントリに引き出しました。"
+
+slot:
+  title: "&2スロットを編集"
+  set-buy: "&e購入価格を設定"
+  set-sell: "&e売却価格を設定"
+  set-category: "&eカテゴリを設定"
+  replace: "&e手持ちアイテムで置き換え"
+  remove: "&cアイテムを削除"
+  back: "&7戻る"
+  buy-current: "&7購入: &f{price}"
+  sell-current: "&7売却: &f{price}"
+  category-current: "&7カテゴリ: &f{category}"
+  buy-prompt: "&7購入価格を入力、&f-1&7 で無効化、または &fcancel&7。"
+  sell-prompt: "&7売却価格を入力、&f-1&7 で無効化、または &fcancel&7。"
+  category-prompt: "&7カテゴリを入力、&fclear&7 でクリア、または &fcancel&7。"
+  price-invalid: "&c有効な価格ではありません。"
+  buy-set: "&a購入価格を &f{price}&a に設定しました。"
+  buy-cleared: "&aこのアイテムの購入を無効にしました。"
+  sell-set: "&a売却価格を &f{price}&a に設定しました。"
+  sell-cleared: "&aこのアイテムの売却を無効にしました。"
+  category-set: "&aカテゴリを &f{category}&a に設定しました。"
+  category-cleared: "&aカテゴリをクリアしました。"
+  replaced: "&aこのスロットのアイテムを置き換えました。"
+
+bounty:
+  usage: "&c使い方: /{label} <プレイヤー> <金額> [メモ]"
+  no-permission: "&c報酬を使う権限がありません。"
+  placed: "&a&f{target}&c に &f{amount}&a の報酬を設定しました。"
+  self: "&c自分自身に報酬は設定できません。"
+  invalid: "&c有効なプレイヤーまたは金額ではありません。"
+  min: "&c最小報酬は &f{min}&c です。"
+  max: "&c最大報酬は &f{max}&c です。"
+  total: "&c同時に &f{max}&c 超えの報酬を設定することになります。"
+  expired: "&e&f{amount}&e の報酬が期限切れになり、銀行に返金されました。"
+  short: "&c銀行に &f{amount}&c ありません。"
+  not-ready: "&cアカウントはまだ読み込み中です。"
+  collected: "&a&f{target}&a の報酬 &f{amount}&a を回収しました！"
+  claimed-broadcast: "&e{killer}&c が &f{target}&c の報酬を回収しました: &f{amount}&a！"
+  cap: "&c銀行の上限に達しました - 報酬は支払えませんでした。"
+  refunded: "&a&f{amount}&a を銀行に返金しました。"
+  refund-failed: "&cその報酬は返金できませんでした。"
+  none-mine: "&7そのプレイヤーに返金する報酬はありません。"
+
+wallet:
+  disabled: "&cこのサーバーでは財布は無効になっています。"
+  give: "&a財布を渡しました - 持っている間現金を数えます。&f右クリックで開きます。"
+  give-full: "&a財布を渡しました。&7インベントリがいっぱいだったため、足元に落ちました。"
+  cannot-store: "&cこのサーバーは財布の中身を保存できません - 財布は利用できません。"
+  deposit-none: "&c紙幣を所持していません。"
+  deposit: "&a&f{amount}&a を財布に預け入れました。"
+  deposit-partial: "&a&f{banked}&a を預け入れました。&7財布はいっぱいです - &f{left}&a はインベントリに残ります。"
+  empty: "&a財布の中身をすべて出しました。"
+  withdraw-one: "&a財布から &f{note}&a を出しました。"
+  withdraw-all: "&a財布から &f{count}x {note}&a を出しました。"
+  dropped: "&7インベントリがいっぱいだったため、一部の紙幣は足元に落ちました。"
+
+language:
+  current: "&aあなたの言語: &f{language} &7(サーバー既定: {global})"
+  current_global: "&aサーバーの言語: &f{language}"
+  set: "&aあなたの言語を &f{language}&a に設定しました &7({code})"
+  reset: "&a個人設定をリセットしました。今はサーバーの言語を使用: &f{language}"
+  not_available: "&cその言語は利用できません: &f{code}"
+  available_list: "&6利用可能な言語:"
+  list_entry: "&7  &f{code} &8- &f{name} &7{marker}"
+  global_changed: "&aグローバル言語を変更: &f{old} &8-> &f{new} &7({code})"
+  global_notify: "&7サーバーの言語を &f{name} に変更しました &7({code})"
+  reloaded: "&a言語ファイルを再読み込みしました。"
+  usage: "&c使い方: /language [set <code>|reset|list|global <code>|reload]"
+
+auction:
+  not_ready: "&cオークションハウスはまだ読み込み中です。しばらくしてからもう一度お試しください。"
+  players_only: "&cプレイヤーのみがオークションハウスを利用できます。"
+
+  create:
+    start_price: "&7開始価格を入力するか &fcancel&7。"
+    price_too_low: "&c開始価格は最低 &f{min}&c でなければなりません。"
+    buyout: "&7即決価格を入力、&f0&7 で入札のみ、または &fcancel&7。"
+    buyout_change: "&7新しい即決価格を入力、&f0/none/remove&7 でクリア、または &fcancel&7。"
+    buyout_too_low: "&c即決価格は開始価格より高くなければなりません。"
+    duration: "&7期間を時間で入力 (1-168)、または &fcancel&7。分は &f10m&7 のように使えます。"
+    max_reached: "&c同時に &f{max}&c 件までのアクティブなオークションです。"
+    success: "&a&f{quantity}x {item}&a のオークションを作成しました。開始 &f{price}&a。"
+    failed: "&cオークションを作成できませんでした。アイテムと手数料分の残高があるか確認してください。"
+
+  bid:
+    prompt: "&7入札額を入力するか &fcancel&7。&f{current}&7 より高くしてください。"
+    invalid_amount: "&c有効な金額ではありません。"
+    placed: "&a&f{item}&a に &f{price}&a の入札をしました。"
+    failed: "&c入札できませんでした。十分な残高があるか確認してください。"
+    success: "&aあなたの入札 &f{price}&a が現在最高額です。"
+    outbid: "&e&f{item}&e で落札を上回られました！入札 &f{old}&e は返金されました。"
+    received: "&e誰かがあなたの &f{item}&e のオークションに &f{price}&e を入札しました。"
+    buyout: "&eあなたの &f{item}&e のオークションが即決 &f{price}&e で買われました！"
+
+  buyout:
+    confirm: "&7&fyes&7 と入力して &f{price}&7 の即決購入を確定、または &fcancel&7。"
+    success: "&a&f{item}&a を &f{price}&a で購入しました！"
+    failed: "&c即決購入を完了できませんでした。"
+
+  cancel:
+    confirm: "&7&fyes&7 と入力してこのオークションのキャンセルを確定、または &fcancel&7。"
+    cancelled: "&a&f{item}&a のオークションをキャンセルしました。"
+
+  win:
+    overflow: "&7インベントリがいっぱいだったため、アイテムは足元に落ちました。"
+
+  won:
+    success: "&a&f{item}&a のオークションに &f{price}&a で勝ちました！"
+
+  expired:
+    no_bids: "&e&f{item}&e のオークションは入札がなく終了しました。アイテムは返却されました。"
+    overflow: "&7インベントリがいっぱいだったため、アイテムは足元に落ちました。"
+
+  sold:
+    success: "&a&f{item}&a のオークションが &f{buyer}&a に &f{price}&a で落札されました。"
+
+  cmd:
+    usage: "&c使い方: /ah [create|my|bids|expire <id>|cancel <id>|reload]"
+    usage_expire: "&c使い方: /ah expire <id>"
+    usage_cancel: "&c使い方: /ah cancel <id>"
+    invalid_id: "&c無効なオークション ID です。"
+    expired: "&aオークション &f{id}&a を期限切れにしました。"
+    not_yours: "&cそのオークションはあなたのものではありません。"
+    reloaded: "&aオークションハウスを再読み込みしました。"
+
+  search:
+    prompt: "&7オークションを検索するか &fcancel&7。"
+
+  listing_fee: "&7出品手数料 &f{percent}%&7 が請求されました: &f{fee}&7。"

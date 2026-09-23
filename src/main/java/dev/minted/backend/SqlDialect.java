@@ -32,6 +32,11 @@ public enum SqlDialect {
             return "INSERT INTO " + table + "(uuid, name) VALUES(?, ?)"
                     + " ON CONFLICT(uuid) DO UPDATE SET name = excluded.name";
         }
+
+        @Override
+        public String languageUpsertSuffix() {
+            return "ON CONFLICT(uuid) DO UPDATE SET language = excluded.language";
+        }
     },
 
     MYSQL("dev.minted.libs.mysql.cj.jdbc.Driver") {
@@ -62,6 +67,11 @@ public enum SqlDialect {
             return "INSERT INTO " + table + "(uuid, name) VALUES(?, ?)"
                     + " ON DUPLICATE KEY UPDATE name = VALUES(name)";
         }
+
+        @Override
+        public String languageUpsertSuffix() {
+            return "ON DUPLICATE KEY UPDATE language = VALUES(language)";
+        }
     };
 
     private final String driverClass;
@@ -90,6 +100,18 @@ public enum SqlDialect {
 
     /** Statement that writes a player's display name, creating the row if missing. */
     public abstract String namesUpsert(String table);
+
+    /** Returns the dialect-specific upsert suffix for INSERT statements. */
+    public String upsertSuffix() {
+        return "";
+    }
+
+    /**
+     * Conflict clause for INSERT into player_languages (PK is uuid on both
+     * backends). The generic {@link #upsertSuffix()} cannot be reused: callers
+     * there have different primary-key columns.
+     */
+    public abstract String languageUpsertSuffix();
 
     public String createTable(String table) {
         return "CREATE TABLE IF NOT EXISTS " + table + " ("
@@ -122,6 +144,16 @@ public enum SqlDialect {
                 + "kind VARCHAR(16) NOT NULL)";
     }
 
+    public String createLedger() {
+        return "CREATE TABLE IF NOT EXISTS minted_ledger ("
+                + "id INTEGER PRIMARY KEY, "
+                + "ts BIGINT NOT NULL, "
+                + "uuid VARCHAR(36) NOT NULL, "
+                + "delta DOUBLE NOT NULL, "
+                + "kind VARCHAR(24) NOT NULL, "
+                + "detail VARCHAR(128) NOT NULL DEFAULT '')";
+    }
+
     public String createLoans() {
         return "CREATE TABLE IF NOT EXISTS minted_loans ("
                 + "id INTEGER PRIMARY KEY, "
@@ -146,6 +178,48 @@ public enum SqlDialect {
                 + "status INT NOT NULL DEFAULT 0)";
     }
 
+    public String createLanguages() {
+        return "CREATE TABLE IF NOT EXISTS player_languages ("
+                + "uuid VARCHAR(36) PRIMARY KEY, "
+                + "language VARCHAR(8) NOT NULL)";
+    }
+
+    public String createAuctions() {
+        return "CREATE TABLE IF NOT EXISTS auctions ("
+                + "id BIGINT PRIMARY KEY, "
+                + "seller VARCHAR(36) NOT NULL, "
+                + "item TEXT NOT NULL, "
+                + "start_price DOUBLE NOT NULL, "
+                + "buyout_price DOUBLE NOT NULL DEFAULT 0, "
+                + "ends_at BIGINT NOT NULL, "
+                + "created_at BIGINT NOT NULL, "
+                + "current_bid DOUBLE NOT NULL DEFAULT 0, "
+                + "highest_bidder VARCHAR(36), "
+                + "bid_count INT NOT NULL DEFAULT 0, "
+                + "state VARCHAR(16) NOT NULL DEFAULT 'ACTIVE')";
+    }
+
+    public String createAuctionBids() {
+        return "CREATE TABLE IF NOT EXISTS auction_bids ("
+                + "id INTEGER PRIMARY KEY, "
+                + "auction_id BIGINT NOT NULL, "
+                + "bidder VARCHAR(36) NOT NULL, "
+                + "amount DOUBLE NOT NULL, "
+                + "timestamp BIGINT NOT NULL, "
+                + "FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE)";
+    }
+
+    public String createCurrencies() {
+        return "CREATE TABLE IF NOT EXISTS currencies ("
+                + "id VARCHAR(32) PRIMARY KEY, "
+                + "name VARCHAR(64) NOT NULL, "
+                + "singular VARCHAR(32) NOT NULL, "
+                + "symbol VARCHAR(8) NOT NULL, "
+                + "exchange_rate DOUBLE NOT NULL DEFAULT 1.0, "
+                + "is_base BOOLEAN NOT NULL DEFAULT FALSE, "
+                + "sort_order INT NOT NULL DEFAULT 0)";
+    }
+
     /** Whole-table total, the global view used by the economy stats menu. */
     public String sum(String table) {
         return "SELECT COALESCE(SUM(balance), 0) FROM " + table;
@@ -166,7 +240,8 @@ public enum SqlDialect {
                 + "name VARCHAR(64) NOT NULL UNIQUE, "
                 + "icon TEXT NOT NULL, "
                 + "currency VARCHAR(16) NOT NULL, "
-                + "type VARCHAR(16) NOT NULL DEFAULT 'global')";
+                + "type VARCHAR(16) NOT NULL DEFAULT 'global', "
+                + "owner VARCHAR(36))";
     }
 
     public String createShopItems() {
@@ -193,6 +268,7 @@ public enum SqlDialect {
     public String[] migrateShopColumns() {
         return new String[] {
                 "ALTER TABLE shops ADD COLUMN type VARCHAR(16) NOT NULL DEFAULT 'global'",
+                "ALTER TABLE shops ADD COLUMN owner VARCHAR(36)",
                 "ALTER TABLE shop_items ADD COLUMN owner VARCHAR(36)",
                 "ALTER TABLE shop_items ADD COLUMN stock BIGINT NOT NULL DEFAULT 0",
                 "ALTER TABLE shop_items ADD COLUMN buy_back DOUBLE NOT NULL DEFAULT -1",

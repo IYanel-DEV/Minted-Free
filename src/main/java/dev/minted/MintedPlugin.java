@@ -1,5 +1,9 @@
 package dev.minted;
 
+import dev.minted.auction.AuctionService;
+import dev.minted.auction.storage.AuctionDao;
+import dev.minted.auction.command.AuctionCommand;
+import dev.minted.currency.CurrencyManager;
 import dev.minted.backend.DatabaseSettings;
 import dev.minted.backend.HikariPool;
 import dev.minted.backend.LoansDao;
@@ -50,6 +54,9 @@ import dev.minted.gui.MenuListener;
 import dev.minted.gui.theme.Design;
 import dev.minted.integration.npc.NpcManager;
 import dev.minted.integration.npc.NpcStore;
+import dev.minted.integration.via.ViaVersionHook;
+import dev.minted.lang.LanguageCommand;
+import dev.minted.lang.LanguageManager;
 import dev.minted.lang.Messages;
 import dev.minted.request.RequestService;
 import dev.minted.sound.SoundFX;
@@ -104,14 +111,24 @@ public final class MintedPlugin extends JavaPlugin {
     private NamesDao namesDao;
     private SaleLog saleLog;
     private LoanService loanService;
+    private dev.minted.ledger.LedgerService ledgerService;
     private boolean interestEnabled;
     private double interestRate;
     private long interestTicks;
     private dev.minted.bounty.BountyService bountyService;
+    private dev.minted.api.MintedEconomy economy;
+    private MoneyFormat format;
+    private Messages messages;
     private boolean vaultRegistered;
     private boolean papiRegistered;
     private NpcManager npcManager;
     private boolean npcsActive;
+    /** Why the bank-teller hook failed to start, or null. Shown in /minted report. */
+    private String npcHookError;
+    private ViaVersionHook viaHook;
+    private AuctionService auctionService;
+    private CurrencyManager currencyManager;
+    private LanguageManager languageManager;
 
     public static MintedPlugin get() {
         return instance;
@@ -164,14 +181,31 @@ public final class MintedPlugin extends JavaPlugin {
 
         double starting = getConfig().getDouble("economy.starting-balance", 0);
         double max = getConfig().getDouble("economy.max-balance", 1_000_000_000);
+        double withdrawPercent = getConfig().getDouble("bank.fee.withdraw-percent", 0);
+        double transferFeePercent = getConfig().getDouble("bank.fee.transfer-percent", 0);
         boolean physical = getConfig().getBoolean("economy.physical", true);
         this.walletEconomy = new EconomyService(this, walletStorage, starting, max);
         this.bankEconomy = new EconomyService(this, bankStorage, 0, max);
+        boolean walletPrimary = "wallet".equalsIgnoreCase(
+                getConfig().getString("integrations.primary-balance", "bank"));
+        this.economy = new dev.minted.api.MintedEconomyImpl(walletEconomy, bankEconomy,
+                MoneyFormat.from(getConfig()),
+                walletPrimary ? dev.minted.api.MintedEconomyImpl.Primary.WALLET
+                        : dev.minted.api.MintedEconomyImpl.Primary.BANK);
         BankService bankService = new BankService(walletEconomy, bankEconomy, max);
 
         MoneyFormat format = MoneyFormat.from(getConfig());
+        this.format = format;
         wireIntegrations(format);
-        Messages messages = Messages.load(this);
+        
+        // Language manager (must be created early for other systems to use)
+        this.languageManager = new LanguageManager(this, pool, dialect);
+        this.languageManager.initialize();
+
+        // Messages is a per-player view over the language manager, so /language
+        // changes take effect everywhere immediately - not just at startup.
+        this.messages = Messages.create(languageManager);
+        Messages messages = this.messages;
         BanknoteManager banknotes = new BanknoteManager(new BanknoteParser(format, serverVersion), denominations());
         NoteInventory noteInventory = new NoteInventory(banknotes);
         boolean walletEnabled = getConfig().getBoolean("wallet.enabled", true);
@@ -184,11 +218,14 @@ public final class MintedPlugin extends JavaPlugin {
 
         this.namesDao = new NamesDao(pool.start(), dialect);
         this.saleLog = new SaleLog(this, new SaleDao(pool, dialect));
+        this.ledgerService = new dev.minted.ledger.LedgerService(this,
+                new dev.minted.backend.LedgerDao(pool, dialect));
         this.loanService = new LoanService(this, new LoansDao(pool, dialect), bankEconomy,
                 getConfig().getDouble("bank.loan.max", 5000),
                 getConfig().getDouble("bank.loan.fee-percent", 10),
                 getConfig().getLong("bank.loan.term-minutes", 10080) * 60000,
-                getConfig().getDouble("bank.loan.late-fee-percent", 2));
+                getConfig().getDouble("bank.loan.late-fee-percent", 2),
+                ledgerService);
         this.interestEnabled = getConfig().getBoolean("bank.interest.enabled", true);
         this.interestRate = getConfig().getDouble("bank.interest.rate", 0.1);
         this.interestTicks = 20L * 60L * getConfig().getLong("bank.interest.interval-minutes", 30);
@@ -198,50 +235,89 @@ public final class MintedPlugin extends JavaPlugin {
                     new dev.minted.backend.BountyDao(pool, dialect),
                     bankEconomy,
                     getConfig().getDouble("bounty.min", 100),
-                    getConfig().getDouble("bounty.max", 1000000));
+                    getConfig().getDouble("bounty.max", 1000000),
+                    getConfig().getDouble("bounty.max-open", 2000000),
+                    getConfig().getLong("bounty.expiry-days", 0) * 24L * 60L * 60L * 1000L,
+                    ledgerService);
             this.bountyService.initialize();
         } else {
             getLogger().info("Bounties are disabled in config.yml.");
         }
 
         this.requestService = new RequestService(this, walletService, format,
-                getConfig().getLong("bank.request-expiry-seconds", 60));
+                getConfig().getLong("bank.request-expiry-seconds", 60), ledgerService);
 
         CombatLock combatLock = combatLock();
 
         MaterialLookup materials = new MaterialLookup(serverVersion);
+        getLogger().info("Material probe: " + MaterialLookup.probe());
+        this.viaHook = new ViaVersionHook(this);
+        if (viaHook.isPresent()) {
+            getLogger().info("Hooked ViaVersion: client-aware catalog items are active.");
+        }
         Design design = new Design(new Glass(serverVersion));
         SoundFX sounds = new SoundFX(getConfig().getConfigurationSection("sounds"));
 
         ChatPrompt chatPrompt = new ChatPrompt(this);
         GuiContext gui = new GuiContext(walletEconomy, bankEconomy, bankService, walletService, noteInventory,
                 format, chatPrompt, requestService, presets(), banknotes, messages, combatLock, design, sounds, stats,
-                this, namesDao, saleLog, loanService, bountyService);
+                this, namesDao, saleLog, loanService, bountyService, ledgerService, withdrawPercent);
 
         this.shopService = new ShopService(this, new ShopDao(pool, dialect), serverVersion, materials);
-        Trade trade = new Trade(walletService, bankEconomy, format, messages, stats, saleLog);
+        getServer().getServicesManager().register(dev.minted.api.MintedItems.class,
+                new dev.minted.api.MintedItems(materials, serverVersion), this, ServicePriority.Normal);
+        Trade trade = new Trade(walletService, bankEconomy, format, messages, stats, saleLog, ledgerService);
         Market market = new Market(shopService, walletService, banknotes, format, messages, saleLog);
         ShopContext shopContext = new ShopContext(shopService, trade, market, messages, format, chatPrompt,
                 design, walletService, materials);
+
+        // Auction house
+        AuctionDao auctionDao = new AuctionDao(pool, dialect);
+        double listingFeePercent = getConfig().getDouble("auction.listing-fee-percent", 1.0);
+        double minStartPrice = getConfig().getDouble("auction.min-start-price", 1.0);
+        int maxDurationHours = getConfig().getInt("auction.max-duration-hours", 168);
+        int minDurationMinutes = getConfig().getInt("auction.min-duration-minutes", 10);
+        int maxItemsPerPlayer = getConfig().getInt("auction.max-per-player", 10);
+        this.auctionService = new AuctionService(auctionDao, walletService, walletEconomy, format, messages, ledgerService,
+                listingFeePercent, minStartPrice, maxDurationHours, minDurationMinutes, maxItemsPerPlayer);
+
+        // Multi-currency
+        this.currencyManager = new CurrencyManager(pool, dialect, messages);
+        if (getConfig().getBoolean("multi-currency.enabled", false)) {
+            this.currencyManager.initialize();
+        }
 
         registerListeners(chatPrompt, gui, banknotes, noteInventory, format, messages, physical, combatLock, bountyService, sounds);
         getServer().getPluginManager().registerEvents(new WalletListener(wallets), this);
         getServer().getPluginManager().registerEvents(
                 new ResourcePackListener(getConfig().getConfigurationSection("resource-pack")), this);
 
+        // The teller hook must run before the command manager is built: /minted npc
+        // holds the manager reference for its whole lifetime, so building it first
+        // would capture the pre-hook null and always report "not available".
+        hookNpcs(gui);
+
         new CommandManager(this, gui, requestService, npcManager).register();
         setExecutor("balance", new BalanceCommand(walletService, format));
         setExecutor("wallet", new WalletCommand(wallets));
-        setExecutor("pay", new PayCommand(walletService, format, sounds));
+        setExecutor("pay", new PayCommand(this, walletService, bankEconomy, namesDao, format, sounds, ledgerService,
+                transferFeePercent, stats));
         setExecutor("bank", new BankCommand(bankService, bankEconomy, banknotes, noteInventory, gui, format,
-                messages, physical, combatLock));
+                messages, physical, combatLock, ledgerService, withdrawPercent, stats));
         setExecutor("sell", new SellCommand(shopContext, banknotes, getConfig().getString("shops.global", "Spawn")));
         setExecutor("mstats", new StatsCommand(gui));
+        setExecutor("mhistory", new dev.minted.command.HistoryCommand(gui));
+        setExecutor("eco", new dev.minted.command.EcoCommand(this, economy, format, ledgerService,
+                new dev.minted.command.BalanceTransfer(this, economy, ledgerService)));
         if (bountyService != null) {
             setExecutor("bounty", new dev.minted.command.BountyCommand(gui));
         }
+        setExecutor("ah", new AuctionCommand(shopContext, auctionService, messages));
+        setExecutor("language", new LanguageCommand(languageManager));
         registerShopCommand(shopContext);
-        hookNpcs(gui);
+        setExecutor("pshop", new dev.minted.shop.command.PlayerShopCommand(
+                shopContext, getConfig().getInt("shops.max-player-shops", 1)));
+        getCommand("pshop").setTabCompleter(new dev.minted.shop.command.PlayerShopTabCompleter(shopContext));
         hookVault();
         hookPapi();
         hookEssentials();
@@ -266,17 +342,24 @@ public final class MintedPlugin extends JavaPlugin {
         try {
             this.npcManager = new NpcManager(this, serverVersion, gui,
                     new NpcStore(getDataFolder()),
-                    getConfig().getLong("integrations.npcs.tab-hide-seconds", 5));
+                    getConfig().getLong("integrations.npcs.tab-hide-seconds", 5),
+                    getConfig().getString("integrations.npcs.name", "&eBanker"),
+                    getConfig().getString("integrations.npcs.skin-value", ""),
+                    getConfig().getString("integrations.npcs.skin-signature", ""),
+                    getConfig().getString("integrations.npcs.skin-player", ""));
             this.npcManager.initialize();
             getServer().getPluginManager().registerEvents(this.npcManager, this);
             this.npcsActive = true;
+            this.npcHookError = null;
             getLogger().info("Hooked ProtocolLib: bank tellers are available (/minted npc).");
         } catch (Throwable failure) {
             this.npcManager = null;
             this.npcsActive = false;
+            this.npcHookError = failure.getClass().getSimpleName() + ": "
+                    + String.valueOf(failure.getMessage());
             getLogger().warning("Could not hook ProtocolLib for bank tellers ("
-                    + failure.getClass().getSimpleName() + ": " + failure.getMessage()
-                    + "); tellers are disabled.");
+                    + npcHookError + "). This is usually a ProtocolLib build that does not match"
+                    + " your server version; install a build built for your server.");
         }
     }
 
@@ -316,12 +399,8 @@ public final class MintedPlugin extends JavaPlugin {
             this.bankEconomy.setChangeSink(sink(MintedBalanceChangeEvent.Account.BANK));
         }
 
-        boolean walletPrimary = "wallet".equalsIgnoreCase(
-                getConfig().getString("integrations.primary-balance", "bank"));
-        MintedEconomyImpl.Primary primary = walletPrimary
-                ? MintedEconomyImpl.Primary.WALLET : MintedEconomyImpl.Primary.BANK;
         getServer().getServicesManager().register(MintedEconomy.class,
-                new MintedEconomyImpl(walletEconomy, bankEconomy, format, primary),
+                this.economy,
                 this, ServicePriority.Normal);
     }
 
@@ -384,12 +463,18 @@ public final class MintedPlugin extends JavaPlugin {
         boolean papi = getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
         boolean essentials = getServer().getPluginManager().getPlugin("Essentials") != null;
         boolean protocolLib = getServer().getPluginManager().getPlugin("ProtocolLib") != null;
+        boolean via = viaHook != null && viaHook.isPresent();
         boolean ready = walletEconomy != null && walletEconomy.isReady()
                 && bankEconomy != null && bankEconomy.isReady();
         return new dev.minted.integration.IntegrationReport(ready, vault, vaultRegistered,
                 papi, papiRegistered, essentials, essentials && essentialsEconomyActive(),
-                protocolLib, npcsActive,
+                protocolLib, npcsActive, via, npcHookError,
                 getConfig().getString("integrations.primary-balance", "bank"));
+    }
+
+    /** The optional ViaVersion hook; never null, degrades when the plugin is absent. */
+    public ViaVersionHook viaHook() {
+        return viaHook;
     }
 
     /** @return true when Minted itself is the active Vault economy provider. */
@@ -496,6 +581,7 @@ public final class MintedPlugin extends JavaPlugin {
                     namesDao.createTable();
                     loanService.initialize();
                     saleLog.initialize();
+                    ledgerService.initialize();
                 } catch (RuntimeException e) {
                     getLogger().severe("Minted could not open its database: " + e.getMessage());
                     return;
@@ -537,11 +623,25 @@ public final class MintedPlugin extends JavaPlugin {
             }
         }, REQUEST_SWEEP_TICKS, REQUEST_SWEEP_TICKS);
         if (interestEnabled) {
-            InterestTask interest = new InterestTask(this, bankEconomy, interestRate, loanService);
+            InterestTask interest = new InterestTask(this, bankEconomy, interestRate, loanService, ledgerService);
             getServer().getScheduler().runTaskTimerAsynchronously(this, interest, interestTicks, interestTicks);
             getLogger().info("Bank interest enabled: " + getConfig().getDouble("bank.interest.rate", 0.1)
                     + "% every " + getConfig().getLong("bank.interest.interval-minutes", 30) + " minutes.");
         }
+        if (bountyService != null && bountyService.expiryMillis() > 0) {
+            dev.minted.bounty.BountyExpiryTask expiry = new dev.minted.bounty.BountyExpiryTask(
+                    this, bountyService, format, messages);
+            getServer().getScheduler().runTaskTimer(this, expiry, REQUEST_SWEEP_TICKS, REQUEST_SWEEP_TICKS);
+        }
+        // Auction house cleanup - check for expired auctions every minute
+        getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
+            @Override
+            public void run() {
+                if (auctionService != null) {
+                    auctionService.cleanupExpired();
+                }
+            }
+        }, 20L * 60L, 20L * 60L);
     }
 
     private double[] presets() {
@@ -631,5 +731,17 @@ public final class MintedPlugin extends JavaPlugin {
 
     public EconomyService getEconomyService() {
         return walletEconomy;
+    }
+
+    public AuctionService getAuctionService() {
+        return auctionService;
+    }
+
+    public CurrencyManager getCurrencyManager() {
+        return currencyManager;
+    }
+
+    public LanguageManager getLanguageManager() {
+        return languageManager;
     }
 }

@@ -7,6 +7,7 @@ import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.Purse;
 import dev.minted.bank.WalletService;
 import dev.minted.lang.Messages;
+import dev.minted.ledger.LedgerService;
 import dev.minted.shop.log.SaleLog;
 
 import org.bukkit.ChatColor;
@@ -35,15 +36,17 @@ public final class Trade {
     private final Messages messages;
     private final EconomyStats stats;
     private final SaleLog sales;
+    private final LedgerService ledger;
 
     public Trade(WalletService wallet, EconomyService bank, MoneyFormat format, Messages messages,
-                 EconomyStats stats, SaleLog sales) {
+                 EconomyStats stats, SaleLog sales, LedgerService ledger) {
         this.wallet = wallet;
         this.bank = bank;
         this.format = format;
         this.messages = messages;
         this.stats = stats;
         this.sales = sales;
+        this.ledger = ledger;
     }
 
     public void buy(Player player, Shop shop, ShopItem item, int quantity) {
@@ -74,6 +77,7 @@ public final class Trade {
         }
         boolean overflowed = giveOrDrop(player, item.copy(), quantity);
         sales.record("shop", null, player.getUniqueId(), describe(item.raw()), quantity, price);
+        ledger.record(player.getUniqueId(), -price, "shop-buy", describe(item.raw()));
         messages.send(player, "buy.success",
                 "quantity", String.valueOf(quantity),
                 "item", describe(item.raw()),
@@ -117,6 +121,7 @@ public final class Trade {
             return;
         }
         sales.record("shop", player.getUniqueId(), null, describe(item.raw()), quantitySold, earned);
+        ledger.record(player.getUniqueId(), earned, "shop-sell", describe(item.raw()));
         messages.send(player, "sell.success",
                 "quantity", String.valueOf(quantitySold),
                 "item", describe(item.raw()),
@@ -162,7 +167,7 @@ public final class Trade {
     private int count(Player player, ItemStack template) {
         int total = 0;
         for (ItemStack stack : player.getInventory().getContents()) {
-            if (stack != null && stack.isSimilar(template)) {
+            if (stack != null && ShopItem.sameStock(stack, template)) {
                 total += stack.getAmount();
             }
         }
@@ -175,7 +180,7 @@ public final class Trade {
         int remaining = quantity;
         for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
             ItemStack stack = contents[slot];
-            if (stack == null || !stack.isSimilar(template)) {
+            if (stack == null || !ShopItem.sameStock(stack, template)) {
                 continue;
             }
             int taken = Math.min(remaining, stack.getAmount());

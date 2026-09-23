@@ -46,11 +46,11 @@ public final class ShopDao {
         List<ShopRow> shops = new ArrayList<ShopRow>();
         try (Connection connection = pool.start().getConnection();
              PreparedStatement statement = connection.prepareStatement(
-                     "SELECT id, name, icon, currency, type FROM shops ORDER BY id");
+                     "SELECT id, name, icon, currency, type, owner FROM shops ORDER BY id");
              ResultSet rows = statement.executeQuery()) {
             while (rows.next()) {
                 shops.add(new ShopRow(rows.getInt(1), rows.getString(2), rows.getString(3),
-                        rows.getString(4), rows.getString(5)));
+                        rows.getString(4), rows.getString(5), rows.getString(6)));
             }
         } catch (SQLException e) {
             throw new StorageException("Could not load shops", e);
@@ -76,15 +76,16 @@ public final class ShopDao {
         return items;
     }
 
-    public void insertShop(int id, String name, String iconData, String currency, String type) {
+    public void insertShop(int id, String name, String iconData, String currency, String type, String owner) {
         try (Connection connection = pool.start().getConnection();
              PreparedStatement statement = connection.prepareStatement(
-                     "INSERT INTO shops(id, name, icon, currency, type) VALUES(?, ?, ?, ?, ?)")) {
+                     "INSERT INTO shops(id, name, icon, currency, type, owner) VALUES(?, ?, ?, ?, ?, ?)")) {
             statement.setInt(1, id);
             statement.setString(2, name);
             statement.setString(3, iconData);
             statement.setString(4, currency);
             statement.setString(5, type);
+            statement.setString(6, owner);
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new StorageException("Could not insert shop " + name, e);

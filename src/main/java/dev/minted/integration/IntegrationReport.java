@@ -17,12 +17,16 @@ public final class IntegrationReport {
     public final boolean essentialsEconomy;
     public final boolean protocolLibInstalled;
     public final boolean npcsActive;
+    public final boolean viaInstalled;
+    /** Why the bank-teller hook failed, or null when it did not. */
+    public final String npcHookError;
     public final String primary;
 
     public IntegrationReport(boolean apiReady, boolean vaultInstalled, boolean vaultRegistered,
                              boolean papiInstalled, boolean papiRegistered,
                              boolean essentialsInstalled, boolean essentialsEconomy,
-                             boolean protocolLibInstalled, boolean npcsActive, String primary) {
+                             boolean protocolLibInstalled, boolean npcsActive, boolean viaInstalled,
+                             String npcHookError, String primary) {
         this.apiReady = apiReady;
         this.vaultInstalled = vaultInstalled;
         this.vaultRegistered = vaultRegistered;
@@ -32,6 +36,8 @@ public final class IntegrationReport {
         this.essentialsEconomy = essentialsEconomy;
         this.protocolLibInstalled = protocolLibInstalled;
         this.npcsActive = npcsActive;
+        this.viaInstalled = viaInstalled;
+        this.npcHookError = npcHookError;
         this.primary = primary;
     }
 }

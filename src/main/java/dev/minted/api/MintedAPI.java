@@ -30,6 +30,17 @@ public final class MintedAPI {
         return registration == null ? null : registration.getProvider();
     }
 
+    /**
+     * Minted's item registry API (which items exist on which Minecraft version,
+     * plus live resolution on this server). Registered as a Bukkit service, so
+     * this is null only when Minted is absent or still enabling.
+     */
+    public static MintedItems items() {
+        RegisteredServiceProvider<MintedItems> registration =
+                Bukkit.getServicesManager().getRegistration(MintedItems.class);
+        return registration == null ? null : registration.getProvider();
+    }
+
     /** @return true when {@link #economy()} would return a provider */
     public static boolean isAvailable() {
         return economy() != null;

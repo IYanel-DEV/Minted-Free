@@ -25,16 +25,20 @@ public final class SellPickerMenu extends Menu {
     private final Player viewer;
 
     public SellPickerMenu(ShopContext ctx, Shop shop, Player viewer) {
-        super(Design.title(Design.Accent.COMMUNITY, "Pick an item to sell"), 6);
+        super(Design.title(accent(shop), "Pick an item to sell"), 6);
         this.ctx = ctx;
         this.shop = shop;
         this.viewer = viewer;
     }
 
+    private static Design.Accent accent(Shop shop) {
+        return shop.isPlayerShop() ? Design.Accent.SHOP : Design.Accent.COMMUNITY;
+    }
+
     @Override
     protected void build() {
         Design d = ctx.design();
-        frame(d.border(Design.Accent.COMMUNITY));
+        frame(d.border(accent(shop)));
 
         List<Integer> slots = interiorSlots();
         ItemStack[] contents = viewer.getInventory().getContents();

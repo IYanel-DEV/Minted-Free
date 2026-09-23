@@ -97,6 +97,8 @@ bank:
   deposited-partial: "&aBanked &f{banked}&a. &7Your bank is full - &f{left}&7 is still in your inventory."
   no-notes: "&cYou are not holding any banknotes."
   full: "&cYour bank is full."
+  # {amount} is a fee taken out of the money when a withdrawal is made.
+  fee: "&7A &f{amount}&7 fee was taken."
   # {seconds} is the whole seconds left on the combat lock.
   combat-lock: "&cYou are in combat - you cannot deposit for another {seconds} seconds."
   loan:
@@ -175,6 +177,53 @@ community:
   withdraw:
     done: "&aWithdrew &f{quantity}&a units back to your inventory."
 
+pshop:
+  usage: "&cUsage: /{label} [create <name>|add <price>|addstack <price>|sell|my|open <name>|browse|delete [name]]"
+  permission: "&cYou do not have permission to run a player shop."
+  not-owner: "&cYou can only stock your own shop."
+  create-usage: "&cUsage: /{label} create <name>"
+  exists: "&cA shop called &f{shop}&c already exists."
+  limit: "&cYou have already reached your shop limit. Withdraw everything, then delete it to open another."
+  created: "&aYour shop &f{shop}&a is open. Use &f/pshop add <price>&a to stock it."
+  no-shop: "&cYou do not have a shop yet. Use &f/pshop create <name>&a."
+  add-usage: "&cUsage: /{label} add <price> - list the stack in your hand."
+  addstack-usage: "&cUsage: /{label} addstack <price> - list every unit of that item you hold."
+  price-invalid: "&cEnter a price greater than zero."
+  hold: "&cHold the item you want to list first."
+  open-usage: "&cUsage: /{label} open <name>"
+  unknown: "&cThere is no player shop called &f{shop}&c."
+  occupied: "&cWithdraw every listing and collect your earnings before closing the shop."
+  deleted: "&aClosed your shop &f{shop}&a."
+  list:
+    hold: "&cPick an item from your inventory to put in your shop."
+    banknote: "&cBanknotes are money, not merchandise - you cannot list them."
+    price-invalid: "&cEnter a price greater than zero."
+    none: "&cYou do not have any of that item to list."
+    full: "&cYour shop is full - every slot is taken."
+    created: "&aListed &f{quantity}x {item}&a in your shop at &f{price}&a each."
+  buy:
+    gone: "&cThat item is no longer in stock."
+    own: "&cYou cannot buy from your own shop."
+    not-ready: "&cYour account is still loading, try again in a moment."
+    insufficient: "&cYou cannot afford that. It costs &f{price}&c."
+    success: "&aBought &f{quantity}x {item}&a for &f{price}&a."
+    overflow: "&7Your inventory was full, so some items dropped at your feet."
+  sell:
+    closed: "&cThis shop is not buying items back."
+    own: "&cYou cannot sell to your own shop."
+    owner-offline: "&cThe owner is offline, so their buy-back is closed."
+    owner-broke: "&cThe owner cannot afford to buy those back right now."
+    cap: "&cThat sale would pass your balance limit - your items were returned."
+    full: "&cThat listing is already full."
+    none: "&cYou have no &f{item}&c to sell."
+    success: "&aSold &f{quantity}x {item}&a for &f{earned}&a."
+  collect:
+    none: "&cThere is nothing to collect from that shop."
+    done: "&aCollected &f{amount}&a from your sales."
+    cap: "&cThat collect would pass your balance limit - spend or bank some first."
+  withdraw:
+    done: "&aWithdrew &f{quantity}&a units back to your inventory."
+
 
 slot:
   title: "&2Edit slot"
@@ -207,6 +256,8 @@ bounty:
   invalid: "&cThat is not a valid player or amount."
   min: "&cThe minimum bounty is &f{min}&c."
   max: "&cThe maximum bounty is &f{max}&c."
+  total: "&cThat would put more than &f{max}&c in bounties at once."
+  expired: "&eA bounty of &f{amount}&e expired and was refunded to your bank."
   short: "&cYou do not have &f{amount}&c in your bank."
   not-ready: "&cYour account is still loading."
   collected: "&aYou collected &f{amount}&a from the bounty on &f{target}&a!"
@@ -232,4 +283,78 @@ wallet:
   withdraw-one: "&aTook &f{note}&a out of your wallet."
   withdraw-all: "&aTook &f{count}x {note}&a out of your wallet."
   dropped: "&7Your inventory was full, so some notes dropped at your feet."
+
+language:
+  current: "&aYour language: &f{language} &7(server default: {global})"
+  current_global: "&aServer language: &f{language}"
+  set: "&aYour language set to: &f{language} &7({code})"
+  reset: "&aPersonal language reset. Now using server default: &f{language}"
+  not_available: "&cLanguage not available: &f{code}"
+  available_list: "&6Available languages:"
+  list_entry: "&7  &f{code} &8- &f{name} &7{marker}"
+  global_changed: "&aGlobal language changed: &f{old} &8-> &f{new} &7({code})"
+  global_notify: "&7Server language changed to &f{name} &7({code})"
+  reloaded: "&aLanguage files reloaded."
+  usage: "&cUsage: /language [set <code>|reset|list|global <code>|reload]"
+
+auction:
+  not_ready: "&cThe auction house is still loading, try again in a moment."
+  players_only: "&cOnly players can use the auction house."
+
+  create:
+    start_price: "&7Type the starting bid amount, or &fcancel&7."
+    price_too_low: "&cStarting bid must be at least &f{min}&c."
+    buyout: "&7Type the buyout price (instant buy), &f0&7 for bids only, or &fcancel&7."
+    buyout_change: "&7Type new buyout price, &f0/none/remove&7 to clear, or &fcancel&7."
+    buyout_too_low: "&cBuyout must be higher than starting bid."
+    duration: "&7Type duration in hours (1-168), or &fcancel&7. Can use &f10m&7 for minutes."
+    max_reached: "&cYou can only have &f{max}&c active auctions at once."
+    success: "&aCreated auction for &f{quantity}x {item}&a starting at &f{price}&a."
+    failed: "&cCould not create auction. Make sure you have the items and enough balance for the listing fee."
+
+  bid:
+    prompt: "&7Type your bid amount, or &fcancel&7. Must be higher than &f{current}&7."
+    invalid_amount: "&cThat is not a valid amount."
+    placed: "&aPlaced a bid of &f{price}&a on &f{item}&a."
+    failed: "&cCould not place bid. Make sure you have enough balance."
+    success: "&aYour bid of &f{price}&a is now the highest."
+    outbid: "&eYou have been outbid on &f{item}&e! Your bid of &f{old}&e was returned."
+    received: "&eSomeone bid &f{price}&e on your auction for &f{item}&e."
+    buyout: "&eYour auction for &f{item}&e was bought out for &f{price}&e!"
+
+  buyout:
+    confirm: "&7Type &fyes&7 to confirm buyout for &f{price}&7, or &fcancel&7."
+    success: "&aBought &f{item}&a for &f{price}&a!"
+    failed: "&cCould not complete buyout."
+
+  cancel:
+    confirm: "&7Type &fyes&7 to confirm cancelling this auction, or &fcancel&7."
+    cancelled: "&aCancelled auction for &f{item}&a."
+
+  win:
+    overflow: "&7Your inventory was full, so the item dropped at your feet."
+
+  won:
+    success: "&aYou won the auction for &f{item}&a at &f{price}&a!"
+
+  expired:
+    no_bids: "&eYour auction for &f{item}&e expired with no bids. The item was returned."
+    overflow: "&7Your inventory was full, so the item dropped at your feet."
+
+  sold:
+    success: "&aYour auction for &f{item}&a sold for &f{price}&a to &f{buyer}&a."
+
+  cmd:
+    usage: "&cUsage: /ah [create|my|bids|expire <id>|cancel <id>|reload]"
+    usage_expire: "&cUsage: /ah expire <id>"
+    usage_cancel: "&cUsage: /ah cancel <id>"
+    invalid_id: "&cInvalid auction ID."
+    expired: "&aExpired auction &f{id}&a."
+    not_yours: "&cThat auction is not yours."
+    reloaded: "&aAuction house reloaded."
+
+  search:
+    prompt: "&7Type to search auctions, or &fcancel&7."
+
+  listing_fee: "&7A &f{percent}%&7 listing fee was charged: &f{fee}&7."
 

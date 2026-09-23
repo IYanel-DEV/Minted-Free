@@ -21,50 +21,52 @@ import java.util.UUID;
  *
  * <p>Textured heads are the "orb" used all over the large public head
  * libraries: a player head whose profile carries a {@code textures} property
- * pointing at a {@code textures.minecraft.net} skin. There is no pure Bukkit
- * API for that, so the profile is built reflectively through the authlib
- * classes bundled with every server and applied through
- * {@code CraftMetaSkull#setProfile}. Every version and fork behaves slightly
- * differently, so the whole path is guarded: if any step fails Minted returns
- * the {@linkplain #icon(String, Material) plain-material fallback} and a menu
- * can never break because of a head. The texture values baked in here are
- * those of the public Minecraft-Heads library and are cheap for a client to
- * fetch from Mojang's servers.
+ * pointing at a {@code textures.minecraft.net} skin. On 1.18.2+ servers that is
+ * done through the official {@code org.bukkit.profile.PlayerProfile} API; older
+ * servers get the same profile built reflectively through the authlib classes
+ * bundled with every server and applied through {@code CraftMetaSkull#setProfile}.
+ * Every version and fork behaves slightly differently, so all paths are guarded:
+ * if every step fails Minted returns the {@linkplain #icon(String, Material)
+ * plain-material fallback} and a menu can never break because of a head. The
+ * texture values baked in here are those of the public Minecraft-Heads library
+ * and are cheap for a client to fetch from Mojang's servers.
  */
 public final class Heads {
 
     public static final short PLAYER_DATA = 3;
 
     // Textured icons, keyed by the UI glyph they represent. Values are base64
-    // profile texture payloads from the public Minecraft-Heads library.
+    // profile texture payloads from the public Minecraft-Heads library. The
+    // URLs are https: modern clients refuse http texture links (HTTP 451), and
+    // a head whose skin cannot load renders as the default Steve/Alex skin.
     private static final String T_BACK =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2RjOWU0ZGNmYTQyMjFhMWZhZGMxYjViMmIxMWQ4YmVlYjU3ODc5YWYxYzQyMzYyMTQyYmFlMWVkZDUifX19";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NkYzllNGRjZmE0MjIxYTFmYWRjMWI1YjJiMTFkOGJlZWI1Nzg3OWFmMWM0MjM2MjE0MmJhZTFlZGQ1In19fQ==";
     private static final String T_NEXT =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTU2YTM2MTg0NTllNDNiMjg3YjIyYjdlMjM1ZWM2OTk1OTQ1NDZjNmZjZDZkYzg0YmZjYTRjZjMwYWI5MzExIn19fQ==";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzk1NmEzNjE4NDU5ZTQzYjI4N2IyMmI3ZTIzNWVjNjk5NTk0NTQ2YzZmY2Q2ZGM4NGJmY2E0Y2YzMGFiOTMxMSJ9fX0=";
     private static final String T_MONEY =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjBhN2I5NGM0ZTU4MWI2OTkxNTlkNDg4NDZlYzA5MTM5MjUwNjIzN2M4OWE5N2M5MzI0OGEwZDhhYmM5MTZkNSJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2IwYTdiOTRjNGU1ODFiNjk5MTU5ZDQ4ODQ2ZWMwOTEzOTI1MDYyMzdjODlhOTdjOTMyNDhhMGQ4YWJjOTE2ZDUifX19";
     private static final String T_BANK =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTFlZGYxNmM0MWQxOTRjNzMxZTMzZmRkOWMyYjllNWVkZDQ1MGJjMzNjYTcwNDM2NTI4YTA1Mzg5ZDdmY2RhMiJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2UxZWRmMTZjNDFkMTk0YzczMWUzM2ZkZDljMmI5ZTVlZGQ0NTBiYzMzY2E3MDQzNjUyOGEwNTM4OWQ3ZmNkYTIifX19";
     private static final String T_WALLET =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmU3ZTNlOGFiMDYwZTY0ZDAyNTZiMzY4OGU2MmQ0MzNlYWIzNDFhMTU3ZjJhNzMzZWQ0MzQ1MGZlZTRlNzI2NCJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzZlN2UzZThhYjA2MGU2NGQwMjU2YjM2ODhlNjJkNDMzZWFiMzQxYTE1N2YyYTczM2VkNDM0NTBmZWU0ZTcyNjQifX19";
     private static final String T_POUCH =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvODM4MWM1MjlkNTJlMDNjZDc0YzNiZjM4YmI2YmEzZmRlMTMzN2FlOWJmNTAzMzJmYWE4ODllMGEyOGU4MDgxZiJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzgzODFjNTI5ZDUyZTAzY2Q3NGMzYmYzOGJiNmJhM2ZkZTEzMzdhZTliZjUwMzMyZmFhODg5ZTBhMjhlODA4MWYifX19";
     private static final String T_HOME =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2IwYTY4OWU1NTc0YWY4MDNlMDFlZmRhMDExMTRjOWRjZDM1N2U5YzQyNzg5NjViYjViNGRiYjVjMzM4NzM0NyJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzNiMGE2ODllNTU3NGFmODAzZTAxZWZkYTAxMTE0YzlkY2QzNTdlOWM0Mjc4OTY1YmI1YjRkYmI1YzMzODczNDcifX19";
     private static final String T_CONFIRM =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTc5YTVjOTVlZTE3YWJmZWY0NWM4ZGMyMjQxODk5NjQ5NDRkNTYwZjE5YTQ0ZjE5ZjhhNDZhZWYzZmVlNDc1NiJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2E3OWE1Yzk1ZWUxN2FiZmVmNDVjOGRjMjI0MTg5OTY0OTQ0ZDU2MGYxOWE0NGYxOWY4YTQ2YWVmM2ZlZTQ3NTYifX19";
     private static final String T_NONE =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjNiMzI5YzEwNTI3N2JmNGE4NTYyMWUzZTVhNDk2ZTJhYTM3NjU4NTY2ZTA3ZGZhMWNkYmI3YmI2YzE5YTVhNiJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzIzYjMyOWMxMDUyNzdiZjRhODU2MjFlM2U1YTQ5NmUyYWEzNzY1ODU2NmUwN2RmYTFjZGJiN2JiNmMxOWE1YTYifX19";
     private static final String T_PAGE =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjY4ZTNlM2YzOTE1NGE4OTc2Nzg2YjJlYjZmNzkxMDhiOTMzZmRiOWJlMDMzYmE2YWViY2FhYWZmZjE4ZTNlMyJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzI2OGUzZTNmMzkxNTRhODk3Njc4NmIyZWI2Zjc5MTA4YjkzM2ZkYjliZTAzM2JhNmFlYmNhYWFmZmYxOGUzZTMifX19";
     private static final String T_CROWN =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTFiMGE1YmJjNjk3YzBjNDJhNmNmMWI5YzRjNDQzNWIwNzMyMmZjZTViYjI3ZDgyYjY5MzA4NDNlNWFiN2EwOSJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzkxYjBhNWJiYzY5N2MwYzQyYTZjZjFiOWM0YzQ0MzViMDczMjJmY2U1YmIyN2Q4MmI2OTMwODQzZTVhYjdhMDkifX19";
     private static final String T_FLAME =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYmI1OGI4M2YwNzYxOGVhNzlhMWExMjAyYjVhNzdiMTRkZjFjOGUzNWI2ZTFkZWI4YTI2ZDg5NzZmODUzNjBjMyJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2JiNThiODNmMDc2MThlYTc5YTFhMTIwMmI1YTc3YjE0ZGYxYzhlMzViNmUxZGViOGEyNmQ4OTc2Zjg1MzYwYzMifX19";
     private static final String T_BOOKS =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWFmNjQ1ZjQ4MjRlNTRkMjY5NzJkMGJmNzIxMWI2ODE1MzgyMWRjM2EwZGY5OTJlNzY2NWNiMjFjNjk2OTBkYSJ9fX0=";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzFhZjY0NWY0ODI0ZTU0ZDI2OTcyZDBiZjcyMTFiNjgxNTM4MjFkYzNhMGRmOTkyZTc2NjVjYjIxYzY5NjkwZGEifX19";
     private static final String T_SILVER =
-            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYTM0YjI3YmZjYzhmOWI5NjQ1OTRiNjE4YjExNDZhZjY5ZGUyNzhjZTVlMmUzMDEyY2I0NzFhOWEzY2YzODcxIn19fQ==";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHBzOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2EzNGIyN2JmY2M4ZjliOTY0NTk0YjYxOGIxMTQ2YWY2OWRlMjc4Y2U1ZTJlMzAxMmNiNDcxYTlhM2NmMzg3MSJ9fX0=";
 
     private Heads() {
     }
@@ -149,6 +151,13 @@ public final class Heads {
         if (head == null) {
             return null;
         }
+        // Modern servers expose the official Bukkit profile API: on 1.18.2+
+        // this renders reliably where the reflective authlib path below can be
+        // blocked by Paper's obfuscation or module sealing.
+        ItemStack modern = applyBukkitProfile(head, base64);
+        if (modern != null) {
+            return modern;
+        }
         try {
             Class<?> profileClass = gameProfileClass();
             Constructor<?> profileCtor = profileClass.getConstructor(UUID.class, String.class);
@@ -171,6 +180,39 @@ public final class Heads {
         } catch (Throwable ignored) {
             // Any failure at all - missing classes, sealed modules, odd forks -
             // must never break a menu: the caller falls back to a plain item.
+            return null;
+        }
+    }
+
+    /**
+     * The 1.18.2+ Bukkit way of stamping a texture on a player skull: build a
+     * {@code PlayerProfile}, add the {@code textures} property, and hand it to
+     * {@code SkullMeta#setOwnerProfile}. Returns null when this server does not
+     * have the API so the caller keeps the reflective authlib path.
+     */
+    private static ItemStack applyBukkitProfile(ItemStack head, String base64) {
+        try {
+            Class<?> profileType = Class.forName("org.bukkit.profile.PlayerProfile");
+            Class<?> propertyType = Class.forName("org.bukkit.profile.ProfileProperty");
+            Object server = org.bukkit.Bukkit.getServer();
+            Method factory;
+            try {
+                factory = server.getClass().getMethod("createPlayerProfile", UUID.class, String.class);
+            } catch (NoSuchMethodException olderFactory) {
+                factory = server.getClass().getMethod("createProfile", UUID.class, String.class);
+            }
+            Object profile = factory.invoke(server, UUID.randomUUID(), "Minted");
+            Object properties = profileType.getMethod("getProperties").invoke(profile);
+            Object property = propertyType.getConstructor(String.class, String.class)
+                    .newInstance("textures", base64);
+            properties.getClass().getMethod("add", propertyType).invoke(properties, property);
+
+            ItemMeta meta = head.getItemMeta();
+            org.bukkit.inventory.meta.SkullMeta.class
+                    .getMethod("setOwnerProfile", profileType).invoke(meta, profile);
+            head.setItemMeta(meta);
+            return head;
+        } catch (Throwable notModern) {
             return null;
         }
     }

@@ -14,27 +14,34 @@ import java.util.Locale;
  */
 public enum Category {
 
-    BUILDING("building", "Building", "bricks"),
-    TOOLS("tools", "Tools & Weapons", "diamond_sword"),
-    ARMOR("armor", "Armor & Combat", "iron_chestplate"),
-    FOOD("food", "Food", "bread"),
-    ORES("ores", "Ores & Materials", "iron_ore"),
-    REDSTONE("redstone", "Redstone & Mechanics", "redstone"),
-    DECORATION("decoration", "Decoration", "painting"),
-    TRANSPORT("transport", "Transport", "minecart"),
-    NATURE("nature", "Nature", "sapling"),
-    BREWING("brewing", "Brewing & Alchemy", "brewing_stand"),
-    ENCHANTED("enchanted", "Enchanted", "enchanted_book"),
-    MISC("misc", "Misc", "chest");
+    BUILDING("building", "Building", "bricks", Material.STONE),
+    TOOLS("tools", "Tools & Weapons", "diamond_sword", Material.IRON_SWORD),
+    ARMOR("armor", "Armor & Combat", "iron_chestplate", Material.IRON_CHESTPLATE),
+    FOOD("food", "Food", "bread", Material.BREAD),
+    ORES("ores", "Ores & Materials", "iron_ore", Material.IRON_ORE),
+    REDSTONE("redstone", "Redstone & Mechanics", "redstone", Material.REDSTONE),
+    DECORATION("decoration", "Decoration", "painting", Material.PAINTING),
+    TRANSPORT("transport", "Transport", "minecart", Material.MINECART),
+    NATURE("nature", "Nature", "sapling", Material.CHEST),
+    BREWING("brewing", "Brewing & Alchemy", "brewing_stand", Material.BREWING_STAND),
+    ENCHANTED("enchanted", "Enchanted", "enchanted_book", Material.ENCHANTED_BOOK),
+    MISC("misc", "Misc", "chest", Material.CHEST);
 
     private final String key;
     private final String display;
     private final String iconKey;
+    /**
+     * A material constant that exists on every supported release (1.8 and
+     * 1.13+) , used when the version-aware icon key cannot resolve so a menu
+     * tile always shows a real item - never a placeholder.
+     */
+    private final Material guaranteed;
 
-    Category(String key, String display, String iconKey) {
+    Category(String key, String display, String iconKey, Material guaranteed) {
         this.key = key;
         this.display = display;
         this.iconKey = iconKey;
+        this.guaranteed = guaranteed;
     }
 
     public String key() {
@@ -47,6 +54,11 @@ public enum Category {
 
     public String iconKey() {
         return iconKey;
+    }
+
+    /** A material that exists on every supported server, for icon fallbacks. */
+    public Material guaranteed() {
+        return guaranteed;
     }
 
     /** The category with this key, or {@link #MISC} for null/unknown (old rows). */

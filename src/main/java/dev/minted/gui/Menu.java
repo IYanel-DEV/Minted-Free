@@ -31,6 +31,13 @@ public abstract class Menu implements InventoryHolder {
     private final Map<Integer, Consumer<Player>> actions = new HashMap<Integer, Consumer<Player>>();
     private final Map<Integer, ClickHandler> handlers = new HashMap<Integer, ClickHandler>();
 
+    /**
+     * The player who this menu is currently open for. Set in {@link #open} and
+     * kept across {@link #refresh}, so {@link #build()} can resolve per-player
+     * text (language) while it draws the contents.
+     */
+    protected Player opener;
+
     protected Menu(String title, int rows) {
         // 1.8 rejects inventory titles longer than 32 characters; capping here
         // keeps a long shop or player name from crashing the menu on old servers.
@@ -85,6 +92,7 @@ public abstract class Menu implements InventoryHolder {
     protected abstract void build();
 
     public final void open(Player player) {
+        this.opener = player;
         render();
         player.openInventory(inventory);
     }

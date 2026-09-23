@@ -27,14 +27,17 @@ public final class LeaderboardMenu extends Menu {
     private final GuiContext ctx;
     private final Player viewer;
     private final List<EntryRow> rows;
+    private final int page;
 
     private static final int SHOWN = 8;
+    private static final int TOTAL = 64;
 
-    public LeaderboardMenu(GuiContext ctx, Player viewer, List<EntryRow> rows) {
+    public LeaderboardMenu(GuiContext ctx, Player viewer, List<EntryRow> rows, int page) {
         super(Design.title(Design.Accent.BANK, "Richest players"), 3);
         this.ctx = ctx;
         this.viewer = viewer;
         this.rows = rows;
+        this.page = page;
     }
 
     /** Fetches the ranking async, then opens the menu on the main thread. */
@@ -47,7 +50,7 @@ public final class LeaderboardMenu extends Menu {
                 RuntimeException failure = null;
                 List<EntryRow> rows = new ArrayList<EntryRow>();
                 try {
-                    Map<UUID, Double> top = bank.topBalances(SHOWN);
+                    Map<UUID, Double> top = bank.topBalances(TOTAL);
                     Map<UUID, String> known = names.names(new ArrayList<UUID>(top.keySet()));
                     int i = 0;
                     for (Entry<UUID, Double> entry : top.entrySet()) {
@@ -66,7 +69,7 @@ public final class LeaderboardMenu extends Menu {
                             viewer.sendMessage(ChatColor.RED + "The leaderboard is still loading, try again.");
                             return;
                         }
-                        new LeaderboardMenu(ctx, viewer, finalRows).open(viewer);
+                        new LeaderboardMenu(ctx, viewer, finalRows, 0).open(viewer);
                     }
                 });
             }
@@ -77,18 +80,22 @@ public final class LeaderboardMenu extends Menu {
     protected void build() {
         Design d = ctx.design();
         frame(d.border(Design.Accent.BANK));
-        int i = 0;
-        for (EntryRow row : rows) {
-            int slot = 9 + i;
+        int pages = Math.max(1, (int) Math.ceil((double) rows.size() / SHOWN));
+        int current = Math.min(page, pages - 1);
+        int start = current * SHOWN;
+        int shown = 0;
+        for (int i = start; i < Math.min(start + SHOWN, rows.size()); i++) {
+            EntryRow row = rows.get(i);
+            int slot = 9 + shown;
             if (slot > 16) {
                 break;
             }
-            Material material = material(i);
-            ChatColor colour = i == 0 ? Design.MONEY : Design.HEADING;
-            set(slot, Icon.of(material, colour + "" + ChatColor.BOLD + "#" + (i + 1) + " " + row.name,
+            Material material = material(row.rank);
+            ChatColor colour = row.rank == 0 ? Design.MONEY : Design.HEADING;
+            set(slot, Icon.of(material, colour + "" + ChatColor.BOLD + "#" + (row.rank + 1) + " " + row.name,
                     Design.lore("Bank balance",
                             Arrays.asList(Design.MONEY + ctx.format().brief(row.balance)), null)), null);
-            i++;
+            shown++;
         }
         set(18, d.back(), new Consumer<Player>() {
             @Override
@@ -96,6 +103,13 @@ public final class LeaderboardMenu extends Menu {
                 new EconomyMenu(ctx, viewer).open(player);
             }
         });
+        if (current > 0) {
+            setClick(20, d.prev(), (p, t) -> new LeaderboardMenu(ctx, viewer, rows, current - 1).open(p));
+        }
+        set(22, d.pageInfo(current + 1, pages), null);
+        if (current < pages - 1) {
+            setClick(24, d.next(), (p, t) -> new LeaderboardMenu(ctx, viewer, rows, current + 1).open(p));
+        }
         fillEmpty(d.filler());
     }
 

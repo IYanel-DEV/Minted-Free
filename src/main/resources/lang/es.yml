@@ -1,0 +1,302 @@
+# ---------------------------------------------------------------------------
+# Minted - Spanish language bundle (Español)
+#
+# Copy this file to lang/es.yml and translate the values.
+# The __meta section tells the plugin the display name.
+# Keys must match English exactly - only change the text after the colon.
+# Use & color codes and {placeholder} tokens.
+# ---------------------------------------------------------------------------
+
+__meta:
+  name: "Español"
+
+common:
+  none: "no establecido"
+
+shop:
+  player-only: "&cSolo los jugadores pueden navegar por las tiendas."
+  not-ready: "&cLas tiendas siguen cargando, intenta de nuevo en un momento."
+  no-shops: "&cNo hay tiendas para abrir."
+  unknown: "&cNo existe ninguna tienda llamada &f{shop}&c."
+  usage: "&cUso: /{label} [shop]"
+  no-permission: "&cNo tienes permiso para usar tiendas aquí."
+
+  admin:
+    no-permission: "&cNo tienes permiso para gestionar tiendas."
+    hold-item: "&cPrimero sostén el artículo que quieres usar en la mano."
+    create-usage: "&cUso: /{label} create <nombre>"
+    exists: "&cYa existe una tienda llamada &f{shop}&c."
+    created: "&aTienda &f{shop}&a creada. Usa &f/eshop edit {shop}&a para abastecerla."
+    delete-usage: "&cUso: /{label} delete <nombre>"
+    deleted: "&aTienda &f{shop}&a eliminada."
+    edit-usage: "&cUso: /{label} edit <nombre>"
+    reloaded: "&aTodas las tiendas recargadas desde la base de datos."
+    currency-usage: "&cUso: /{label} setcurrency <shop> wallet|bank"
+    currency-invalid: "&cLa moneda debe ser &fwallet&c o &fbank&c."
+    currency-changed: "&aLa tienda &f{shop}&a ahora comercia en &f{currency}&a."
+
+browse:
+  title: "&2Tiendas"
+  open-lore: "&7Click para abrir."
+
+menu:
+  title: "&2{shop} &8| &7{currency}"
+  category-all: "&eTodos los artículos"
+  category-uncategorised: "&eSin categoría"
+  category: "&e{category}"
+  category-lore: "&7Etiqueta de categoría."
+  prev-page: "&ePágina anterior"
+  next-page: "&ePágina siguiente"
+  page-info: "&7Página &f{page}&7 de &f{pages}"
+  back: "&7Volver a tiendas"
+
+item:
+  buy-lore: "&7Comprar: &a{price}"
+  sell-lore: "&7Vender: &a{price}"
+  not-buyable: "&7Comprar: &cno disponible"
+  not-sellable: "&7Vender: &cno disponible"
+  hint: "&7Izq comprar | &eDer vender | &eShift+Der vender todo | &8Shift+Izq cantidad"
+
+detail:
+  title: "&2{item}"
+  buy: "&aComprar"
+  sell: "&eVender"
+  buy-lore: "&7Precio cada uno: &a{price}"
+  sell-lore: "&7Pago cada uno: &a{price}"
+
+quantity:
+  title: "&2{action}"
+  button: "&e{amount}"
+  custom: "&eCantidad personalizada"
+  custom-lore: "&7Escribe un número en el chat, o 'cancelar'."
+  prompt: "&7Escribe una cantidad en el chat, o &fcancelar&7."
+  invalid: "&cEsa no es una cantidad válida."
+  cancelled: "&7Cancelado."
+
+buy:
+  not-ready: "&cTu cuenta sigue cargando, intenta de nuevo en un momento."
+  not-buyable: "&cEse artículo no está a la venta aquí."
+  insufficient: "&cNo puedes permitirte eso. Cuesta &f{price}&c."
+  success: "&aCompraste &f{quantity}x {item}&a por &f{price}&a. Balance: &f{balance}&a."
+  discount: "&7Se aplicó un descuento del &f{percent}%&7."
+  overflow: "&7Tu inventario estaba lleno, así que algunos artículos cayeron a tus pies."
+
+sell:
+  not-ready: "&cTu cuenta sigue cargando, intenta de nuevo en un momento."
+  not-sellable: "&cEse artículo no se puede vender aquí."
+  none: "&cNo tienes &f{item}&c para vender."
+  cap: "&cEsa venta superaría tu límite de balance."
+  success: "&aVendiste &f{quantity}x {item}&a por &f{earned}&a. Balance: &f{balance}&a."
+  bonus: "&7Se aplicó un bono de venta de &f{factor}x&7."
+  hold: "&cSostén algo para vender - el dinero no es mercancía."
+  no-global: "&cLa tienda global no compra este artículo."
+  amount-invalid: "&cIntroduce una cantidad, &ftodo&c, o déjalo en blanco."
+
+bank:
+  cash-out: "&aAquí tienes &f{amount}&a en efectivo."
+  cash-out-dropped: "&aAquí tienes &f{amount}&a en efectivo. &7Tu inventario estaba lleno, así que algunos billetes están a tus pies - recógelos."
+  deposited-notes: "&aDepositados &f{amount}&a."
+  deposited-partial: "&aDepositados &f{banked}&a. &7Tu banco está lleno - &f{left}&7 sigue en tu inventario."
+  no-notes: "&cNo estás sosteniendo billetes."
+  full: "&cTu banco está lleno."
+  fee: "&7Se cobró una comisión de &f{amount}&7."
+  combat-lock: "&cEstás en combate - no puedes depositar por otros {seconds} segundos."
+  loan:
+    active: "&cYa tienes un préstamo pendiente."
+    taken: "&aPrestados &f{amount}&a del banco. Devuelve &f{owed}&a antes de la fecha límite."
+    invalid: "&cIntroduce una cantidad de préstamo mayor que cero."
+    limit: "&cLos préstamos están limitados a &f{max}&a."
+    not-ready: "&cTu cuenta sigue cargando, intenta de nuevo en un momento."
+    cap: "&cTu banco no puede contener tanto - el préstamo superaría su límite."
+    short: "&cNo tienes suficiente en el banco - se deben &f{owed}&c."
+    repaid: "&aPréstamo devuelto - &f{owed}&a liquidado."
+    none: "&cNo tienes préstamo que devolver."
+
+editor:
+  title: "&2Editar {shop} &8| &7página {page}/{pages}"
+  add-hint: "&eAñadir artículo"
+  add-hint-lore: "&7Sostén un artículo y clic en un hueco vacío,"
+  add-hint-lore2: "&7o clic aquí para ponerlo en el primer hueco libre."
+  slot-hint: "&8Clic izquierdo en un hueco con stock para editarlo."
+  rename: "&eRenombrar tienda"
+  rename-lore: "&7Escribe el nuevo nombre en el chat."
+  rename-prompt: "&7Escribe el nuevo nombre de la tienda, o &fcancelar&7."
+  renamed: "&aTienda renombrada a &f{shop}&a."
+  set-icon: "&eEstablecer icono del menú"
+  set-icon-lore: "&7Usa el artículo en tu mano."
+  icon-set: "&aIcono de la tienda actualizado."
+  currency: "&eMoneda: &f{currency}"
+  currency-lore: "&7Clic para cambiar wallet/bank."
+  currency-changed: "&aLa tienda ahora comercia en &f{currency}&a."
+  add-page: "&eAñadir página"
+  page-added: "&aNueva página añadida."
+  prev-page: "&ePágina anterior"
+  next-page: "&ePágina siguiente"
+  placed: "&aAñadido &f{item}&a a la tienda."
+  replaced: "&aArtículo reemplazado por &f{item}&a."
+  removed: "&aArtículo eliminado."
+  page-full: "&cEsta página está llena."
+
+community:
+  search:
+    prompt: "&7Escribe para buscar, o &fcancelar&7."
+  list:
+    hold: "&cSelecciona un artículo de tu inventario para vender."
+    banknote: "&cLos billetes son dinero, no mercancía - no puedes listarlos."
+    price-invalid: "&cIntroduce un precio de compra mayor que cero."
+    none: "&cNo tienes ese artículo para listar."
+    full: "&cEl mercado comunitario está lleno ahora mismo."
+    created: "&aListado &f{quantity}x {item}&a a &f{price}&a cada uno."
+    price-prompt: "&7Escribe el precio que pagan los compradores por unidad, o &fcancelar&7."
+    buyback-prompt: "&7Escribe el precio de recompra por unidad, &fninguno&7 para cerrar, o &fcancelar&7."
+  buy:
+    gone: "&cEsa oferta ya no está disponible."
+    own: "&cNo puedes comprar de tu propia oferta."
+    not-ready: "&cTu cuenta sigue cargando, intenta de nuevo en un momento."
+    insufficient: "&cNo puedes permitirte eso. Cuesta &f{price}&c."
+    success: "&aCompraste &f{quantity}x {item}&a por &f{price}&a."
+    overflow: "&7Tu inventario estaba lleno, así que algunos artículos cayeron a tus pies."
+  sell:
+    closed: "&cEsta oferta no está recomprando artículos."
+    own: "&cNo puedes vender a tu propia oferta."
+    owner-offline: "&cEl propietario está offline, así que su recompra está cerrada."
+    owner-broke: "&cEl propietario no puede permitirse recomprar esos ahora."
+    cap: "&cEsa venta superaría tu límite de balance - tus artículos fueron devueltos."
+    full: "&cEsa oferta ya está llena."
+    none: "&cNo tienes &f{item}&c para vender."
+    success: "&aVendiste &f{quantity}x {item}&a por &f{earned}&a."
+  collect:
+    none: "&cNo hay nada que cobrar de esa oferta."
+    done: "&aCobrado &f{amount}&a de tus ventas."
+    cap: "&cEse cobro superaría tu límite de balance - gasta o deposita primero."
+  withdraw:
+    done: "&aRetirado &f{quantity}&a unidades a tu inventario."
+
+slot:
+  title: "&2Editar hueco"
+  set-buy: "&eEstablecer precio de compra"
+  set-sell: "&eEstablecer precio de venta"
+  set-category: "&eEstablecer categoría"
+  replace: "&eReemplazar con artículo en mano"
+  remove: "&cEliminar artículo"
+  back: "&7Volver"
+  buy-current: "&7Compra: &f{price}"
+  sell-current: "&7Venta: &f{price}"
+  category-current: "&7Categoría: &f{category}"
+  buy-prompt: "&7Escribe el precio de compra, &f-1&7 para desactivar, o &fcancelar&7."
+  sell-prompt: "&7Escribe el precio de venta, &f-1&7 para desactivar, o &fcancelar&7."
+  category-prompt: "&7Escribe una categoría, &flimpiar&7 para limpiar, o &fcancelar&7."
+  price-invalid: "&cEse no es un precio válido."
+  buy-set: "&aPrecio de compra establecido a &f{price}&a."
+  buy-cleared: "&aCompra desactivada para este artículo."
+  sell-set: "&aPrecio de venta establecido a &f{price}&a."
+  sell-cleared: "&aVenta desactivada para este artículo."
+  category-set: "&aCategoría establecida a &f{category}&a."
+  category-cleared: "&aCategoría limpiada."
+  replaced: "&aArtículo en este hueco reemplazado."
+
+bounty:
+  usage: "&cUso: /{label} <jugador> <cantidad> [nota]"
+  no-permission: "&cNo tienes permiso para usar recompensas."
+  placed: "&aPuesta recompensa de &f{amount}&a en &f{target}&a."
+  self: "&cNo puedes poner una recompensa en ti mismo."
+  invalid: "&cEse no es un jugador o cantidad válida."
+  min: "&cLa recompensa mínima es &f{min}&c."
+  max: "&cLa recompensa máxima es &f{max}&c."
+  total: "&cEso pondría más de &f{max}&c en recompensas a la vez."
+  expired: "&eUna recompensa de &f{amount}&e expiró y fue reembolsada a tu banco."
+  short: "&cNo tienes &f{amount}&c en tu banco."
+  not-ready: "&cTu cuenta sigue cargando."
+  collected: "&a¡Cobraste &f{amount}&a de la recompensa en &f{target}&a!"
+  claimed-broadcast: "&e{killer}&c reclamó la recompensa en &f{target}&c: &f{amount}&a!"
+  cap: "&cLlegaste al límite de tu banco - la recompensa no pudo pagarse."
+  refunded: "&aReembolsado &f{amount}&a a tu banco."
+  refund-failed: "&cEsa recompensa no pudo ser reembolsada."
+  none-mine: "&7No tienes recompensa para reembolsar en este jugador."
+
+wallet:
+  disabled: "&cLas carteras están desactivadas en este servidor."
+  give: "&aAquí tienes tu cartera - cuenta tu efectivo mientras la sostienes. &fClic derecho para abrir."
+  give-full: "&aAquí tienes tu cartera - &7tu inventario estaba lleno, así que cayó a tus pies."
+  cannot-store: "&cEste servidor no puede almacenar contenido de carteras - las carteras no están disponibles."
+  deposit-none: "&cNo llevas billetes."
+  deposit: "&aDepositado &f{amount}&a en tu cartera."
+  deposit-partial: "&aDepositado &f{banked}&a. &7Tu cartera está llena - &f{left}&7 se queda en tu inventario."
+  empty: "&aSacaste todo de tu cartera."
+  withdraw-one: "&aSacaste &f{note}&a de tu cartera."
+  withdraw-all: "&aSacaste &f{count}x {note}&a de tu cartera."
+  dropped: "&7Tu inventario estaba lleno, así que algunos billetes cayeron a tus pies."
+
+language:
+  current: "&aTu idioma: &f{language} &7(por defecto del servidor: {global})"
+  current_global: "&aIdioma del servidor: &f{language}"
+  set: "&aTu idioma cambiado a: &f{language} &7({code})"
+  reset: "&aIdioma personal restablecido. Ahora usando el del servidor: &f{language}"
+  not_available: "&cIdioma no disponible: &f{code}"
+  available_list: "&6Idiomas disponibles:"
+  list_entry: "&7  &f{code} &8- &f{name} &7{marker}"
+  global_changed: "&aIdioma global cambiado: &f{old} &8-> &f{new} &7({code})"
+  global_notify: "&7Idioma del servidor cambiado a &f{name} &7({code})"
+  reloaded: "&aArchivos de idioma recargados."
+  usage: "&cUso: /language [set <code>|reset|list|global <code>|reload]"
+
+auction:
+  not_ready: "&cLa casa de subastas sigue cargando, intenta de nuevo en un momento."
+  players_only: "&cSolo los jugadores pueden usar la casa de subastas."
+
+  create:
+    start_price: "&7Escribe la puja inicial, o &fcancelar&7."
+    price_too_low: "&cLa puja inicial debe ser al menos &f{min}&c."
+    buyout: "&7Escribe el precio de compra directa, &f0&7 solo pujas, o &fcancelar&7."
+    buyout_change: "&7Escribe nuevo precio de compra directa, &f0/ninguno/quitar&7 para limpiar, o &fcancelar&7."
+    buyout_too_low: "&cLa compra directa debe ser mayor que la puja inicial."
+    duration: "&7Escribe duración en horas (1-168), o &fcancelar&7. Puede usar &f10m&7 para minutos."
+    max_reached: "&cSolo puedes tener &f{max}&c subastas activas a la vez."
+    success: "&aSubasta creada para &f{quantity}x {item}&a comenzando en &f{price}&a."
+    failed: "&cNo se pudo crear la subasta. Asegúrate de tener los artículos y balance suficiente para la comisión."
+
+  bid:
+    prompt: "&7Escribe tu puja, o &fcancelar&7. Debe ser mayor que &f{current}&7."
+    invalid_amount: "&cEsa no es una cantidad válida."
+    placed: "&aPuesta puja de &f{price}&a en &f{item}&a."
+    failed: "&cNo se pudo poner la puja. Asegúrate de tener suficiente balance."
+    success: "&aTu puja de &f{price}&a es ahora la más alta."
+    outbid: "&e¡Te han superado la puja en &f{item}&e! Tu puja de &f{old}&e fue devuelta."
+    received: "&eAlguien pujó &f{price}&e en tu subasta de &f{item}&e."
+    buyout: "&e¡Tu subasta de &f{item}&e fue comprada directamente por &f{price}&e!"
+
+  buyout:
+    confirm: "&7Escribe &fsí&7 para confirmar compra directa por &f{price}&7, o &fcancelar&7."
+    success: "&a¡Compraste &f{item}&a por &f{price}&a!"
+    failed: "&cNo se pudo completar la compra directa."
+
+  cancel:
+    confirm: "&7Escribe &fsí&7 para confirmar cancelar esta subasta, o &fcancelar&7."
+    cancelled: "&aSubasta cancelada para &f{item}&a."
+
+  win:
+    overflow: "&7Tu inventario estaba lleno, así que el artículo cayó a tus pies."
+
+  won:
+    success: "&a¡Ganaste la subasta de &f{item}&a por &f{price}&a!"
+
+  expired:
+    no_bids: "&eTu subasta de &f{item}&e expiró sin pujas. El artículo fue devuelto."
+    overflow: "&7Tu inventario estaba lleno, así que el artículo cayó a tus pies."
+
+  sold:
+    success: "&aTu subasta de &f{item}&a se vendió por &f{price}&a a &f{buyer}&a."
+
+  cmd:
+    usage: "&cUso: /ah [create|my|bids|expire <id>|cancel <id>|reload]"
+    usage_expire: "&cUso: /ah expire <id>"
+    usage_cancel: "&cUso: /ah cancel <id>"
+    invalid_id: "&cID de subasta inválido."
+    expired: "&aSubasta &f{id}&a expirada."
+    not_yours: "&cEsa subasta no es tuya."
+    reloaded: "&aCasa de subastas recargada."
+
+  search:
+    prompt: "&7Escribe para buscar subastas, o &fcancelar&7."
+
+  listing_fee: "&7Se cobró una comisión del &f{percent}%&7: &f{fee}&7."

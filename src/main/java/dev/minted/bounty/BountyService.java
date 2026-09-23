@@ -3,6 +3,7 @@ package dev.minted.bounty;
 import dev.minted.backend.BountyDao;
 import dev.minted.bank.BankAccount;
 import dev.minted.bank.EconomyService;
+import dev.minted.ledger.LedgerService;
 
 import org.bukkit.plugin.Plugin;
 
@@ -30,6 +31,7 @@ public final class BountyService {
         INVALID,
         MIN,
         MAX,
+        TOTAL,
         SHORT,
         KILLER_SHORT
     }
@@ -39,16 +41,23 @@ public final class BountyService {
     private final EconomyService bank;
     private final double minAmount;
     private final double maxAmount;
+    private final double maxOpen;
+    private final long expiryMillis;
+    private final LedgerService ledger;
 
     private final Map<Integer, Bounty> open = new LinkedHashMap<Integer, Bounty>();
     private int nextId = 1;
 
-    public BountyService(Plugin plugin, BountyDao dao, EconomyService bank, double minAmount, double maxAmount) {
+    public BountyService(Plugin plugin, BountyDao dao, EconomyService bank, double minAmount, double maxAmount,
+                         double maxOpen, long expiryMillis, LedgerService ledger) {
         this.plugin = plugin;
         this.dao = dao;
         this.bank = bank;
         this.minAmount = minAmount;
         this.maxAmount = maxAmount;
+        this.maxOpen = maxOpen;
+        this.expiryMillis = expiryMillis;
+        this.ledger = ledger;
     }
 
     /** Seeded from storage (blocking); run on an async thread once at startup. */
@@ -73,6 +82,33 @@ public final class BountyService {
 
     public double maxAmount() {
         return maxAmount;
+    }
+
+    /** The largest amount a single player may have escrowed on open bounties. */
+    public double maxOpen() {
+        return maxOpen;
+    }
+
+    /** Milliseconds a bounty may sit unclaimed before it is auto-refunded, or 0 for never. */
+    public long expiryMillis() {
+        return expiryMillis;
+    }
+
+    /** Open bounties placed before now - expiryMillis; empty when expiry is off. */
+    public List<Bounty> expired(long now) {
+        List<Bounty> matches = new ArrayList<Bounty>();
+        if (expiryMillis <= 0) {
+            return matches;
+        }
+        long cutoff = now - expiryMillis;
+        synchronized (open) {
+            for (Bounty bounty : open.values()) {
+                if (bounty.placedAt() < cutoff) {
+                    matches.add(bounty);
+                }
+            }
+        }
+        return matches;
     }
 
     /** Snapshot of every open bounty, in posting order. Main thread friendly. */
@@ -119,14 +155,25 @@ public final class BountyService {
         if (amount > maxAmount) {
             return Result.MAX;
         }
+        if (note != null && note.length() > 64) {
+            note = note.trim();
+            if (note.length() > 64) {
+                note = note.substring(0, 64);
+            }
+        }
         double currentTotal = 0;
+        double placerTotal = 0;
         synchronized (open) {
             for (Bounty b : open.values()) {
                 if (b.target().equals(target)) currentTotal += b.amount();
+                if (b.placer().equals(placer)) placerTotal += b.amount();
             }
         }
         if (currentTotal + amount > maxAmount) {
             return Result.MAX;
+        }
+        if (maxOpen > 0 && placerTotal + amount > maxOpen) {
+            return Result.TOTAL;
         }
         BankAccount account = bank.getCached(placer);
         if (account == null) {
@@ -144,6 +191,7 @@ public final class BountyService {
                 open.put(id, bounty);
             }
             persistInsert(bounty, placer);
+            ledger.record(placer, -amount, "bounty", note == null ? null : note.trim());
         }
         return Result.OK;
     }
@@ -176,6 +224,7 @@ public final class BountyService {
         }
         final long now = System.currentTimeMillis();
         final double paid = total;
+        ledger.record(killer, paid, "bounty", "bounty on " + target);
         synchronized (open) {
             for (Bounty bounty : pending) {
                 open.remove(bounty.id());
@@ -218,6 +267,7 @@ public final class BountyService {
                 return false;
             }
         }
+        ledger.record(bounty.placer(), bounty.amount(), "bounty", "refund");
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
             @Override
             public void run() {

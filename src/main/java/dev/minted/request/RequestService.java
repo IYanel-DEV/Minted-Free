@@ -2,6 +2,7 @@ package dev.minted.request;
 
 import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.WalletService;
+import dev.minted.ledger.LedgerService;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -26,15 +27,18 @@ public final class RequestService implements Listener {
     private final WalletService wallet;
     private final MoneyFormat format;
     private final long expiryMillis;
+    private final LedgerService ledger;
 
     private final ConcurrentHashMap<UUID, PaymentRequest> byId =
             new ConcurrentHashMap<UUID, PaymentRequest>();
 
-    public RequestService(Plugin plugin, WalletService wallet, MoneyFormat format, long expirySeconds) {
+    public RequestService(Plugin plugin, WalletService wallet, MoneyFormat format, long expirySeconds,
+                          LedgerService ledger) {
         this.plugin = plugin;
         this.wallet = wallet;
         this.format = format;
         this.expiryMillis = expirySeconds * 1000L;
+        this.ledger = ledger;
     }
 
     public PaymentRequest create(UUID requester, UUID payer, double amount) {
@@ -61,6 +65,9 @@ public final class RequestService implements Listener {
             acceptor.sendMessage(ChatColor.RED + "Payment failed - the recipient must be online and you need the funds.");
             return;
         }
+        ledger.record(acceptor.getUniqueId(), -request.getAmount(), "request",
+                "paid to " + (requester != null ? requester.getName() : "you"));
+        ledger.record(request.getRequester(), request.getAmount(), "request", "from " + acceptor.getName());
 
         acceptor.sendMessage(ChatColor.GREEN + "Paid " + ChatColor.WHITE + format.format(request.getAmount())
                 + ChatColor.GREEN + ".");

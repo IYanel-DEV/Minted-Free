@@ -1,80 +1,51 @@
 package dev.minted.lang;
 
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
-
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import org.bukkit.entity.Player;
 
 /**
  * Looks up player-facing strings by key.
  *
- * <p>The English bundle ships inside the jar and is the fallback for every key,
- * so a missing or partial translation never leaves a blank line. On first run
- * {@code en.yml} is copied to {@code lang/} so it can be edited or used as a
- * template; the active language is chosen by {@code lang.code} in the config.
- * Values may use {@code &} colour codes and {@code {placeholder}} tokens.
+ * <p>Thin adapter over {@link LanguageManager}: a lookup for a player resolves
+ * in that player's preferred language (set at runtime with
+ * {@code /language set}), while a lookup with no player resolves in the live
+ * server-wide language (config {@code lang.code}, changeable at runtime with
+ * {@code /language global} or by editing the config and running
+ * {@code /language reload}). English ships inside the jar and is the fallback
+ * for every key, so a missing or partial translation never leaves a blank
+ * line. Values may use {@code &} colour codes and {@code {placeholder}} tokens.
  */
 public final class Messages {
 
-    private final YamlConfiguration defaults;
-    private final FileConfiguration active;
+    private final LanguageManager languages;
 
-    private Messages(YamlConfiguration defaults, FileConfiguration active) {
-        this.defaults = defaults;
-        this.active = active;
+    private Messages(LanguageManager languages) {
+        this.languages = languages;
     }
 
-    public static Messages load(Plugin plugin) {
-        YamlConfiguration defaults = loadBundledDefaults(plugin);
-        copyDefaultOut(plugin);
-        String code = plugin.getConfig().getString("lang.code", "en");
-        return new Messages(defaults, loadActive(plugin, code, defaults));
+    public static Messages create(LanguageManager languages) {
+        return new Messages(languages);
     }
 
     /** @param pairs alternating placeholder name and value, e.g. {@code "shop", "Spawn"} */
+    public String get(Player player, String key, String... pairs) {
+        return languages.get(player, key, pairs);
+    }
+
+    /** Global-language variant, used when no specific player is known. */
     public String get(String key, String... pairs) {
-        String raw = active.getString(key, defaults.getString(key, key));
-        return ChatColor.translateAlternateColorCodes('&', substitute(raw, pairs));
+        return languages.getGlobal(key, pairs);
+    }
+
+    public void send(Player player, String key, String... pairs) {
+        player.sendMessage(get(player, key, pairs));
     }
 
     public void send(CommandSender to, String key, String... pairs) {
-        to.sendMessage(get(key, pairs));
-    }
-
-    private String substitute(String message, String[] pairs) {
-        String result = message;
-        for (int i = 0; i + 1 < pairs.length; i += 2) {
-            result = result.replace("{" + pairs[i] + "}", pairs[i + 1]);
+        if (to instanceof Player) {
+            send((Player) to, key, pairs);
+        } else {
+            to.sendMessage(get(key, pairs));
         }
-        return result;
-    }
-
-    private static YamlConfiguration loadBundledDefaults(Plugin plugin) {
-        InputStream in = plugin.getResource("lang/en.yml");
-        if (in == null) {
-            return new YamlConfiguration();
-        }
-        return YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
-    }
-
-    private static void copyDefaultOut(Plugin plugin) {
-        File file = new File(plugin.getDataFolder(), "lang/en.yml");
-        if (!file.exists()) {
-            plugin.saveResource("lang/en.yml", false);
-        }
-    }
-
-    private static FileConfiguration loadActive(Plugin plugin, String code, YamlConfiguration defaults) {
-        File file = new File(plugin.getDataFolder(), "lang/" + code + ".yml");
-        if (file.exists()) {
-            return YamlConfiguration.loadConfiguration(file);
-        }
-        return defaults;
     }
 }

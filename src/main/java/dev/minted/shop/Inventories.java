@@ -12,15 +12,15 @@ import java.util.Map;
  * buy-back matches the global shop's behaviour exactly. Deliberately mirrors
  * Trade's private helpers rather than refactoring that frozen path.
  */
-final class Inventories {
+public final class Inventories {
 
     private Inventories() {
     }
 
-    static int count(Player player, ItemStack template) {
+    public static int count(Player player, ItemStack template) {
         int total = 0;
         for (ItemStack stack : player.getInventory().getContents()) {
-            if (stack != null && stack.isSimilar(template)) {
+            if (stack != null && ShopItem.sameStock(stack, template)) {
                 total += stack.getAmount();
             }
         }
@@ -28,13 +28,13 @@ final class Inventories {
     }
 
     /** Removes up to {@code quantity} units matching the template; returns how many were removed. */
-    static int remove(Player player, ItemStack template, int quantity) {
+    public static int remove(Player player, ItemStack template, int quantity) {
         Inventory inventory = player.getInventory();
         ItemStack[] contents = inventory.getContents();
         int remaining = quantity;
         for (int slot = 0; slot < contents.length && remaining > 0; slot++) {
             ItemStack stack = contents[slot];
-            if (stack == null || !stack.isSimilar(template)) {
+            if (stack == null || !ShopItem.sameStock(stack, template)) {
                 continue;
             }
             int taken = Math.min(remaining, stack.getAmount());
@@ -46,7 +46,7 @@ final class Inventories {
     }
 
     /** Gives the stack, dropping any overflow at the player's feet; true if anything dropped. */
-    static boolean giveOrDrop(Player player, ItemStack template, int quantity) {
+    public static boolean giveOrDrop(Player player, ItemStack template, int quantity) {
         int max = template.getMaxStackSize();
         int remaining = quantity;
         boolean overflowed = false;

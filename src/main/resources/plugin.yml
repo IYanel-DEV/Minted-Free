@@ -1,11 +1,14 @@
 # ---------------------------------------------------------------------------
 # Minted - plugin descriptor
 #
-# api-version is intentionally NOT set. It tells the server to enable legacy
-# behaviour (legacy material names, etc.). Since Minted ships 1.8 -> 1.26 in
-# a single jar, omitting it keeps startup behaviour identical everywhere.
-# Version-specific behaviour is handled by the compat layer, never by the
-# server's own legacy switch.
+# api-version: 1.13 opts out of the server's legacy-material mode. A plugin
+# without api-version forces Paper/Spigot to enable CraftLegacy, where
+# Material.getMaterial()/matchMaterial() answer with legacy names only - so
+# modern constants (OAK_PLANKS, RED_WOOL, TRIDENT, ...) resolve to null even
+# though they exist in the 1.13+ enum, and every colour variant collapses into
+# its base item. On 1.13+ with this line set, modern constants resolve
+# normally; on 1.12 and below the value is ignored, so the single 1.8 -> 1.26
+# jar keeps working on both sides of the flattening.
 # ---------------------------------------------------------------------------
 
 name: Minted
@@ -14,14 +17,17 @@ description: GUI-first economy for premium survival and roleplay servers.
 author: iyanel-dev
 website: https://github.com/IYanel-DEV/Minted-Free
 main: dev.minted.MintedPlugin
-# Optional hooks; Minted works fully without any of these present.
-softdepend: [Vault, PlaceholderAPI, Essentials, ProtocolLib]
+api-version: 1.13
+# Optional hooks; Minted works fully without any of these present. ViaVersion
+# (with ViaBackwards/ViaRewind) makes the catalog and item handouts follow the
+# client's own Minecraft version; everything is reflection-guarded.
+softdepend: [Vault, PlaceholderAPI, Essentials, ProtocolLib, ViaVersion]
 
 commands:
   minted:
     description: Main Minted command.
     aliases: [mint]
-    usage: /minted [gui|reload]
+    usage: /minted [gui|dashboard|reload|report|npc]
   balance:
     description: Check a balance.
     aliases: [bal, money]
@@ -36,19 +42,37 @@ commands:
     description: Open your bank, or deposit and withdraw.
     usage: /bank [deposit|withdraw] <amount>
   sell:
-    description: Sell the item in your hand to the global shop.
-    usage: /sell [amount]
+    description: Sell the item in your hand to the global shop, or open the sell menu.
+    usage: /sell [amount|all|menu]
   mstats:
     description: Open the server-wide economy stats.
     aliases: [economy]
     usage: /mstats
+  mhistory:
+    description: Open your personal transaction history.
+    aliases: [history, hst]
+    usage: /mhistory
   bounty:
     description: Place or view player bounties.
     usage: /bounty [player] [amount] [note]
+  ah:
+    description: Open the auction house.
+    aliases: [auction, auctionhouse]
+    usage: /ah [create|my|bids|expire|cancel|reload]
+  language:
+    description: View or change language.
+    aliases: [lang]
+    usage: /language [set <code>|reset|list|global <code>|reload]
   eshop:
     description: Browse the shops, or manage them as an admin.
     aliases: [shop, shops]
     usage: /eshop [shop|create|delete|edit|reload|setcurrency]
+  pshop:
+    description: Open and run your own player shop.
+    usage: /pshop [create <name>|add <price>|addstack <price>|sell|my|open <name>|browse|delete [name]]
+  eco:
+    description: Administer player balances, and export or import them. Console only.
+    usage: /eco [give|take|set|reset] <player> [amount] | /eco [export|import] <file> [confirm] (console only)
 
 permissions:
   minted.use:
@@ -78,6 +102,9 @@ permissions:
   minted.stats:
     description: View the server-wide economy stats.
     default: true
+  minted.history:
+    description: View your personal transaction history.
+    default: true
   minted.bounty:
     description: Place, view and refund player bounties.
     default: true
@@ -86,4 +113,10 @@ permissions:
     default: true
   minted.shop.admin:
     description: Create, edit and reload shops.
+    default: op
+  minted.shop.own:
+    description: Open your own player shop and list items in it.
+    default: true
+  minted.eco:
+    description: Give, take, set and reset player balances. Console only - never usable in game, even with op.
     default: op

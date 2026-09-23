@@ -1,196 +1,308 @@
-# ---------------------------------------------------------------------------
-# Minted configuration
-# ---------------------------------------------------------------------------
+# =============================================================================
+# Minted - Configuration
+# =============================================================================
+# This is the ONLY config file you need. Everything is organized into clear
+# sections with detailed comments. All options have sensible defaults.
+# 
+# Quick start: Just install the plugin and it works! Tweak only what you need.
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# LANGUAGE
+# -----------------------------------------------------------------------------
 lang:
-  # Language file to use from the lang/ folder (without the .yml). en ships
-  # built in and is copied out on first run; it is also the fallback for any
-  # key a translation leaves out.
+  # Language file to use (from lang/ folder, without .yml).
+  # Built-in: en (English). Add your own translations to lang/ folder.
   code: en
 
+# -----------------------------------------------------------------------------
+# CURRENCY DISPLAY (Single Currency Mode)
+# -----------------------------------------------------------------------------
+# These settings control how money LOOKS in chat, GUIs, and messages.
+# The actual stored value is always a plain number.
 currency:
-  # Display name of the currency unit used across all GUIs and messages.
-  name: Coins
-  singular: Coin
-  # Symbol prepended to formatted balances.
+  # Display name shown in GUIs and messages (plural)
+  name: "Coins"
+  # Singular form (for "1 Coin")
+  singular: "Coin"
+  # Symbol prepended to amounts (e.g., $100)
   symbol: "$"
-  # Render big amounts with short suffixes instead of full digits: k=1,000,
-  # m=1,000,000, b=1,000,000,000, t=1,000,000,000,000, q=1,000,000,000,000,000
-  # (so 10,000 -> 10k, 1,000,000 -> 1m, 10,000,000,000,000,000 -> 10q). Display
-  # only - the stored value is always a plain number, and amount input (all,
-  # half, max, raw numbers) is unaffected. Off by default.
+  # Shorten large numbers: 10000 -> 10k, 1000000 -> 1m, etc.
+  # Purely visual - does NOT affect stored values or input parsing.
   compact: false
 
-# --- Third-party integrations ---
-integrations:
-  # Fire dev.minted.api.event.MintedBalanceChangeEvent for every wallet/bank
-  # change, so other plugins can observe Minted's economy. Costs one event per
-  # balance movement; turn off only if a profiler says it matters.
-  events: true
-  # Which balance external APIs (Vault, placeholders, MintedEconomy#getBalance)
-  # read and write: 'bank' (recommended) or 'wallet'. The bank is a digital
-  # account that works for offline players; the wallet may be physical notes.
-  primary-balance: bank
-  # Register Minted as the server's Vault economy so EssentialsX, shops, Towny
-  # and every other Vault-aware plugin read and move money through Minted.
-  # Ignored when Vault is not installed. Set false to stay self-contained.
-  vault:
-    register: true
-  # Register the %minted_*% placeholders with PlaceholderAPI. Ignored when
-  # PlaceholderAPI is not installed. Set false to turn them off.
-  placeholders:
-    register: true
-  # EssentialsX runs a duplicate economy by default. When it is installed,
-  # Minted logs one startup message explaining how to point Essentials at
-  # Minted (via Vault). Pure awareness - disable it if the message is noise.
-  essentials:
-    warn: true
-  # Self-built bank tellers: fake players rendered entirely with ProtocolLib,
-  # no Citizens and no real entity. Right-clicking a teller opens the player's
-  # own bank menu. Tellers are placed with /minted npc create|here and their
-  # definitions live in npcs.yml (not here). The whole feature is inert when
-  # disabled or when ProtocolLib is absent.
-  npcs:
-    enabled: true
-    # How long a teller stays in the player list (tab) before being hidden.
-    # Keeping it there for a moment lets the client download the skin, so the
-    # teller never flashes as a default Steve/Alex.
-    tab-hide-seconds: 5
+# -----------------------------------------------------------------------------
+# MULTI-CURRENCY (Advanced)
+# -----------------------------------------------------------------------------
+# Enable to support multiple currencies with exchange rates (e.g., Coins, Gems, Tokens).
+# When DISABLED (default), the single currency above is used everywhere.
+# When ENABLED, all balances are stored in the BASE currency internally.
+multi-currency:
+  enabled: false
+  base:
+    # Internal ID (lowercase, no spaces) - used for database/storage
+    id: "coins"
+    # Display name
+    name: "Coins"
+    # Singular form
+    singular: "Coin"
+    # Symbol
+    symbol: "$"
+  # Additional currencies are added in-game with /currency create
+  # Example: /currency create gems Gem ♦ 100 1
+  #   id=gems, name=Gems, singular=Gem, symbol=♦, rate=100 (1 Coin = 100 Gems), sort=1
 
+# -----------------------------------------------------------------------------
+# DATABASE
+# -----------------------------------------------------------------------------
+# SQLite works out of the box (zero config). Use MySQL for multi-server networks.
 database:
-  # Storage backend. sqlite ships zero-config; mysql requires the fields below
-  # and enables cross-server syncing on BungeeCord/Velocity networks.
-  type: sqlite
-  host: localhost
+  # Backend: "sqlite" (file-based, zero config) or "mysql" (network, for Bungee/Velocity)
+  type: "sqlite"
+  
+  # MySQL only - ignored for SQLite
+  host: "localhost"
   port: 3306
-  database: minted
-  username: root
+  database: "minted"
+  username: "root"
   password: ""
-  # Connection pool size. One thread per requested pool slot, allocated lazily.
+  
+  # Connection pool size (concurrent DB connections). Increase for busy servers.
   pool-size: 8
 
+# -----------------------------------------------------------------------------
+# ECONOMY CORE
+# -----------------------------------------------------------------------------
 economy:
-  # Physical money. When true (the default) a player's wallet IS the signed
-  # banknotes in their inventory: shops pay and charge real cash, /bank deposit
-  # and right-clicking a note bank it, and money that is lost (dropped, died
-  # without keepInventory) is gone for good. Set to false for a classic digital
-  # wallet balance - then notes are just a way to carry money, redeemed back into
-  # the wallet on right-click, and shops move the digital balance. The bank is
-  # always a digital silo either way.
+  # PHYSICAL MODE (default): Wallet = actual banknotes in inventory.
+  #   - Shops pay/charge real cash items
+  #   - /bank deposit takes physical notes from inventory
+  #   - Dropped/lost money is GONE forever (hardcore economy)
+  # DIGITAL MODE (false): Wallet = digital balance.
+  #   - Notes are just convenience items, auto-redeemed on right-click
+  #   - Shops move digital balance only
+  #   - Money never lost on death/drop
   physical: true
-  # Starting balance granted to players on first join. In physical mode this is
-  # the digital wallet only, which is unused, so leave it at 0.
+  
+  # Starting balance for new players (digital wallet only).
+  # In physical mode, leave at 0 - players start with empty pockets.
   starting-balance: 0
-  # Hard cap for any single balance. Guards against overflow duplication bugs.
-  # Applies to the wallet and the bank alike.
+  
+  # Absolute maximum balance per player (wallet + bank combined).
+  # Prevents overflow exploits. 1 billion = 1,000,000,000
   max-balance: 1000000000
 
+# -----------------------------------------------------------------------------
+# PLAYER INTERACTION
+# -----------------------------------------------------------------------------
 player_interact:
-  # How the payment menu opens when you interact with another player:
-  # shift_right_click (sneak + right-click) or right_click.
-  action: shift_right_click
+  # How to open payment menu when clicking another player:
+  # "shift_right_click" = Sneak + Right-click (recommended, prevents accidents)
+  # "right_click" = Just right-click (simpler but can misfire)
+  action: "shift_right_click"
 
+# -----------------------------------------------------------------------------
+# BANK
+# -----------------------------------------------------------------------------
 bank:
-  # Amount buttons shown in the send, request and bank menus.
+  # Quick-amount buttons in send/request/bank menus
   presets: [50, 100, 500]
-  # How long a money request stays valid before it is dropped.
+  
+  # How long a money request (/request) stays valid (seconds)
   request-expiry-seconds: 60
-  # Combat lock. Taking a hit blocks bank deposits for a short window so players
-  # cannot stash their cash mid-fight. Only deposits are affected - withdrawals,
-  # /pay, shop trading and money requests all keep working.
+  
+  # FEES (money sinks - removed from economy permanently)
+  fee:
+    # % taken when withdrawing from bank to cash (on top of amount)
+    withdraw-percent: 0
+    # % taken when paying another player (sender pays fee, recipient gets full)
+    transfer-percent: 0
+  
+  # COMBAT LOCK - Prevents combat logging by blocking deposits after taking damage
   hit-lock:
-    # Master switch. When false the feature is completely inert.
     enabled: true
-    # How long the deposit block lasts after a hit. A fresh hit refreshes the
-    # window rather than extending it.
+    # Seconds deposit is blocked after taking damage
     seconds: 8
-    # What counts as a hit: 'any' entity attack (mobs included) or only when the
-    # damager is another 'player'. Environmental damage (fall, lava, drowning)
-    # never triggers the lock either way.
-    trigger: any
-  # The bank pays a small return on every stored balance, a reward for keeping
-  # money on deposit. Money it pays is newly created, so the economy grows.
+    # What triggers it: "any" (mobs + players) or "player" (players only)
+    trigger: "any"
+  
+  # INTEREST - Passive income for keeping money in bank
   interest:
-    # Master switch. When false the feature is completely inert.
     enabled: true
-    # Percent of the balance added to each account at every payout.
+    # % of balance added each payout (0.1 = 0.1%)
     rate: 0.1
-    # How often a payout happens, in minutes. 30 = every half hour.
+    # Payout interval in minutes (30 = every half hour)
     interval-minutes: 30
-  # Loans: the bank prints money for a player now, and they repay principal
-  # plus a one-time fee later. Outstanding loans are repaid from the bank
-  # balance, so a loan adds money to the economy until it is settled.
+  
+  # LOANS - Bank prints money, player repays later with fee
   loan:
-    # Largest single loan a player can take at once.
+    # Maximum single loan amount
     max: 5000
-    # One-time charge, as a percent of the principal, added to what must be
-    # repaid. 10 means a $1,000 loan costs $1,100 to settle.
+    # One-time fee % added to principal (10 = $1000 loan costs $1100 to repay)
     fee-percent: 10
-    # How long a player has to repay before late fees kick in, in minutes.
-    # 10080 = one week.
+    # Repayment term in minutes (10080 = 1 week)
     term-minutes: 10080
-    # Late fee: percent added to the outstanding owed at every payout while the
-    # loan is overdue. It compounds, so an ignored loan keeps growing.
+    # Late fee % per payout while overdue (compounds!)
     late-fee-percent: 2
 
-# Player bounties. Posting a bounty draws the reward out of the placer's bank
-# and escrows it on the posting; whoever kills the target collects every open
-# bounty on them into their bank. From the board (/bounty) the placer - or an
-# admin - can pull a bounty back for a full refund at any time.
+# -----------------------------------------------------------------------------
+# BOUNTIES
+# -----------------------------------------------------------------------------
 bounty:
-  # Master switch. When false the whole feature is inert and /bounty is gone.
   enabled: true
-  # Smallest and largest amounts a single posting may be. The running total on
-  # one player is also capped at the maximum.
+  # Min/max for a single bounty posting
   min: 100
   max: 1000000
+  # Max total escrowed on one player at once (0 = unlimited)
+  max-open: 2000000
+  # Auto-refund after this many days (0 = never expire)
+  expiry-days: 0
 
-# --- Resource Pack & Visuals ---
-# When enabled, the plugin will prompt players to download a resource pack
-# that gives banknotes and checks their own custom textures (1.14+).
+# -----------------------------------------------------------------------------
+# AUCTION HOUSE
+# -----------------------------------------------------------------------------
+auction:
+  enabled: true
+  # % fee charged to seller when listing (taken from wallet)
+  listing-fee-percent: 1.0
+  # Minimum starting bid
+  min-start-price: 1.0
+  # Maximum auction duration in hours (168 = 1 week)
+  max-duration-hours: 168
+  # Minimum duration in minutes
+  min-duration-minutes: 10
+  # Max concurrent auctions per player
+  max-per-player: 10
+
+# -----------------------------------------------------------------------------
+# RESOURCE PACK
+# -----------------------------------------------------------------------------
+# Prompts players to download custom textures for banknotes/wallet (1.14+)
 resource-pack:
   enabled: true
-  # URL to the .zip file and its SHA-1 hash for verification.
+  # Direct download URL to .zip file
   url: "https://example.com/minted-pack.zip"
+  # SHA-1 hash for verification (leave empty to skip check)
   hash: ""
 
-# --- Physical Wallet ---
-# When enabled, players can use a "Wallet" item to store banknotes and checks,
-# saving inventory space while still being able to pay directly from it.
+# -----------------------------------------------------------------------------
+# PHYSICAL WALLET ITEM
+# -----------------------------------------------------------------------------
 wallet:
   enabled: true
-  # Material used for the wallet item.
+  # Material for the wallet item (any valid Bukkit material name)
   material: "LEATHER"
 
+# -----------------------------------------------------------------------------
+# SHOPS
+# -----------------------------------------------------------------------------
 shops:
-  # Name of the shop that /sell trades against. This is an ordinary shop (the
-  # seeded starter shop by default); /sell never creates a second economy, it
-  # simply sells the held item to this shop at its configured buy price.
-  global: Spawn
+  # Shop name used by /sell command (must match a created shop)
+  global: "Spawn"
+  # How many personal (player-owned) shops one account may open with /pshop.
+  max-player-shops: 1
 
+# -----------------------------------------------------------------------------
+# SOUNDS
+# -----------------------------------------------------------------------------
+# Uses 1.8 sound names (auto-converted on newer versions)
 sounds:
-  # Money-moment sound effects, played only to the one player who should hear it.
-  # Master switch: when false the whole feature is inert.
   enabled: true
-  # Playback volume, 0.0 - 1.0.
   volume: 1.0
-  # Which sound each moment plays. Use 1.8-era Sound names (e.g. NOTE_BASS,
-  # ORB_PICKUP, NOTE_PLING, LEVEL_UP, ANVIL_LAND); they are auto-translated to
-  # the modern spelling on 1.13+. An unknown name simply plays nothing.
-  pay-sent: NOTE_BASS
-  pay-received: ORB_PICKUP
-  request-received: NOTE_PLING
-  # A bounty reward being paid out to a killer.
-  bounty-collected: ANVIL_LAND
+  pay-sent: "NOTE_BASS"
+  pay-received: "ORB_PICKUP"
+  request-received: "NOTE_PLING"
+  bounty-collected: "ANVIL_LAND"
 
+# -----------------------------------------------------------------------------
+# BANKNOTE DENOMINATIONS
+# -----------------------------------------------------------------------------
+# Physical cash denominations when withdrawing from bank.
+# Largest-first greedy split. Extend for large economies.
 money:
-  # Denominations minted when the bank pays out physical cash (/bank withdraw).
-  # The amount is split into these notes largest-first; any leftover that no
-  # denomination divides becomes a single odd note of the remainder. The ladder
-  # climbs to the largest sane note so big payouts fit in a pocket instead of a
-  # flood of tiny paper; it mirrors economy.max-balance, so admins running an
-  # enormous economy should extend it further (the mint stays bounded regardless
-  # - amounts above the largest note are handed out as a few ad-hoc big notes).
-  # Invalid (<= 0) entries are dropped with a warning; an empty list falls back
-  # to the classic small set.
   denominations: [1, 5, 10, 50, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000]
+
+# -----------------------------------------------------------------------------
+# THIRD-PARTY INTEGRATIONS
+# -----------------------------------------------------------------------------
+# All optional. Minted works 100% standalone. Enable only what you need.
+integrations:
+  # Fire MintedBalanceChangeEvent for other plugins to listen to
+  events: true
+  
+  # Which balance Vault/Placeholders/API see: "bank" (recommended) or "wallet"
+  primary-balance: "bank"
+  
+  # VAULT - Make Minted the server economy for EssentialsX, Towny, shops, etc.
+  vault:
+    register: false  # Set true if you have Vault and want other plugins to use Minted
+  
+  # PLACEHOLDERAPI - Enable %minted_*% placeholders
+  placeholders:
+    register: true
+  
+  # ESSENTIALSX - Warn if Essentials runs its own economy alongside Minted
+  essentials:
+    warn: true
+  
+  # PROTOCOLLIB - Bank teller NPCs (fake players, no Citizens needed)
+  npcs:
+    enabled: true
+    # Seconds teller stays in tab list before hiding (lets skin download)
+    tab-hide-seconds: 5
+    # Default teller display name, used when /minted npc create is run
+    # without a name. & colour codes work (&e = yellow). The mock-player
+    # username is this name with colours stripped, e.g. "&eBanker" -> "Banker".
+    name: "&eBanker"
+    # Default teller skin: a mustachioed bank man in a suit (textures value).
+    # The value alone renders on most setups; servers that enforce secure
+    # profiles may show Steve for unsigned values. To guarantee a Mojang-signed
+    # skin, set skin-player to any player name and Minted fetches it live.
+    skin-value: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTAxMDA4ZTFkOGI5MjRhOGQ0YjFkMTFmMmZkMWNmZmE0YzdjZWFlYTBlNzhiZmZkYWJkM2NlODFkZjdmOTI4YiJ9fX0="
+    skin-signature: ""
+    skin-player: ""
+
+# =============================================================================
+# QUICK REFERENCE: COMMON SETUPS
+# =============================================================================
+# 
+# CLASSIC DIGITAL ECONOMY (Essentials-style):
+#   economy.physical: false
+#   economy.starting-balance: 1000
+#   bank.interest.enabled: false
+#   bank.loan.enabled: false
+#   bounty.enabled: false
+#   auction.enabled: false
+# 
+# HARDCORE PHYSICAL ECONOMY (Hermitcraft-style):
+#   economy.physical: true
+#   economy.starting-balance: 0
+#   bank.fee.withdraw-percent: 1.0
+#   bank.fee.transfer-percent: 0.5
+#   bank.hit-lock.enabled: true
+# 
+# RPG SERVER WITH MULTIPLE CURRENCIES:
+#   multi-currency.enabled: true
+#   multi-currency.base.id: "gold"
+#   multi-currency.base.name: "Gold"
+#   multi-currency.base.symbol: "⛁"
+#   # Then in-game: /currency create silver Silver ⛂ 100 1
+#   # And: /currency create copper Copper ⛃ 10000 2
+# 
+# MINIMAL / LIGHTWEIGHT (just balances + pay + shop):
+#   bank.interest.enabled: false
+#   bank.loan.enabled: false
+#   bounty.enabled: false
+#   auction.enabled: false
+#   wallet.enabled: false
+#   resource-pack.enabled: false
+#   sounds.enabled: false
+# 
+# NETWORK / BUNGEECORD (MySQL):
+#   database.type: "mysql"
+#   database.host: "db.example.com"
+#   database.database: "minted_network"
+#   database.username: "minted"
+#   database.password: "secure_password"
+#   integrations.vault.register: true
+# =============================================================================

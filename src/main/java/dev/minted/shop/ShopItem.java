@@ -103,6 +103,29 @@ public final class ShopItem {
         return item.clone();
     }
 
+    /**
+     * Whether {@code other} is the same kind of goods as this listing: the same
+     * material, and the same durability only where durability is identity
+     * (legacy data-values on materials with no health bar) rather than tool
+     * damage. Display-name cosmetics never change identity, so a wild apple can
+     * be sold to a listing whose icon wears a shop name, and a repaired axe
+     * sells like a scraped one.
+     */
+    public boolean sameAs(ItemStack other) {
+        return sameStock(other, item);
+    }
+
+    /** {@code a} and {@code b} are the same kind of goods; see {@link #sameAs}. */
+    public static boolean sameStock(ItemStack a, ItemStack b) {
+        if (a == null || b == null || a.getType() != b.getType()) {
+            return false;
+        }
+        if (a.getType().getMaxDurability() == 0 && a.getDurability() != b.getDurability()) {
+            return false;
+        }
+        return true;
+    }
+
     ItemStack raw() {
         return item;
     }

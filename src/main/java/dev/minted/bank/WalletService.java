@@ -61,6 +61,27 @@ public final class WalletService {
     }
 
     /**
+     * Charges the player's wallet (spends notes, or takes from the digital
+     * balance). Uses the same purse as {@code /pay}, so a payment path can
+     * debit the payer and credit a target that is not a held {@link Player}.
+     *
+     * @return true when the amount was taken; false if unready or short
+     */
+    public boolean charge(Player player, double amount) {
+        Purse purse = purseFor(player);
+        return purse != null && purse.charge(amount);
+    }
+
+    /**
+     * Rebates the player's wallet after a payment that failed to land. The
+     * physical form hands the value back as cash; the digital form deposits it.
+     */
+    public boolean refund(Player player, double amount) {
+        Purse purse = purseFor(player);
+        return purse != null && purse.credit(amount);
+    }
+
+    /**
      * Moves wallet money between two online players. Digital mode uses the atomic
      * account transfer; physical mode charges the sender's notes and pays the
      * same value to the receiver as cash.

@@ -1,6 +1,7 @@
 package dev.minted.bank;
 
 import dev.minted.backend.LoansDao;
+import dev.minted.ledger.LedgerService;
 
 import org.bukkit.plugin.Plugin;
 
@@ -25,12 +26,13 @@ public final class LoanService {
     private final double feePercent;
     private final long termMs;
     private final double lateFeePercent;
+    private final LedgerService ledger;
 
     private final Map<UUID, Loan> active = new HashMap<UUID, Loan>();
     private int nextId = 1;
 
     public LoanService(Plugin plugin, LoansDao dao, EconomyService bank,
-                       double max, double feePercent, long termMs, double lateFeePercent) {
+                       double max, double feePercent, long termMs, double lateFeePercent, LedgerService ledger) {
         this.plugin = plugin;
         this.dao = dao;
         this.bank = bank;
@@ -38,6 +40,7 @@ public final class LoanService {
         this.feePercent = feePercent;
         this.termMs = termMs;
         this.lateFeePercent = lateFeePercent;
+        this.ledger = ledger;
     }
 
     /** Maximum principal any player may borrow at once. */
@@ -103,6 +106,7 @@ public final class LoanService {
             final Loan loan = new Loan(id, uuid, amount, owed, now, now + termMs);
             active.put(uuid, loan);
             persistInsert(loan);
+            ledger.record(uuid, amount, "loan", null);
             return true;
         }
     }
@@ -119,6 +123,7 @@ public final class LoanService {
                 return false;
             }
             active.remove(uuid);
+            ledger.record(uuid, -loan.owed(), "repay", null);
             final int id = loan.id();
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
                 @Override

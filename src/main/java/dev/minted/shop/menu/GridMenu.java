@@ -52,7 +52,8 @@ public final class GridMenu extends Menu {
     }
 
     private static Design.Accent accent(Shop shop) {
-        return shop.isCommunity() ? Design.Accent.COMMUNITY : Design.Accent.SHOP;
+        return shop.isCommunity() ? Design.Accent.COMMUNITY
+                : shop.isPlayerShop() ? Design.Accent.SHOP : Design.Accent.SHOP;
     }
 
     private static String heading(Category category, String query) {
@@ -95,8 +96,9 @@ public final class GridMenu extends Menu {
 
     private List<ShopItem> view() {
         List<ShopItem> result = new ArrayList<ShopItem>();
+        boolean stockTracked = shop.isCommunity() || shop.isPlayerShop();
         for (ShopItem item : shop.allItems()) {
-            if (shop.isCommunity() && item.getStock() <= 0) {
+            if (stockTracked && item.getStock() <= 0) {
                 continue;
             }
             if (category != null && Category.byKey(item.getCategory()) != category) {
@@ -121,7 +123,7 @@ public final class GridMenu extends Menu {
 
     private ItemStack describe(ShopItem item) {
         List<String> lore = new ArrayList<String>();
-        if (shop.isCommunity()) {
+        if (shop.isCommunity() || item.getOwner() != null) {
             lore.add(Design.MONEY + "Buy: " + ChatColor.WHITE + ctx.format().format(item.getBuyPrice()) + " each");
             lore.add(Design.HINT + "In stock: " + ChatColor.WHITE + item.getStock());
             lore.add(Design.HINT + "Seller: " + ChatColor.WHITE + ownerName(item.getOwner()));
@@ -147,12 +149,14 @@ public final class GridMenu extends Menu {
         return new ClickHandler() {
             @Override
             public void click(Player player, ClickType type) {
-                if (shop.isCommunity()) {
+                // Community listings and any item owned by a player (a player
+                // shop's whole stock) trade through the market, not the void.
+                if (shop.isCommunity() || item.getOwner() != null) {
                     new ListingMenu(ctx, shop, viewer, item).open(player);
                     return;
                 }
                 if (type == ClickType.SHIFT_LEFT) {
-                    new ItemDetailMenu(ctx, shop, item, 0).open(player);
+                    new ItemDetailMenu(ctx, shop, item, 0, viewer).open(player);
                     return;
                 }
                 if (type == ClickType.SHIFT_RIGHT || type == ClickType.MIDDLE) {

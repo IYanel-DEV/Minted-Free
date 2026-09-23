@@ -64,6 +64,9 @@ public final class BountyCommand implements CommandExecutor {
             case MAX:
                 gui.messages().send(player, "bounty.max", "max", String.valueOf(bounties.maxAmount()));
                 break;
+            case TOTAL:
+                gui.messages().send(player, "bounty.total", "max", String.valueOf(bounties.maxOpen()));
+                break;
             case SHORT:
                 gui.messages().send(player, "bounty.short", "amount", String.valueOf(amount));
                 break;

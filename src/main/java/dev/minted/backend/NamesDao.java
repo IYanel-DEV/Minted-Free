@@ -72,6 +72,22 @@ public final class NamesDao {
         return result;
     }
 
+    /** The latest uuid that has been seen under the given name, or null. Blocking; async callers only. */
+    public UUID uuidByName(String name) {
+        String sql = "SELECT uuid FROM " + TABLE + " WHERE LOWER(name) = LOWER(?)"
+                + " ORDER BY name = ? DESC LIMIT 1";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, name);
+            statement.setString(2, name);
+            try (ResultSet rows = statement.executeQuery()) {
+                return rows.next() ? UUID.fromString(rows.getString(1)) : null;
+            }
+        } catch (SQLException e) {
+            throw new StorageException("Could not resolve name '" + name + "' to a uuid", e);
+        }
+    }
+
     private String placeholders(int count) {
         StringBuilder builder = new StringBuilder(count * 2);
         for (int i = 0; i < count; i++) {

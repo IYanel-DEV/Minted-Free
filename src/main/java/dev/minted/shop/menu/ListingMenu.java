@@ -29,17 +29,21 @@ public final class ListingMenu extends Menu {
     private final ShopItem listing;
 
     public ListingMenu(ShopContext ctx, Shop shop, Player viewer, ShopItem listing) {
-        super(Design.title(Design.Accent.COMMUNITY, "Listing"), 3);
+        super(Design.title(accent(shop), "Listing"), 3);
         this.ctx = ctx;
         this.shop = shop;
         this.viewer = viewer;
         this.listing = listing;
     }
 
+    private static Design.Accent accent(Shop shop) {
+        return shop.isPlayerShop() ? Design.Accent.SHOP : Design.Accent.COMMUNITY;
+    }
+
     @Override
     protected void build() {
         Design d = ctx.design();
-        frame(d.border(Design.Accent.COMMUNITY));
+        frame(d.border(accent(shop)));
         set(13, preview(), null);
 
         set(11, Icon.of(Material.EMERALD, Design.title(Design.Accent.SHOP, "Buy"),
@@ -49,13 +53,13 @@ public final class ListingMenu extends Menu {
                 new Consumer<Player>() {
                     @Override
                     public void accept(Player player) {
-                        new QuantityMenu(ctx, ctx.messages().get("quantity.title", "action", "Buy"),
+                        new QuantityMenu(ctx, ctx.messages().get(player, "quantity.title", "action", "Buy"),
                                 buy()).open(player);
                     }
                 });
 
         if (listing.buysBack()) {
-            set(15, Icon.of(Material.GOLD_INGOT, Design.title(Design.Accent.COMMUNITY, "Sell to owner"),
+            set(15, Icon.of(Material.GOLD_INGOT, Design.title(accent(shop), "Sell to owner"),
                     Design.lore("The owner buys these back.",
                             one(Design.IN + "Payout: " + ChatColor.WHITE
                                     + ctx.format().format(listing.getBuyBackPrice()) + " each"),
@@ -63,7 +67,7 @@ public final class ListingMenu extends Menu {
                     new Consumer<Player>() {
                         @Override
                         public void accept(Player player) {
-                            new QuantityMenu(ctx, ctx.messages().get("quantity.title", "action", "Sell"),
+                            new QuantityMenu(ctx, ctx.messages().get(player, "quantity.title", "action", "Sell"),
                                     sell()).open(player);
                         }
                     });

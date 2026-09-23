@@ -4,6 +4,8 @@ import dev.minted.bank.BankAccount;
 import dev.minted.bank.EconomyService;
 import dev.minted.bank.MoneyFormat;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -70,6 +72,14 @@ public final class MintedEconomyImpl implements MintedEconomy {
     @Override
     public boolean setBalance(UUID player, double amount) {
         return account(player).setBalance(amount);
+    }
+
+    @Override
+    public Map<UUID, Double> snapshot() {
+        EconomyService service = primary == Primary.BANK ? bank : wallet;
+        Map<UUID, Double> balances = new HashMap<UUID, Double>(service.allBalances());
+        balances.putAll(service.cachedBalances());
+        return balances;
     }
 
     @Override

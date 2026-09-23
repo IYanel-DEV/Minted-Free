@@ -11,13 +11,15 @@ public final class ShopRow {
     private final String iconData;
     private final String currency;
     private final String type;
+    private final String owner;
 
-    public ShopRow(int id, String name, String iconData, String currency, String type) {
+    public ShopRow(int id, String name, String iconData, String currency, String type, String owner) {
         this.id = id;
         this.name = name;
         this.iconData = iconData;
         this.currency = currency;
         this.type = type;
+        this.owner = owner;
     }
 
     public int getId() {
@@ -38,5 +40,10 @@ public final class ShopRow {
 
     public String getType() {
         return type;
+    }
+
+    /** The owning player's UUID as stored, or null for an administrative shop. */
+    public String getOwner() {
+        return owner;
     }
 }

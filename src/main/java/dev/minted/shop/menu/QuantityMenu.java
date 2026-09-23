@@ -38,7 +38,7 @@ public final class QuantityMenu extends Menu {
     protected void build() {
         for (int i = 0; i < PRESETS.length; i++) {
             final int quantity = PRESETS[i];
-            set(1 + i, Icon.of(Material.PAPER, ctx.messages().get("quantity.button", "amount", String.valueOf(quantity))),
+            set(1 + i, Icon.of(Material.PAPER, ctx.messages().get(opener, "quantity.button", "amount", String.valueOf(quantity))),
                     new Consumer<Player>() {
                         @Override
                         public void accept(Player player) {
@@ -46,8 +46,8 @@ public final class QuantityMenu extends Menu {
                         }
                     });
         }
-        set(7, Icon.of(Material.NAME_TAG, ctx.messages().get("quantity.custom"),
-                        ctx.messages().get("quantity.custom-lore")),
+        set(7, Icon.of(Material.NAME_TAG, ctx.messages().get(opener, "quantity.custom"),
+                        ctx.messages().get(opener, "quantity.custom-lore")),
                 new Consumer<Player>() {
                     @Override
                     public void accept(Player player) {

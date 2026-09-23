@@ -44,6 +44,15 @@ public final class ChooseMenu extends Menu {
                     }
                 });
 
+        set(13, Icon.of(Material.CHEST, Design.title(Design.Accent.SHOP, "Player shops"),
+                Design.lore("Storefronts opened by players.", null, "Click to browse.")),
+                new Consumer<Player>() {
+                    @Override
+                    public void accept(Player player) {
+                        new PlayerShopsMenu(ctx, player).open(player);
+                    }
+                });
+
         Shop community = ctx.shops().community();
         set(15, Icon.of(community != null ? community.getIcon().getType() : Material.CHEST,
                 Design.title(Design.Accent.COMMUNITY, "Community Market"),
@@ -75,7 +84,7 @@ public final class ChooseMenu extends Menu {
         } else if (globals == 1) {
             new HomeMenu(ctx, only, player).open(player);
         } else {
-            new ShopBrowseMenu(ctx).open(player);
+            new ShopBrowseMenu(ctx, player).open(player);
         }
     }
 }

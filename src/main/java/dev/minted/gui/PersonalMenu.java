@@ -39,6 +39,16 @@ public final class PersonalMenu extends Menu {
         set(11, d.wallet(ctx.walletService().balance(viewer), ctx.format()), null);
         set(15, d.bank(ctx.bank().bankBalance(viewer.getUniqueId()), ctx.format()), null);
 
+        set(13, Icon.of(Heads.icon(Heads.booksSkin(), Material.BOOK),
+                Design.HEADING + "" + ChatColor.BOLD + "History",
+                Design.lore("Your recent money movements.",
+                        null, "Click to view your history.")), new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                HistoryMenu.open(ctx, player);
+            }
+        });
+
         String depositLore = physical ? "All banknotes in your inventory." : "Wallet into bank.";
         set(21, Icon.of(Heads.icon(Heads.moneySkin(), Material.GOLD_BLOCK),
                 Design.MONEY + "" + ChatColor.BOLD + "Deposit",
@@ -104,6 +114,9 @@ public final class PersonalMenu extends Menu {
         } else {
             ctx.messages().send(player, "bank.deposited-notes", "amount", ctx.format().format(banked));
         }
+        if (banked > 0) {
+            ctx.ledger().record(player.getUniqueId(), banked, "deposit", null);
+        }
     }
 
     private AmountMenu.AmountChoice deposit() {
@@ -122,6 +135,7 @@ public final class PersonalMenu extends Menu {
                 } else {
                     player.sendMessage(ChatColor.GREEN + "Deposited " + ChatColor.WHITE + ctx.format().format(amount)
                             + ChatColor.GREEN + ".");
+                    ctx.ledger().record(player.getUniqueId(), amount, "deposit", null);
                 }
                 new PersonalMenu(ctx, viewer).open(player);
             }
@@ -135,17 +149,33 @@ public final class PersonalMenu extends Menu {
                 BankAccount account = ctx.bankEconomy().getCached(player.getUniqueId());
                 if (account == null) {
                     player.sendMessage(ChatColor.RED + "Your account is still loading, try again in a moment.");
+                    new PersonalMenu(ctx, viewer).open(player);
+                    return;
+                }
+                double fee = dev.minted.bank.Fees.of(ctx.withdrawPercent(), amount);
+                double total = amount + fee;
+                if (account.getBalance() < total) {
+                    player.sendMessage(ChatColor.RED + "Withdraw failed - not enough in your bank.");
+                    new PersonalMenu(ctx, viewer).open(player);
                     return;
                 }
                 List<ItemStack> notes = ctx.banknotes().mint(account, amount);
                 if (notes.isEmpty()) {
                     player.sendMessage(ChatColor.RED + "Withdraw failed - not enough in your bank.");
                 } else {
+                    if (fee > 0) {
+                        account.withdraw(fee);
+                        ctx.stats().burn(fee);
+                    }
                     boolean dropped = ctx.banknotes().give(player, notes);
                     player.sendMessage(ChatColor.GREEN + "Here is " + ChatColor.WHITE + ctx.format().format(amount)
                             + ChatColor.GREEN + " in cash."
                             + (dropped ? " " + ChatColor.GRAY
                                     + "Your inventory was full, so some notes dropped at your feet." : ""));
+                    ctx.ledger().record(player.getUniqueId(), -total, "withdraw", null);
+                    if (fee > 0) {
+                        ctx.messages().send(player, "bank.fee", "amount", ctx.format().format(fee));
+                    }
                 }
                 new PersonalMenu(ctx, viewer).open(player);
             }

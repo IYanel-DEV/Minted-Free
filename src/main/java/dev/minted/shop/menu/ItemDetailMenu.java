@@ -24,13 +24,15 @@ public final class ItemDetailMenu extends Menu {
     private final Shop shop;
     private final ShopItem item;
     private final int returnPage;
+    private final Player viewer;
 
-    public ItemDetailMenu(ShopContext ctx, Shop shop, ShopItem item, int returnPage) {
-        super(ctx.messages().get("detail.title", "item", shop.getName()), 3);
+    public ItemDetailMenu(ShopContext ctx, Shop shop, ShopItem item, int returnPage, Player viewer) {
+        super(ctx.messages().get(viewer, "detail.title", "item", shop.getName()), 3);
         this.ctx = ctx;
         this.shop = shop;
         this.item = item;
         this.returnPage = returnPage;
+        this.viewer = viewer;
     }
 
     @Override
@@ -39,35 +41,35 @@ public final class ItemDetailMenu extends Menu {
         set(13, item.copy(), null);
 
         if (item.isBuyable()) {
-            set(11, Icon.of(Material.GOLD_INGOT, ctx.messages().get("detail.buy"),
-                            ctx.messages().get("detail.buy-lore", "price", ctx.format().format(item.getBuyPrice()))),
-                    openQuantity(ctx.messages().get("detail.buy"), true));
+            set(11, Icon.of(Material.GOLD_INGOT, ctx.messages().get(viewer, "detail.buy"),
+                            ctx.messages().get(viewer, "detail.buy-lore", "price", ctx.format().format(item.getBuyPrice()))),
+                    openQuantity(ctx.messages().get(viewer, "detail.buy"), true));
         } else {
-            set(11, Icon.of(Material.GOLD_INGOT, ctx.messages().get("item.not-buyable")), null);
+            set(11, Icon.of(Material.GOLD_INGOT, ctx.messages().get(viewer, "item.not-buyable")), null);
         }
 
         if (item.isSellable() && item.getSellPrice() > 0) {
-            set(15, Icon.of(Material.EMERALD, ctx.messages().get("detail.sell"),
-                            ctx.messages().get("detail.sell-lore", "price", ctx.format().format(item.getSellPrice()))),
-                    openQuantity(ctx.messages().get("detail.sell"), false));
+            set(15, Icon.of(Material.EMERALD, ctx.messages().get(viewer, "detail.sell"),
+                            ctx.messages().get(viewer, "detail.sell-lore", "price", ctx.format().format(item.getSellPrice()))),
+                    openQuantity(ctx.messages().get(viewer, "detail.sell"), false));
         } else {
-            set(15, Icon.of(Material.EMERALD, ctx.messages().get("item.not-sellable")), null);
+            set(15, Icon.of(Material.EMERALD, ctx.messages().get(viewer, "item.not-sellable")), null);
         }
 
         set(22, ctx.design().back(), new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new HomeMenu(ctx, shop, player).open(player);
+                new HomeMenu(ctx, shop, viewer).open(player);
             }
         });
     }
 
     private Consumer<Player> openQuantity(final String action, final boolean buying) {
-        final String title = ctx.messages().get("quantity.title", "action", action);
         return new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new QuantityMenu(ctx, title, trade(buying)).open(player);
+                new QuantityMenu(ctx, ctx.messages().get(player, "quantity.title", "action", action),
+                        trade(buying)).open(player);
             }
         };
     }
@@ -81,7 +83,7 @@ public final class ItemDetailMenu extends Menu {
                 } else {
                     ctx.trade().sell(player, shop, item, quantity);
                 }
-                new ItemDetailMenu(ctx, shop, item, returnPage).open(player);
+                new ItemDetailMenu(ctx, shop, item, returnPage, player).open(player);
             }
         };
     }

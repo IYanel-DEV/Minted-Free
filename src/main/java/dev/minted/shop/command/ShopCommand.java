@@ -145,7 +145,7 @@ public final class ShopCommand implements CommandExecutor {
             ctx.messages().send(player, "shop.unknown", "shop", args[1]);
             return true;
         }
-        new ShopEditorMenu(ctx, shop, 0).open(player);
+        new ShopEditorMenu(ctx, shop, 0, player).open(player);
         return true;
     }
 

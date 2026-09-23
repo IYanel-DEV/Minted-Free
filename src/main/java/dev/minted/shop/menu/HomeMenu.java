@@ -10,6 +10,7 @@ import dev.minted.shop.catalog.Category;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -40,6 +41,10 @@ public final class HomeMenu extends Menu {
         return shop.isCommunity() ? Design.Accent.COMMUNITY : Design.Accent.SHOP;
     }
 
+    private boolean stockTracked() {
+        return shop.isCommunity() || shop.isPlayerShop();
+    }
+
     @Override
     protected void build() {
         Design d = ctx.design();
@@ -64,8 +69,10 @@ public final class HomeMenu extends Menu {
                 askSearch(player);
             }
         });
-        if (shop.isCommunity()) {
-            set(48, Icon.of(Material.HOPPER, Design.title(Design.Accent.COMMUNITY, "Sell items"),
+        if (shop.isCommunity() || (shop.isPlayerShop() && shop.ownedBy(viewer.getUniqueId()))) {
+            final boolean mine = shop.isPlayerShop();
+            final Design.Accent action = mine ? Design.Accent.SHOP : Design.Accent.COMMUNITY;
+            set(48, Icon.of(Material.HOPPER, Design.title(action, "Sell items"),
                     Design.lore("List your own items for sale.", null, "Click to pick from your inventory.")),
                     new Consumer<Player>() {
                         @Override
@@ -73,7 +80,7 @@ public final class HomeMenu extends Menu {
                             new SellPickerMenu(ctx, shop, viewer).open(player);
                         }
                     });
-            set(50, Icon.of(Material.EMERALD, Design.title(Design.Accent.COMMUNITY, "My sales"),
+            set(50, Icon.of(Material.EMERALD, Design.title(action, "My sales"),
                     Design.lore("Your listings, stock and earnings.", null, "Click to manage.")),
                     new Consumer<Player>() {
                         @Override
@@ -94,7 +101,7 @@ public final class HomeMenu extends Menu {
     private Set<Category> categoriesWithStock() {
         Set<Category> present = new LinkedHashSet<Category>();
         for (ShopItem item : shop.allItems()) {
-            if (!shop.isCommunity() || item.getStock() > 0) {
+            if (!stockTracked() || item.getStock() > 0) {
                 present.add(Category.byKey(item.getCategory()));
             }
         }
@@ -103,7 +110,12 @@ public final class HomeMenu extends Menu {
 
     private org.bukkit.inventory.ItemStack categoryTile(Category category) {
         Material icon = ctx.materials().get(category.iconKey());
-        return Icon.of(icon == null ? Material.CHEST : icon, Design.title(accent(shop), category.display()),
+        if (icon == null) {
+            // If the version-aware icon cannot resolve, fall back to a material
+            // that exists on every supported server - never a placeholder.
+            icon = category.guaranteed();
+        }
+        return Icon.of(new ItemStack(icon, 1), Design.title(accent(shop), category.display()),
                 Design.lore("Browse " + category.display().toLowerCase() + ".", null, "Click to open."));
     }
 

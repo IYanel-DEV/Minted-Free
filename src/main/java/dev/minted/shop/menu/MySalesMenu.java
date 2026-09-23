@@ -28,16 +28,20 @@ public final class MySalesMenu extends Menu {
     private final Player viewer;
 
     public MySalesMenu(ShopContext ctx, Shop shop, Player viewer) {
-        super(Design.title(Design.Accent.COMMUNITY, "My sales"), 6);
+        super(Design.title(accent(shop), "My sales"), 6);
         this.ctx = ctx;
         this.shop = shop;
         this.viewer = viewer;
     }
 
+    private static Design.Accent accent(Shop shop) {
+        return shop.isPlayerShop() ? Design.Accent.SHOP : Design.Accent.COMMUNITY;
+    }
+
     @Override
     protected void build() {
         Design d = ctx.design();
-        frame(d.border(Design.Accent.COMMUNITY));
+        frame(d.border(accent(shop)));
 
         List<Integer> slots = interiorSlots();
         int i = 0;

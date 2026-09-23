@@ -1,5 +1,6 @@
 package dev.minted.integration.npc;
 
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.UUID;
@@ -18,6 +19,7 @@ public final class BankNpc {
 
     private final UUID uuid;
     private final String name;
+    private final String display;
     private final String world;
     private final double x;
     private final double y;
@@ -28,9 +30,10 @@ public final class BankNpc {
     private int entityId;
 
     public BankNpc(UUID uuid, String name, String world, double x, double y, double z, float yaw,
-                   String skinValue, String skinSignature) {
+                   String skinValue, String skinSignature, String display) {
         this.uuid = uuid;
         this.name = name;
+        this.display = display;
         this.world = world;
         this.x = x;
         this.y = y;
@@ -53,7 +56,8 @@ public final class BankNpc {
                     section.getDouble("x", 0), section.getDouble("y", 0), section.getDouble("z", 0),
                     (float) section.getDouble("yaw", 0),
                     section.getString("skin-value", ""),
-                    section.getString("skin-signature", null));
+                    section.getString("skin-signature", null),
+                    section.getString("display-name", name));
         } catch (IllegalArgumentException malformed) {
             return null;
         }
@@ -62,6 +66,7 @@ public final class BankNpc {
     public void storeTo(ConfigurationSection section) {
         section.set("uuid", uuid.toString());
         section.set("name", name);
+        section.set("display-name", display);
         section.set("world", world);
         section.set("x", x);
         section.set("y", y);
@@ -73,14 +78,14 @@ public final class BankNpc {
 
     /** @return a copy standing at the given spot, used by {@code /minted npc here}. */
     public BankNpc at(String newWorld, double newX, double newY, double newZ, float newYaw) {
-        BankNpc copy = new BankNpc(uuid, name, newWorld, newX, newY, newZ, newYaw, skinValue, skinSignature);
+        BankNpc copy = new BankNpc(uuid, name, newWorld, newX, newY, newZ, newYaw, skinValue, skinSignature, display);
         copy.entityId = entityId;
         return copy;
     }
 
     /** @return a copy wearing the given skin, used after a Mojang skin fetch. */
     public BankNpc withSkin(String newValue, String newSignature) {
-        BankNpc copy = new BankNpc(uuid, name, world, x, y, z, yaw, newValue, newSignature);
+        BankNpc copy = new BankNpc(uuid, name, world, x, y, z, yaw, newValue, newSignature, display);
         copy.entityId = entityId;
         return copy;
     }
@@ -91,6 +96,15 @@ public final class BankNpc {
 
     public String name() {
         return name;
+    }
+
+    /**
+     * @return the on-screen name: the configured display with {@code &} colour
+     *         codes translated, e.g. {@code "&eBanker"} renders as yellow
+     *         "Banker" in the name tag and tab list
+     */
+    public String display() {
+        return ChatColor.translateAlternateColorCodes('&', display);
     }
 
     public String world() {

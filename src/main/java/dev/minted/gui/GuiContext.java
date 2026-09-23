@@ -13,6 +13,7 @@ import dev.minted.banknote.BanknoteManager;
 import dev.minted.banknote.NoteInventory;
 import dev.minted.gui.theme.Design;
 import dev.minted.lang.Messages;
+import dev.minted.ledger.LedgerService;
 import dev.minted.request.RequestService;
 import dev.minted.shop.log.SaleLog;
 import dev.minted.sound.SoundFX;
@@ -48,12 +49,15 @@ public final class GuiContext {
     private final SaleLog sales;
     private final LoanService loans;
     private final BountyService bounties;
+    private final LedgerService ledger;
+    private final double withdrawPercent;
 
     public GuiContext(EconomyService wallet, EconomyService bankEconomy, BankService bank, WalletService walletService,
                       NoteInventory notes, MoneyFormat format, ChatPrompt prompt, RequestService requests,
                       double[] presets, BanknoteManager banknotes, Messages messages, CombatLock combatLock,
                       Design design, SoundFX sounds, EconomyStats stats, Plugin plugin,
-                      NamesDao names, SaleLog sales, LoanService loans, BountyService bounties) {
+                      NamesDao names, SaleLog sales, LoanService loans, BountyService bounties,
+                      LedgerService ledger, double withdrawPercent) {
         this.wallet = wallet;
         this.bankEconomy = bankEconomy;
         this.bank = bank;
@@ -74,6 +78,8 @@ public final class GuiContext {
         this.sales = sales;
         this.loans = loans;
         this.bounties = bounties;
+        this.ledger = ledger;
+        this.withdrawPercent = withdrawPercent;
     }
 
     public Design design() {
@@ -159,5 +165,14 @@ public final class GuiContext {
 
     public BountyService bounties() {
         return bounties;
+    }
+
+    LedgerService ledger() {
+        return ledger;
+    }
+
+    /** The per-withdrawal fee percent from {@code bank.fee.withdraw-percent}. */
+    double withdrawPercent() {
+        return withdrawPercent;
     }
 }

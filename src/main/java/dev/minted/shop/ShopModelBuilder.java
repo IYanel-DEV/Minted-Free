@@ -46,7 +46,7 @@ final class ShopModelBuilder {
         try {
             ItemStack icon = ItemCodec.decode(row.getIconData());
             return new Shop(row.getId(), row.getName(), icon, Currency.fromId(row.getCurrency()),
-                    ShopType.fromId(row.getType()));
+                    ShopType.fromId(row.getType()), parseUuid(row.getOwner()));
         } catch (ItemCodec.DecodeException e) {
             log.warning("Skipping shop '" + row.getName() + "': its icon could not be read.");
             return null;

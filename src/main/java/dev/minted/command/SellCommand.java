@@ -49,6 +49,18 @@ public final class SellCommand implements CommandExecutor {
             return true;
         }
 
+        Shop shop = ctx.shops().get(globalShop);
+
+        String token = args.length > 0 ? args[0].toLowerCase(Locale.ROOT) : "";
+        if ("menu".equals(token) || "gui".equals(token)) {
+            if (shop == null) {
+                ctx.messages().send(player, "sell.no-global");
+                return true;
+            }
+            new dev.minted.shop.menu.AutoSellMenu(ctx, shop, player).open(player);
+            return true;
+        }
+
         ItemStack held = player.getInventory().getItemInHand();
         // Empty hand, or a banknote: money is not shop goods, so refuse the same way.
         if (held == null || held.getType().name().equals("AIR") || banknotes.isBanknote(held)) {
@@ -61,8 +73,7 @@ public final class SellCommand implements CommandExecutor {
             return true;
         }
 
-        Shop shop = ctx.shops().get(globalShop);
-        ShopItem match = shop == null ? null : find(shop, held);
+        ShopItem match = shop == null ? null : shop.matchSellable(held);
         if (match == null) {
             ctx.messages().send(player, "sell.no-global");
             return true;
@@ -70,22 +81,6 @@ public final class SellCommand implements CommandExecutor {
 
         ctx.trade().sell(player, shop, match, amount);
         return true;
-    }
-
-    // Prefers a sellable match, but returns any similar item so Trade can answer
-    // with sell.not-sellable rather than the shop pretending not to stock it.
-    private ShopItem find(Shop shop, ItemStack held) {
-        ShopItem similar = null;
-        for (ShopItem item : shop.allItems()) {
-            if (!item.copy().isSimilar(held)) {
-                continue;
-            }
-            if (item.isSellable() && item.getSellPrice() > 0) {
-                return item;
-            }
-            similar = item;
-        }
-        return similar;
     }
 
     private int resolveAmount(Player player, String[] args, int held) {

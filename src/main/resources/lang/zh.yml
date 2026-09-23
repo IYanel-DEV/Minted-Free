@@ -1,0 +1,302 @@
+# ---------------------------------------------------------------------------
+# Minted - Chinese (Simplified) language bundle (简体中文)
+#
+# Copy this file to lang/zh.yml and translate the values.
+# The __meta section tells the plugin the display name.
+# Keys must match English exactly - only change the text after the colon.
+# Use & color codes and {placeholder} tokens.
+# ---------------------------------------------------------------------------
+
+__meta:
+  name: "简体中文"
+
+common:
+  none: "未设置"
+
+shop:
+  player-only: "&c只有玩家可以浏览商店。"
+  not-ready: "&c商店仍在加载，请稍后再试。"
+  no-shops: "&c没有可打开的商店。"
+  unknown: "&c不存在名为 &f{shop}&c 的商店。"
+  usage: "&c用法: /{label} [shop]"
+  no-permission: "&c你没有权限在此使用商店。"
+
+  admin:
+    no-permission: "&c你没有权限管理商店。"
+    hold-item: "&c请先将要使用的物品拿在手中。"
+    create-usage: "&c用法: /{label} create <名称>"
+    exists: "&c已存在名为 &f{shop}&c 的商店。"
+    created: "&a商店 &f{shop}&a 已创建。使用 &f/eshop edit {shop}&a 来上架商品。"
+    delete-usage: "&c用法: /{label} delete <名称>"
+    deleted: "&a商店 &f{shop}&a 已删除。"
+    edit-usage: "&c用法: /{label} edit <名称>"
+    reloaded: "&a已从数据库重新加载所有商店。"
+    currency-usage: "&c用法: /{label} setcurrency <shop> wallet|bank"
+    currency-invalid: "&c货币必须是 &fwallet&c 或 &fbank&c。"
+    currency-changed: "&a商店 &f{shop}&a 现在以 &f{currency}&a 进行交易。"
+
+browse:
+  title: "&2商店"
+  open-lore: "&7点击打开。"
+
+menu:
+  title: "&2{shop} &8| &7{currency}"
+  category-all: "&e所有物品"
+  category-uncategorised: "&e未分类"
+  category: "&e{category}"
+  category-lore: "&7分类标签。"
+  prev-page: "&e上一页"
+  next-page: "&e下一页"
+  page-info: "&7第 &f{page}&7 页，共 &f{pages}&7 页"
+  back: "&7返回商店列表"
+
+item:
+  buy-lore: "&7购买: &a{price}"
+  sell-lore: "&7出售: &a{price}"
+  not-buyable: "&7购买: &c不可用"
+  not-sellable: "&7出售: &c不可用"
+  hint: "&7左键购买 | &e右键出售 | &eShift+右键全部出售 | &8Shift+左键选择数量"
+
+detail:
+  title: "&2{item}"
+  buy: "&a购买"
+  sell: "&e出售"
+  buy-lore: "&7单价: &a{price}"
+  sell-lore: "&7单价收益: &a{price}"
+
+quantity:
+  title: "&2{action}"
+  button: "&e{amount}"
+  custom: "&e自定义数量"
+  custom-lore: "&7在聊天中输入数字，或输入 'cancel'。"
+  prompt: "&7在聊天中输入数量，或 &fcancel&7。"
+  invalid: "&c这不是有效的数量。"
+  cancelled: "&7已取消。"
+
+buy:
+  not-ready: "&c你的账户仍在加载，请稍后再试。"
+  not-buyable: "&c该物品此处不出售。"
+  insufficient: "&c你买不起。需要 &f{price}&c。"
+  success: "&a你花费 &f{price}&a 购买了 &f{quantity}x {item}&a。余额: &f{balance}&a。"
+  discount: "&7已应用 &f{percent}%&7 的折扣。"
+  overflow: "&7你的背包已满，部分物品掉落在了地上。"
+
+sell:
+  not-ready: "&c你的账户仍在加载，请稍后再试。"
+  not-sellable: "&c该物品无法在此出售。"
+  none: "&c你没有 &f{item}&c 可出售。"
+  cap: "&c该交易会超出你的余额上限。"
+  success: "&a你出售了 &f{quantity}x {item}&a，获得 &f{earned}&a。余额: &f{balance}&a。"
+  bonus: "&7已应用 &f{factor}x&7 的出售加成。"
+  hold: "&c请手持要出售的物品 - 钱不是商品。"
+  no-global: "&c全局商店不收购该物品。"
+  amount-invalid: "&c请输入数量、&ftodo&c 或留空。"
+
+bank:
+  cash-out: "&a给你 &f{amount}&a 现金。"
+  cash-out-dropped: "&a给你 &f{amount}&a 现金。&7你的背包已满，部分钞票掉在了地上 - 请捡起来。"
+  deposited-notes: "&a已存入 &f{amount}&a。"
+  deposited-partial: "&a已存入 &f{banked}&a。&7你的银行已满 - &f{left}&7 仍在你的背包中。"
+  no-notes: "&c你没有拿着钞票。"
+  full: "&c你的银行已满。"
+  fee: "&7已扣除 &f{amount}&7 的手续费。"
+  combat-lock: "&c你正在战斗中 - 还有 {seconds} 秒才能存款。"
+  loan:
+    active: "&c你已有未偿还的贷款。"
+    taken: "&a从银行借出 &f{amount}&a。请在到期前偿还 &f{owed}&a。"
+    invalid: "&c请输入大于零的贷款金额。"
+    limit: "&c贷款上限为 &f{max}&a。"
+    not-ready: "&c你的账户仍在加载，请稍后再试。"
+    cap: "&c你的银行存不下这么多 - 贷款会超出其上限。"
+    short: "&c你银行里的钱不够 - 还需 &f{owed}&c。"
+    repaid: "&a贷款已偿还 - &f{owed}&a 已结清。"
+    none: "&c你没有需要偿还的贷款。"
+
+editor:
+  title: "&2编辑 {shop} &8| &7第 {page}/{pages} 页"
+  add-hint: "&e添加物品"
+  add-hint-lore: "&7手持物品并点击空槽位，"
+  add-hint-lore2: "&7或点击此处放入第一个空位。"
+  slot-hint: "&8左键点击已有物品的槽位进行编辑。"
+  rename: "&e重命名商店"
+  rename-lore: "&7在聊天中输入新名称。"
+  rename-prompt: "&7输入商店的新名称，或 &fcancel&7。"
+  renamed: "&a商店已重命名为 &f{shop}&a。"
+  set-icon: "&e设置菜单图标"
+  set-icon-lore: "&7使用你手中的物品。"
+  icon-set: "&a商店图标已更新。"
+  currency: "&e货币: &f{currency}"
+  currency-lore: "&7点击切换 wallet/bank。"
+  currency-changed: "&a商店现在以 &f{currency}&a 进行交易。"
+  add-page: "&e添加页面"
+  page-added: "&a已添加新页面。"
+  prev-page: "&e上一页"
+  next-page: "&e下一页"
+  placed: "&a已将 &f{item}&a 添加到商店。"
+  replaced: "&a物品已替换为 &f{item}&a。"
+  removed: "&a物品已移除。"
+  page-full: "&c此页面已满。"
+
+community:
+  search:
+    prompt: "&7输入以搜索，或 &fcancel&7。"
+  list:
+    hold: "&c请从背包中选择要出售的物品。"
+    banknote: "&c钞票是钱不是商品 - 不能上架。"
+    price-invalid: "&c请输入大于零的购买价格。"
+    none: "&c你没有该物品可以上架。"
+    full: "&c社区市场目前已满。"
+    created: "&a已上架 &f{quantity}x {item}&a，单价 &f{price}&a。"
+    price-prompt: "&7输入买家支付的单价，或 &fcancel&7。"
+    buyback-prompt: "&7输入单价回收价格，输入 &fnone&7 关闭回收，或 &fcancel&7。"
+  buy:
+    gone: "&c该商品已不可用。"
+    own: "&c你不能购买自己发布的商品。"
+    not-ready: "&c你的账户仍在加载，请稍后再试。"
+    insufficient: "&c你买不起。需要 &f{price}&c。"
+    success: "&a你花费 &f{price}&a 购买了 &f{quantity}x {item}&a。"
+    overflow: "&7你的背包已满，部分物品掉落在了地上。"
+  sell:
+    closed: "&c该商品不回收物品。"
+    own: "&c你不能出售给自己的商品。"
+    owner-offline: "&c卖家不在线，因此回收已关闭。"
+    owner-broke: "&c卖家现在没钱回收。"
+    cap: "&c该交易会超出你的余额上限 - 物品已退还。"
+    full: "&c该商品已满。"
+    none: "&c你没有 &f{item}&c 可出售。"
+    success: "&a你出售了 &f{quantity}x {item}&a，获得 &f{earned}&a。"
+  collect:
+    none: "&c该商品没有可领取的收益。"
+    done: "&a已领取 &f{amount}&a 的销售收益。"
+    cap: "&c领取会超出你的余额上限 - 请先消费或存款。"
+  withdraw:
+    done: "&a已取出 &f{quantity}&a 个物品到背包。"
+
+slot:
+  title: "&2编辑槽位"
+  set-buy: "&e设置购买价格"
+  set-sell: "&e设置出售价格"
+  set-category: "&e设置分类"
+  replace: "&e用手中物品替换"
+  remove: "&c移除物品"
+  back: "&7返回"
+  buy-current: "&7购买: &f{price}"
+  sell-current: "&7出售: &f{price}"
+  category-current: "&7分类: &f{category}"
+  buy-prompt: "&7输入购买价格，输入 &f-1&7 禁用，或 &fcancel&7。"
+  sell-prompt: "&7输入出售价格，输入 &f-1&7 禁用，或 &fcancel&7。"
+  category-prompt: "&7输入分类，输入 &fclear&7 清除，或 &fcancel&7。"
+  price-invalid: "&c这不是有效价格。"
+  buy-set: "&a购买价格已设为 &f{price}&a。"
+  buy-cleared: "&a已为该物品禁用购买。"
+  sell-set: "&a出售价格已设为 &f{price}&a。"
+  sell-cleared: "&a已为该物品禁用出售。"
+  category-set: "&a分类已设为 &f{category}&a。"
+  category-cleared: "&a分类已清除。"
+  replaced: "&a该槽位的物品已替换。"
+
+bounty:
+  usage: "&c用法: /{label} <玩家> <金额> [备注]"
+  no-permission: "&c你没有权限使用赏金。"
+  placed: "&a已在 &f{target}&a 上设置 &f{amount}&a 的赏金。"
+  self: "&c你不能在自己身上设置赏金。"
+  invalid: "&c这不是有效的玩家或金额。"
+  min: "&c最低赏金为 &f{min}&c。"
+  max: "&c最高赏金为 &f{max}&c。"
+  total: "&c这会同时设置超过 &f{max}&c 的赏金。"
+  expired: "&e一笔 &f{amount}&e 的赏金已过期，已退还到你的银行。"
+  short: "&c你的银行里没有 &f{amount}&c。"
+  not-ready: "&c你的账户仍在加载。"
+  collected: "&a你领取了 &f{target}&a 上 &f{amount}&a 的赏金！"
+  claimed-broadcast: "&e{killer}&c 领取了 &f{target}&c 的赏金: &f{amount}&a！"
+  cap: "&c你已达到银行上限 - 赏金无法支付。"
+  refunded: "&a已退还 &f{amount}&a 到你的银行。"
+  refund-failed: "&c该赏金无法退还。"
+  none-mine: "&7你没有对该玩家的赏金需要退还。"
+
+wallet:
+  disabled: "&c此服务器已禁用钱包。"
+  give: "&a这是你的钱包 - 持有时它会清点你的现金。&f右键打开。"
+  give-full: "&a这是你的钱包 - &7你的背包已满，它掉在了地上。"
+  cannot-store: "&c此服务器无法存储钱包内容 - 钱包不可用。"
+  deposit-none: "&c你没有拿着钞票。"
+  deposit: "&a已存入 &f{amount}&a 到你的钱包。"
+  deposit-partial: "&a已存入 &f{banked}&a。&7你的钱包已满 - &f{left}&7 仍在你的背包中。"
+  empty: "&a你已清空钱包。"
+  withdraw-one: "&a你从钱包取出 &f{note}&a。"
+  withdraw-all: "&a你从钱包取出 &f{count}x {note}&a。"
+  dropped: "&7你的背包已满，部分钞票掉在了地上。"
+
+language:
+  current: "&a你的语言: &f{language} &7(服务器默认: {global})"
+  current_global: "&a服务器语言: &f{language}"
+  set: "&a你的语言已设为: &f{language} &7({code})"
+  reset: "&a个人语言已重置。现在使用服务器语言: &f{language}"
+  not_available: "&c语言不可用: &f{code}"
+  available_list: "&6可用语言:"
+  list_entry: "&7  &f{code} &8- &f{name} &7{marker}"
+  global_changed: "&a全局语言已更改: &f{old} &8-> &f{new} &7({code})"
+  global_notify: "&7服务器语言已更改为 &f{name} &7({code})"
+  reloaded: "&a语言文件已重新加载。"
+  usage: "&c用法: /language [set <code>|reset|list|global <code>|reload]"
+
+auction:
+  not_ready: "&c拍卖行仍在加载，请稍后再试。"
+  players_only: "&c只有玩家可以使用拍卖行。"
+
+  create:
+    start_price: "&7输入起拍价，或 &fcancel&7。"
+    price_too_low: "&c起拍价至少为 &f{min}&c。"
+    buyout: "&7输入一口价，输入 &f0&7 仅竞拍，或 &fcancel&7。"
+    buyout_change: "&7输入新的一口价，输入 &f0/none/remove&7 清除，或 &fcancel&7。"
+    buyout_too_low: "&c一口价必须高于起拍价。"
+    duration: "&7输入时长（小时，1-168），或 &fcancel&7。可用 &f10m&7 表示分钟。"
+    max_reached: "&c你同时最多只能有 &f{max}&c 个进行中的拍卖。"
+    success: "&a已创建 &f{quantity}x {item}&a 的拍卖，起价 &f{price}&a。"
+    failed: "&c无法创建拍卖。请确保你有物品且余额足够支付手续费。"
+
+  bid:
+    prompt: "&7输入你的出价，或 &fcancel&7。必须高于 &f{current}&7。"
+    invalid_amount: "&c这不是有效的金额。"
+    placed: "&a已对 &f{item}&a 出价 &f{price}&a。"
+    failed: "&c无法出价。请确保你有足够的余额。"
+    success: "&a你的出价 &f{price}&a 现在是最高的。"
+    outbid: "&e你在 &f{item}&e 上被超越了！你的出价 &f{old}&e 已退还。"
+    received: "&e有人对你的 &f{item}&e 拍卖出价 &f{price}&e。"
+    buyout: "&e你的 &f{item}&e 拍卖已被一口价 &f{price}&e 买下！"
+
+  buyout:
+    confirm: "&7输入 &fyes&7 确认以 &f{price}&7 一口价购买，或 &fcancel&7。"
+    success: "&a你以 &f{price}&a 购买了 &f{item}&a！"
+    failed: "&c无法完成一口价购买。"
+
+  cancel:
+    confirm: "&7输入 &fyes&7 确认取消该拍卖，或 &fcancel&7。"
+    cancelled: "&a已取消 &f{item}&a 的拍卖。"
+
+  win:
+    overflow: "&7你的背包已满，物品掉在了地上。"
+
+  won:
+    success: "&a你以 &f{price}&a 赢得了 &f{item}&a 的拍卖！"
+
+  expired:
+    no_bids: "&e你的 &f{item}&e 拍卖无人出价已结束。物品已退还。"
+    overflow: "&7你的背包已满，物品掉在了地上。"
+
+  sold:
+    success: "&a你的 &f{item}&a 拍卖以 &f{price}&a 卖给了 &f{buyer}&a。"
+
+  cmd:
+    usage: "&c用法: /ah [create|my|bids|expire <id>|cancel <id>|reload]"
+    usage_expire: "&c用法: /ah expire <id>"
+    usage_cancel: "&c用法: /ah cancel <id>"
+    invalid_id: "&c无效的拍卖 ID。"
+    expired: "&a拍卖 &f{id}&a 已结束。"
+    not_yours: "&c该拍卖不属于你。"
+    reloaded: "&a拍卖行已重新加载。"
+
+  search:
+    prompt: "&7输入以搜索拍卖，或 &fcancel&7。"
+
+  listing_fee: "&7已收取 &f{percent}%&7 的上架费: &f{fee}&7。"

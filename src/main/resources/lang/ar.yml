@@ -1,0 +1,302 @@
+# ---------------------------------------------------------------------------
+# Minted - Arabic language bundle (العربية)
+#
+# Copy this file to lang/ar.yml and translate the values.
+# The __meta section tells the plugin the display name.
+# Keys must match English exactly - only change the text after the colon.
+# Use & color codes and {placeholder} tokens.
+# ---------------------------------------------------------------------------
+
+__meta:
+  name: "العربية"
+
+common:
+  none: "غير محدد"
+
+shop:
+  player-only: "&cاللاعبون فقط يمكنهم تصفح المتاجر."
+  not-ready: "&cالمتاجر ما زالت قيد التحميل، حاول مرة أخرى بعد لحظات."
+  no-shops: "&cلا توجد متاجر لفتحها."
+  unknown: "&cلا يوجد متجر يسمى &f{shop}&c."
+  usage: "&cالاستخدام: /{label} [shop]"
+  no-permission: "&cلا تملك صلاحية استخدام المتاجر هنا."
+
+  admin:
+    no-permission: "&cلا تملك صلاحية إدارة المتاجر."
+    hold-item: "&cأمسك أولاً العنصر الذي تريد استخدامه في يدك."
+    create-usage: "&cالاستخدام: /{label} create <name>"
+    exists: "&cيوجد متجر يسمى &f{shop}&c بالفعل."
+    created: "&aتم إنشاء المتجر &f{shop}&a. استخدم &f/eshop edit {shop}&a لتزويده بالسلع."
+    delete-usage: "&cالاستخدام: /{label} delete <name>"
+    deleted: "&aتم حذف المتجر &f{shop}&a."
+    edit-usage: "&cالاستخدام: /{label} edit <name>"
+    reloaded: "&aأعيد تحميل جميع المتاجر من قاعدة البيانات."
+    currency-usage: "&cالاستخدام: /{label} setcurrency <shop> wallet|bank"
+    currency-invalid: "&cيجب أن تكون العملة &fwallet&c أو &fbank&c."
+    currency-changed: "&aالمتجر &f{shop}&a يتداول الآن بـ &f{currency}&a."
+
+browse:
+  title: "&2المتاجر"
+  open-lore: "&7انقر للفتح."
+
+menu:
+  title: "&2{shop} &8| &7{currency}"
+  category-all: "&eكل العناصر"
+  category-uncategorised: "&eبدون تصنيف"
+  category: "&e{category}"
+  category-lore: "&7وسم الفئة."
+  prev-page: "&eالصفحة السابقة"
+  next-page: "&eالصفحة التالية"
+  page-info: "&7الصفحة &f{page}&7 من &f{pages}"
+  back: "&7العودة إلى المتاجر"
+
+item:
+  buy-lore: "&7شراء: &a{price}"
+  sell-lore: "&7بيع: &a{price}"
+  not-buyable: "&7شراء: &cغير متاح"
+  not-sellable: "&7بيع: &cغير متاح"
+  hint: "&7يسار شراء | &eيمين بيع | &eShift+يمين بيع الكل | &8Shift+يسار الكمية"
+
+detail:
+  title: "&2{item}"
+  buy: "&aشراء"
+  sell: "&eبيع"
+  buy-lore: "&7السعر للوحدة: &a{price}"
+  sell-lore: "&7الدفعة للوحدة: &a{price}"
+
+quantity:
+  title: "&2{action}"
+  button: "&e{amount}"
+  custom: "&eكمية مخصصة"
+  custom-lore: "&7أدخل رقماً في الدردشة أو 'إلغاء'."
+  prompt: "&7أدخل كمية في الدردشة أو &fإلغاء&7."
+  invalid: "&cهذه ليست كمية صحيحة."
+  cancelled: "&7تم الإلغاء."
+
+buy:
+  not-ready: "&cحسابك ما زال قيد التحميل، حاول مرة أخرى بعد لحظات."
+  not-buyable: "&cهذا العنصر غير معروض للبيع هنا."
+  insufficient: "&cلا تستطيع تحمّل ذلك. التكلفة &f{price}&c."
+  success: "&aاشتريت &f{quantity}x {item}&a مقابل &f{price}&a. الرصيد: &f{balance}&a."
+  discount: "&7تم تطبيق خصم &f{percent}%&7."
+  overflow: "&7كان حقيبتك ممتلئة، لذا سقطت بعض العناصر على الأرض."
+
+sell:
+  not-ready: "&cحسابك ما زال قيد التحميل، حاول مرة أخرى بعد لحظات."
+  not-sellable: "&cلا يمكن بيع هذا العنصر هنا."
+  none: "&cليس لديك &f{item}&c للبيع."
+  cap: "&cهذا البيع سيتجاوز حد رصيدك."
+  success: "&aبعت &f{quantity}x {item}&a مقابل &f{earned}&a. الرصيد: &f{balance}&a."
+  bonus: "&7تم تطبيق مكافأة بيع &f{factor}x&7."
+  hold: "&cأمسك شيئاً للبيع - المال ليس سلعة."
+  no-global: "&cالمتجر العام لا يشتري هذا العنصر."
+  amount-invalid: "&cأدخل كمية أو &fكل&c أو اتركه فارغاً."
+
+bank:
+  cash-out: "&aتفضل &f{amount}&a نقداً."
+  cash-out-dropped: "&aتفضل &f{amount}&a نقداً. &7كانت حقيبتك ممتلئة، لذا بعض الأوراق على الأرض - التقطها."
+  deposited-notes: "&aتم إيداع &f{amount}&a."
+  deposited-partial: "&aتم إيداع &f{banked}&a. &7بنكك ممتلئ - &f{left}&a تبقى في حقيبتك."
+  no-notes: "&cأنت لا تحمل أوراقاً نقدية."
+  full: "&cبنكك ممتلئ."
+  fee: "&7تم خصم رسوم &f{amount}&7."
+  combat-lock: "&cأنت في قتال - لا يمكنك الإيداع لمدة {seconds} ثانية إضافية."
+  loan:
+    active: "&cلديك قرض قيد السداد بالفعل."
+    taken: "&aاقتربت &f{amount}&a من البنك. سدد &f{owed}&a قبل الموعد النهائي."
+    invalid: "&cأدخل مبلغ قرض أكبر من صفر."
+    limit: "&cالقروض محدودة بـ &f{max}&a."
+    not-ready: "&cحسابك ما زال قيد التحميل، حاول مرة أخرى بعد لحظات."
+    cap: "&cبنكك لا يتسع لكل ذلك - القرض سيتجاوز حده."
+    short: "&cليس لديك ما يكفي في البنك - عليك &f{owed}&c."
+    repaid: "&aتم سداد القرض - تم تصفية &f{owed}&a."
+    none: "&cليس لديك قرض لتسديده."
+
+editor:
+  title: "&2تحرير {shop} &8| &7صفحة {page}/{pages}"
+  add-hint: "&eإضافة عنصر"
+  add-hint-lore: "&7أمسك عنصراً وانقر خانة فارغة،"
+  add-hint-lore2: "&7أو انقر هنا لوضعه في أول خانة شاغرة."
+  slot-hint: "&8نقر يسار على خانة بها مخزون لتحريرها."
+  rename: "&eإعادة تسمية المتجر"
+  rename-lore: "&7أدخل الاسم الجديد في الدردشة."
+  rename-prompt: "&7أدخل اسم المتجر الجديد أو &fإلغاء&7."
+  renamed: "&aتمت إعادة تسمية المتجر إلى &f{shop}&a."
+  set-icon: "&eتعيين أيقونة القائمة"
+  set-icon-lore: "&7تستخدم العنصر في يدك."
+  icon-set: "&aتم تحديث أيقونة المتجر."
+  currency: "&eالعملة: &f{currency}"
+  currency-lore: "&7انقر للتبديل بين wallet/bank."
+  currency-changed: "&aالمتجر يتداول الآن بـ &f{currency}&a."
+  add-page: "&eإضافة صفحة"
+  page-added: "&aتمت إضافة صفحة جديدة."
+  prev-page: "&eالصفحة السابقة"
+  next-page: "&eالصفحة التالية"
+  placed: "&aتمت إضافة &f{item}&a إلى المتجر."
+  replaced: "&aتم استبدال العنصر بـ &f{item}&a."
+  removed: "&aتمت إزالة العنصر."
+  page-full: "&cهذه الصفحة ممتلئة."
+
+community:
+  search:
+    prompt: "&7أدخل للبحث أو &fإلغاء&7."
+  list:
+    hold: "&cاختر عنصراً من حقيبتك للبيع."
+    banknote: "&cالأوراق النقدية مال وليست سلعة - لا يمكن عرضها."
+    price-invalid: "&cأدخل سعر شراء أكبر من صفر."
+    none: "&cليس لديك هذا العنصر لعرضه."
+    full: "&cسوق المجتمع ممتلئ حالياً."
+    created: "&aتم عرض &f{quantity}x {item}&a بسعر &f{price}&a للوحدة."
+    price-prompt: "&7أدخل السعر الذي يدفعه المشترون للوحدة أو &fإلغاء&7."
+    buyback-prompt: "&7أدخل سعر إعادة الشراء للوحدة، &fلا شيء&7 للإغلاق، أو &fإلغاء&7."
+  buy:
+    gone: "&cهذا العرض لم يعد متاحاً."
+    own: "&cلا يمكنك الشراء من عرضك الخاص."
+    not-ready: "&cحسابك ما زال قيد التحميل، حاول مرة أخرى بعد لحظات."
+    insufficient: "&cلا تستطيع تحمّل ذلك. التكلفة &f{price}&c."
+    success: "&aاشتريت &f{quantity}x {item}&a مقابل &f{price}&a."
+    overflow: "&7كانت حقيبتك ممتلئة، لذا سقطت بعض العناصر على الأرض."
+  sell:
+    closed: "&cهذا العرض لا يعيد شراء العناصر."
+    own: "&cلا يمكنك البيع إلى عرضك الخاص."
+    owner-offline: "&cالمالك غير متصل، لذا إعادة شراءه مغلقة."
+    owner-broke: "&cالمالك لا يستطيع تحمّل إعادة الشراء الآن."
+    cap: "&cهذا البيع سيتجاوز حد رصيدك - أعيدت عناصرك."
+    full: "&cهذا العرض ممتلئ بالفعل."
+    none: "&cليس لديك &f{item}&c للبيع."
+    success: "&aبعت &f{quantity}x {item}&a مقابل &f{earned}&a."
+  collect:
+    none: "&cلا يوجد ما يُجمع من هذا العرض."
+    done: "&aتم جمع &f{amount}&a من مبيعاتك."
+    cap: "&cهذا التحصيل سيتجاوز حد رصيدك - أنفق أو أودع أولاً."
+  withdraw:
+    done: "&aتم سحب &f{quantity}&a وحدة إلى حقيبتك."
+
+slot:
+  title: "&2تحرير الخانة"
+  set-buy: "&eتعيين سعر الشراء"
+  set-sell: "&eتعيين سعر البيع"
+  set-category: "&eتعيين الفئة"
+  replace: "&eاستبدال بالعنصر في يدك"
+  remove: "&cإزالة العنصر"
+  back: "&7رجوع"
+  buy-current: "&7شراء: &f{price}"
+  sell-current: "&7بيع: &f{price}"
+  category-current: "&7الفئة: &f{category}"
+  buy-prompt: "&7أدخل سعر الشراء، &f-1&7 للتعطيل، أو &fإلغاء&7."
+  sell-prompt: "&7أدخل سعر البيع، &f-1&7 للتعطيل، أو &fإلغاء&7."
+  category-prompt: "&7أدخل فئة، &fمسح&7 للإزالة، أو &fإلغاء&7."
+  price-invalid: "&cهذه ليست سعراً صحيحاً."
+  buy-set: "&aتم تعيين سعر الشراء إلى &f{price}&a."
+  buy-cleared: "&aتم تعطيل الشراء لهذا العنصر."
+  sell-set: "&aتم تعيين سعر البيع إلى &f{price}&a."
+  sell-cleared: "&aتم تعطيل البيع لهذا العنصر."
+  category-set: "&aتم تعيين الفئة إلى &f{category}&a."
+  category-cleared: "&aتم مسح الفئة."
+  replaced: "&aتم استبدال العنصر في هذه الخانة."
+
+bounty:
+  usage: "&cالاستخدام: /{label} <player> <amount> [note]"
+  no-permission: "&cلا تملك صلاحية استخدام المكافآت."
+  placed: "&aتم وضع مكافأة &f{amount}&a على &f{target}&a."
+  self: "&cلا يمكنك وضع مكافأة على نفسك."
+  invalid: "&cهذا ليس لاعباً أو مبلغاً صحيحاً."
+  min: "&cالحد الأدنى للمكافأة &f{min}&c."
+  max: "&cالحد الأقصى للمكافأة &f{max}&c."
+  total: "&cسيضع ذلك أكثر من &f{max}&c من المكافآت دفعة واحدة."
+  expired: "&eانتهت مكافأة &f{amount}&e وتم ردّها إلى بنكك."
+  short: "&cليس لديك &f{amount}&c في بنكك."
+  not-ready: "&cحسابك ما زال قيد التحميل."
+  collected: "&aحصلت على &f{amount}&a من مكافأة &f{target}&a!"
+  claimed-broadcast: "&e{killer}&c استلم المكافأة على &f{target}&c: &f{amount}&a!"
+  cap: "&cوصلت إلى حد بنكك - لم يتم دفع المكافأة."
+  refunded: "&aتم رد &f{amount}&a إلى بنكك."
+  refund-failed: "&cتعذر رد هذه المكافأة."
+  none-mine: "&cلا توجد لديك مكافأة لردّها على هذا اللاعب."
+
+wallet:
+  disabled: "&cالمحافظ معطلة على هذا الخادم."
+  give: "&aتفضل محفظتك - تعد نقدك وأنت تحملها. &fنقر يمين للفتح."
+  give-full: "&aتفضل محفظتك. &7كانت حقيبتك ممتلئة، لذا سقطت على الأرض."
+  cannot-store: "&cهذا الخادم لا يستطيع تخزين محتوى المحافظ - المحافظ غير متاحة."
+  deposit-none: "&cأنت لا تحمل أوراقاً نقدية."
+  deposit: "&aتم إيداع &f{amount}&a في محفظتك."
+  deposit-partial: "&aتم إيداع &f{banked}&a. &7محفظتك ممتلئة - &f{left}&a تبقى في حقيبتك."
+  empty: "&aأفرغت محفظتك بالكامل."
+  withdraw-one: "&aسحبت &f{note}&a من محفظتك."
+  withdraw-all: "&aسحبت &f{count}x {note}&a من محفظتك."
+  dropped: "&7كانت حقيبتك ممتلئة، لذا سقطت بعض الأوراق على الأرض."
+
+language:
+  current: "&aلغتك: &f{language} &7(الافتراضي للخادم: {global})"
+  current_global: "&aلغة الخادم: &f{language}"
+  set: "&aتم تعيين لغتك إلى: &f{language} &7({code})"
+  reset: "&aتمت إعادة ضبط اللغة الشخصية. الآن تستخدم لغة الخادم: &f{language}"
+  not_available: "&cاللغة غير متاحة: &f{code}"
+  available_list: "&6اللغات المتاحة:"
+  list_entry: "&7  &f{code} &8- &f{name} &7{marker}"
+  global_changed: "&aتم تغيير اللغة العامة: &f{old} &8-> &f{new} &7({code})"
+  global_notify: "&7تم تغيير لغة الخادم إلى &f{name} &7({code})"
+  reloaded: "&aتم إعادة تحميل ملفات اللغة."
+  usage: "&cالاستخدام: /language [set <code>|reset|list|global <code>|reload]"
+
+auction:
+  not_ready: "&cدار المزادات ما زالت قيد التحميل، حاول مرة أخرى بعد لحظات."
+  players_only: "&cاللاعبون فقط يمكنهم استخدام دار المزادات."
+
+  create:
+    start_price: "&7أدخل سعر البداية أو &fإلغاء&7."
+    price_too_low: "&cيجب أن يكون سعر البداية &f{min}&c على الأقل."
+    buyout: "&7أدخل سعر الشراء الفوري، &f0&7 للمزايدة فقط، أو &fإلغاء&7."
+    buyout_change: "&7أدخل سعر الشراء الفوري الجديد، &f0/لا شيء/إزالة&7 للمسح، أو &fإلغاء&7."
+    buyout_too_low: "&cيجب أن يكون الشراء الفوري أعلى من سعر البداية."
+    duration: "&7أدخل المدة بالساعات (1-168) أو &fإلغاء&7. يمكنك استخدام &f10m&7 للدقائق."
+    max_reached: "&cيمكنك أن تملك &f{max}&c مزادات نشطة في وقت واحد فقط."
+    success: "&aتم إنشاء مزاد لـ &f{quantity}x {item}&a يبدأ من &f{price}&a."
+    failed: "&cتعذر إنشاء المزاد. تأكد من امتلاك العناصر ورصيد كافٍ للرسوم."
+
+  bid:
+    prompt: "&7أدخل مزايدتك أو &fإلغاء&7. يجب أن تكون أعلى من &f{current}&7."
+    invalid_amount: "&cهذا ليس مبلغاً صحيحاً."
+    placed: "&aتم تقديم مزايدة &f{price}&a على &f{item}&a."
+    failed: "&cتعذر تقديم المزايدة. تأكد من امتلاك رصيد كافٍ."
+    success: "&aمزايدتك &f{price}&a هي الأعلى الآن."
+    outbid: "&eتمت مزايدتك في &f{item}&e! تم رد مزايدتك &f{old}&e."
+    received: "&eقام أحدهم بمزايدة &f{price}&e على مزادك &f{item}&e."
+    buyout: "&eتم شراء مزادك &f{item}&e فوراً مقابل &f{price}&e!"
+
+  buyout:
+    confirm: "&7أدخل &fنعم&7 لتأكيد الشراء الفوري مقابل &f{price}&7 أو &fإلغاء&7."
+    success: "&aاشتريت &f{item}&a مقابل &f{price}&a!"
+    failed: "&cتعذر إتمام الشراء الفوري."
+
+  cancel:
+    confirm: "&7أدخل &fنعم&7 لتأكيد إلغاء هذا المزاد أو &fإلغاء&7."
+    cancelled: "&aتم إلغاء مزاد &f{item}&a."
+
+  win:
+    overflow: "&7كانت حقيبتك ممتلئة، لذا سقط العنصر على الأرض."
+
+  won:
+    success: "&aفزت بمزاد &f{item}&a مقابل &f{price}&a!"
+
+  expired:
+    no_bids: "&eانتهى مزادك &f{item}&e دون مزايدات. أعيد العنصر."
+    overflow: "&7كانت حقيبتك ممتلئة، لذا سقط العنصر على الأرض."
+
+  sold:
+    success: "&aتم بيع مزادك &f{item}&a مقابل &f{price}&a إلى &f{buyer}&a."
+
+  cmd:
+    usage: "&cالاستخدام: /ah [create|my|bids|expire <id>|cancel <id>|reload]"
+    usage_expire: "&cالاستخدام: /ah expire <id>"
+    usage_cancel: "&cالاستخدام: /ah cancel <id>"
+    invalid_id: "&cمعرّف مزاد غير صالح."
+    expired: "&aتم إنهاء المزاد &f{id}&a."
+    not_yours: "&cهذا المزاد ليس لك."
+    reloaded: "&aتم إعادة تحميل دار المزادات."
+
+  search:
+    prompt: "&7أدخل للبحث عن مزادات أو &fإلغاء&7."
+
+  listing_fee: "&7تم خصم رسوم عرض &f{percent}%&7: &f{fee}&7."

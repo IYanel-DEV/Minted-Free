@@ -28,13 +28,15 @@ public final class ShopEditorMenu extends Menu {
     private final ShopContext ctx;
     private final Shop shop;
     private final int page;
+    private final Player viewer;
 
-    public ShopEditorMenu(ShopContext ctx, Shop shop, int page) {
-        super(ctx.messages().get("editor.title", "shop", shop.getName(),
+    public ShopEditorMenu(ShopContext ctx, Shop shop, int page, Player viewer) {
+        super(ctx.messages().get(viewer, "editor.title", "shop", shop.getName(),
                 "page", String.valueOf(page + 1), "pages", String.valueOf(Math.max(shop.pageCount(), page + 1))), 6);
         this.ctx = ctx;
         this.shop = shop;
         this.page = page;
+        this.viewer = viewer;
     }
 
     @Override
@@ -47,18 +49,18 @@ public final class ShopEditorMenu extends Menu {
     }
 
     private void renderControls() {
-        set(45, Icon.of(Material.ARROW, ctx.messages().get("editor.prev-page")), openPage(Math.max(0, page - 1)));
-        set(46, Icon.of(Material.PAPER, ctx.messages().get("editor.add-page")), openPage(shop.pageCount()));
-        set(47, Icon.of(Material.NAME_TAG, ctx.messages().get("editor.rename"),
-                ctx.messages().get("editor.rename-lore")), rename());
-        set(48, Icon.of(Material.ITEM_FRAME, ctx.messages().get("editor.set-icon"),
-                ctx.messages().get("editor.set-icon-lore")), setIcon());
-        set(49, Icon.of(Material.BOOK, ctx.messages().get("editor.slot-hint")), null);
-        set(50, Icon.of(Material.EMERALD, ctx.messages().get("editor.currency",
-                "currency", shop.getCurrency().display()), ctx.messages().get("editor.currency-lore")), toggleCurrency());
-        set(51, Icon.of(Material.CHEST, ctx.messages().get("editor.add-hint"),
-                ctx.messages().get("editor.add-hint-lore"), ctx.messages().get("editor.add-hint-lore2")), addHeld());
-        set(53, Icon.of(Material.ARROW, ctx.messages().get("editor.next-page")), openPage(page + 1));
+        set(45, Icon.of(Material.ARROW, ctx.messages().get(viewer, "editor.prev-page")), openPage(Math.max(0, page - 1)));
+        set(46, Icon.of(Material.PAPER, ctx.messages().get(viewer, "editor.add-page")), openPage(shop.pageCount()));
+        set(47, Icon.of(Material.NAME_TAG, ctx.messages().get(viewer, "editor.rename"),
+                ctx.messages().get(viewer, "editor.rename-lore")), rename());
+        set(48, Icon.of(Material.ITEM_FRAME, ctx.messages().get(viewer, "editor.set-icon"),
+                ctx.messages().get(viewer, "editor.set-icon-lore")), setIcon());
+        set(49, Icon.of(Material.BOOK, ctx.messages().get(viewer, "editor.slot-hint")), null);
+        set(50, Icon.of(Material.EMERALD, ctx.messages().get(viewer, "editor.currency",
+                "currency", shop.getCurrency().display()), ctx.messages().get(viewer, "editor.currency-lore")), toggleCurrency());
+        set(51, Icon.of(Material.CHEST, ctx.messages().get(viewer, "editor.add-hint"),
+                ctx.messages().get(viewer, "editor.add-hint-lore"), ctx.messages().get(viewer, "editor.add-hint-lore2")), addHeld());
+        set(53, Icon.of(Material.ARROW, ctx.messages().get(viewer, "editor.next-page")), openPage(page + 1));
     }
 
     private ClickHandler slotHandler(final int slot) {
@@ -78,7 +80,7 @@ public final class ShopEditorMenu extends Menu {
                     ctx.messages().send(player, "editor.replaced", "item", name(held));
                     reopen(player);
                 } else {
-                    new SlotEditorMenu(ctx, shop, existing, page).open(player);
+                    new SlotEditorMenu(ctx, shop, existing, page, player).open(player);
                 }
             }
         };
@@ -173,13 +175,13 @@ public final class ShopEditorMenu extends Menu {
         return new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new ShopEditorMenu(ctx, shop, Math.max(0, target)).open(player);
+                new ShopEditorMenu(ctx, shop, Math.max(0, target), player).open(player);
             }
         };
     }
 
     private void reopen(Player player) {
-        new ShopEditorMenu(ctx, shop, page).open(player);
+        new ShopEditorMenu(ctx, shop, page, player).open(player);
     }
 
     private int firstFreeSlot() {
@@ -195,13 +197,13 @@ public final class ShopEditorMenu extends Menu {
         return Display.withLore(item.copy(), Arrays.asList(
                 priceLine("slot.buy-current", item.getBuyPrice(), item.isBuyable()),
                 priceLine("slot.sell-current", item.getSellPrice(), item.isSellable()),
-                ctx.messages().get("slot.category-current", "category",
-                        item.getCategory() == null ? ctx.messages().get("common.none") : item.getCategory()),
-                ctx.messages().get("editor.slot-hint")));
+                ctx.messages().get(viewer, "slot.category-current", "category",
+                        item.getCategory() == null ? ctx.messages().get(viewer, "common.none") : item.getCategory()),
+                ctx.messages().get(viewer, "editor.slot-hint")));
     }
 
     private String priceLine(String key, double price, boolean offered) {
-        return ctx.messages().get(key, "price", offered ? ctx.format().format(price) : ctx.messages().get("common.none"));
+        return ctx.messages().get(viewer, key, "price", offered ? ctx.format().format(price) : ctx.messages().get(viewer, "common.none"));
     }
 
     private String name(ItemStack item) {

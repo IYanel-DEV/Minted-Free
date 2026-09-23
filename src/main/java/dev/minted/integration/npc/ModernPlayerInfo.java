@@ -20,27 +20,30 @@ import java.util.UUID;
  *
  * <p>From 1.19.3 the player-list packet became <i>PlayerInfoUpdate</i>, whose
  * actions are a set rather than a single field, and from 1.19.4 removals moved
- * into their own packet keyed by UUID. This class is the only one in Minted
- * that touches those modern structures (using getPlayerInfoActions() and
- * getUUIDLists(), both ProtocolLib 5-only getters), so it is isolated: it is
- * never loaded on a pre-1.19.3 server, where ProtocolLib itself would have no
- * such methods.
+ * into their own packet keyed by UUID. The 1.19.3+ data entries are the newer
+ * {@code PlayerInfoData} shape - profile, latency, the {@code listed} flag and
+ * profile UUID - which the old four-argument form can no longer build on the
+ * newest servers. This class is the only one in Minted that touches those
+ * modern structures (using getPlayerInfoActions() and getUUIDLists(), both
+ * ProtocolLib 5-only getters), so it is isolated: it is never loaded on a
+ * pre-1.19.3 server, where ProtocolLib itself would have no such methods.
  */
 final class ModernPlayerInfo {
 
     private ModernPlayerInfo() {
     }
 
-    static void sendAdd(ProtocolManager pm, Player viewer, WrappedGameProfile profile) {
+    static void sendAdd(ProtocolManager pm, Player viewer, WrappedGameProfile profile, String displayName) {
         PacketContainer packet = pm.createPacket(PacketType.Play.Server.PLAYER_INFO);
-        packet.getPlayerInfoActions().write(0, EnumSet.of(EnumWrappers.PlayerInfoAction.ADD_PLAYER));
-        PlayerInfoData data = new PlayerInfoData(profile, 2, EnumWrappers.NativeGameMode.NOT_SET,
-                WrappedChatComponent.fromText(profile.getName()));
+        packet.getPlayerInfoActions().write(0, EnumSet.of(EnumWrappers.PlayerInfoAction.ADD_PLAYER,
+                EnumWrappers.PlayerInfoAction.UPDATE_LISTED));
+        PlayerInfoData data = new PlayerInfoData(profile.getUUID(), 0, true,
+                EnumWrappers.NativeGameMode.SURVIVAL, profile, WrappedChatComponent.fromText(displayName));
         packet.getPlayerInfoDataLists().write(0, Collections.singletonList(data));
         pm.sendServerPacket(viewer, packet);
     }
 
-    static void sendRemove(ProtocolManager pm, Player viewer, UUID npcUuid, String name) {
+    static void sendRemove(ProtocolManager pm, Player viewer, UUID npcUuid, String name, String displayName) {
         MinecraftVersion version = pm.getMinecraftVersion();
         if (version.isAtLeast(new MinecraftVersion(1, 19, 4))) {
             PacketContainer packet = pm.createPacket(PacketType.Play.Server.PLAYER_INFO_REMOVE);
@@ -51,7 +54,7 @@ final class ModernPlayerInfo {
             packet.getPlayerInfoActions().write(0, EnumSet.of(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER));
             packet.getPlayerInfoDataLists().write(0, Collections.singletonList(
                     new PlayerInfoData(new WrappedGameProfile(npcUuid, name), 0,
-                            EnumWrappers.NativeGameMode.NOT_SET, WrappedChatComponent.fromText(name))));
+                            EnumWrappers.NativeGameMode.NOT_SET, WrappedChatComponent.fromText(displayName))));
             pm.sendServerPacket(viewer, packet);
         }
     }

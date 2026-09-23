@@ -6,7 +6,7 @@
 
     <groupId>dev.minted</groupId>
     <artifactId>minted-free</artifactId>
-    <version>0.21.0</version>
+    <version>0.44.0</version>
     <packaging>jar</packaging>
 
     <name>Minted-Free</name>
@@ -64,6 +64,19 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>2.7.9</version>
+        </dependency>
+
+        <!--
+            HikariCP logs through slf4j-api; without a binding slf4j shouts its
+            "Failed to load StaticLoggerBinder" to stderr on every boot. slf4j-nop
+            ships the NOP binder so the pool logs into the void - bundled and
+            relocated to dev.minted.libs.slf4j like the API itself, so it never
+            fights a binding another plugin brings.
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.30</version>
         </dependency>
 
         <!--

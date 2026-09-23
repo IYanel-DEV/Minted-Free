@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -64,6 +65,16 @@ public final class ShopService {
         return materials;
     }
 
+    /** A startup/reload line the seeder can use to report catalog growth. */
+    void info(String message) {
+        plugin.getLogger().info(message);
+    }
+
+    /** A startup/reload warning, e.g. catalog rows this server could not resolve. */
+    void warn(String message) {
+        plugin.getLogger().warning(message);
+    }
+
     public boolean isReady() {
         return ready;
     }
@@ -111,8 +122,12 @@ public final class ShopService {
         if (seedIfEmpty) {
             // Seeds the global starter only on a truly empty install, and the
             // community marketplace whenever it is missing (covers an upgrade
-            // from a pre-0.10.0 database that already has global shops).
+            // from a pre-0.10.0 database that already has global shops). The
+            // growth step also runs on reload: it is idempotent, so a fresh
+            // jar grows every global shop the moment it is loaded.
             ShopSeeder.seed(this, version, materials, shops.isEmpty());
+        } else {
+            ShopSeeder.seed(this, version, materials, false);
         }
     }
 
@@ -142,24 +157,59 @@ public final class ShopService {
     }
 
     public Shop create(String name, ItemStack icon, Currency currency) {
-        return create(name, icon, currency, ShopType.GLOBAL);
+        return create(name, icon, currency, ShopType.GLOBAL, null);
     }
 
     public Shop create(String name, ItemStack icon, Currency currency, ShopType type) {
+        return create(name, icon, currency, type, null);
+    }
+
+    public Shop create(String name, ItemStack icon, Currency currency, ShopType type, UUID owner) {
         final int id = nextId++;
-        Shop shop = new Shop(id, name, icon, currency, type);
+        Shop shop = new Shop(id, name, icon, currency, type, owner);
         shops.put(key(name), shop);
         final String iconData = ItemCodec.encode(icon);
         final String currencyId = currency.id();
         final String stored = name;
         final String typeId = type.id();
+        final String storedOwner = owner == null ? null : owner.toString();
         async(new Runnable() {
             @Override
             public void run() {
-                dao.insertShop(id, stored, iconData, currencyId, typeId);
+                dao.insertShop(id, stored, iconData, currencyId, typeId, storedOwner);
             }
         });
         return shop;
+    }
+
+    /** Opens a personal storefront for a player, always trading in the wallet. */
+    public Shop createPlayerShop(String name, ItemStack icon, UUID owner) {
+        return create(name, icon, Currency.WALLET, ShopType.PLAYER, owner);
+    }
+
+    /** Every player shop owned by the given player, in creation order. */
+    public Collection<Shop> shopsFor(UUID owner) {
+        List<Shop> owned = new ArrayList<Shop>();
+        for (Shop shop : shops.values()) {
+            if (shop.isPlayerShop() && shop.ownedBy(owner)) {
+                owned.add(shop);
+            }
+        }
+        return owned;
+    }
+
+    /** The first player shop owned by the player, or null. */
+    public Shop playerShopOf(UUID owner) {
+        for (Shop shop : shops.values()) {
+            if (shop.isPlayerShop() && shop.ownedBy(owner)) {
+                return shop;
+            }
+        }
+        return null;
+    }
+
+    public int playerShopCount(UUID owner) {
+        return shopsFor(owner).size();
     }
 
     /** The single community marketplace, or null before it is seeded. */

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  * A shop and the items laid out across its pages. Items are addressed by
@@ -26,20 +27,26 @@ public final class Shop {
     private ItemStack icon;
     private Currency currency;
     private final ShopType type;
+    private final UUID owner;
 
     // Keyed by page * SLOTS_PER_PAGE + slot, sorted so iteration is page-then-slot.
     private final TreeMap<Integer, ShopItem> items = new TreeMap<Integer, ShopItem>();
 
     public Shop(int id, String name, ItemStack icon, Currency currency) {
-        this(id, name, icon, currency, ShopType.GLOBAL);
+        this(id, name, icon, currency, ShopType.GLOBAL, null);
     }
 
     public Shop(int id, String name, ItemStack icon, Currency currency, ShopType type) {
+        this(id, name, icon, currency, type, null);
+    }
+
+    public Shop(int id, String name, ItemStack icon, Currency currency, ShopType type, UUID owner) {
         this.id = id;
         this.name = name;
         this.icon = icon;
         this.currency = currency;
         this.type = type;
+        this.owner = owner;
     }
 
     public ShopType getType() {
@@ -48,6 +55,21 @@ public final class Shop {
 
     public boolean isCommunity() {
         return type == ShopType.COMMUNITY;
+    }
+
+    /** Whether this is a player-owned storefront (real stock, no void money). */
+    public boolean isPlayerShop() {
+        return type == ShopType.PLAYER;
+    }
+
+    /** The owning player's UUID, or null for an administrative shop. */
+    public UUID getOwner() {
+        return owner;
+    }
+
+    /** Whether the given player is the shop owner. */
+    public boolean ownedBy(UUID uuid) {
+        return owner != null && owner.equals(uuid);
     }
 
     /** The next free (page, slot) address, or -1 when full - used by community listings. */
@@ -90,6 +112,21 @@ public final class Shop {
 
     public void setCurrency(Currency currency) {
         this.currency = currency;
+    }
+
+    /** Best catalog row for a held stack: prefers a sellable match, else any similar item. */
+    public ShopItem matchSellable(ItemStack held) {
+        ShopItem similar = null;
+        for (ShopItem item : items.values()) {
+            if (!item.sameAs(held)) {
+                continue;
+            }
+            if (item.isSellable() && item.getSellPrice() > 0) {
+                return item;
+            }
+            similar = item;
+        }
+        return similar;
     }
 
     public ShopItem itemAt(int page, int slot) {

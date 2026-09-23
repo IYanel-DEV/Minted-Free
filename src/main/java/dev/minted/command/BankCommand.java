@@ -5,12 +5,15 @@ import dev.minted.bank.BankAccount;
 import dev.minted.bank.BankService;
 import dev.minted.bank.CombatLock;
 import dev.minted.bank.EconomyService;
+import dev.minted.bank.EconomyStats;
+import dev.minted.bank.Fees;
 import dev.minted.bank.MoneyFormat;
 import dev.minted.banknote.BanknoteManager;
 import dev.minted.banknote.NoteInventory;
 import dev.minted.gui.GuiContext;
 import dev.minted.gui.PersonalMenu;
 import dev.minted.lang.Messages;
+import dev.minted.ledger.LedgerService;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -41,9 +44,13 @@ public final class BankCommand implements CommandExecutor {
     private final Messages messages;
     private final boolean physical;
     private final CombatLock combatLock;
+    private final LedgerService ledger;
+    private final double withdrawPercent;
+    private final EconomyStats stats;
 
     public BankCommand(BankService bank, EconomyService bankEconomy, BanknoteManager banknotes, NoteInventory notes,
-                       GuiContext gui, MoneyFormat format, Messages messages, boolean physical, CombatLock combatLock) {
+                       GuiContext gui, MoneyFormat format, Messages messages, boolean physical, CombatLock combatLock,
+                       LedgerService ledger, double withdrawPercent, EconomyStats stats) {
         this.bank = bank;
         this.bankEconomy = bankEconomy;
         this.banknotes = banknotes;
@@ -53,6 +60,9 @@ public final class BankCommand implements CommandExecutor {
         this.messages = messages;
         this.physical = physical;
         this.combatLock = combatLock;
+        this.ledger = ledger;
+        this.withdrawPercent = withdrawPercent;
+        this.stats = stats;
     }
 
     @Override
@@ -112,6 +122,7 @@ public final class BankCommand implements CommandExecutor {
         }
         player.sendMessage(ChatColor.GREEN + "Deposited " + ChatColor.WHITE
                 + format.format(amount) + ChatColor.GREEN + ".");
+        ledger.record(uuid, amount, "deposit", null);
         return true;
     }
 
@@ -127,14 +138,28 @@ public final class BankCommand implements CommandExecutor {
             player.sendMessage(ChatColor.RED + "Enter an amount greater than zero.");
             return true;
         }
+        double fee = Fees.of(withdrawPercent, amount);
+        double total = amount + fee;
+        if (account.getBalance() < total) {
+            player.sendMessage(ChatColor.RED + "Withdraw failed - not enough in your bank.");
+            return true;
+        }
         List<org.bukkit.inventory.ItemStack> minted = banknotes.mint(account, amount);
         if (minted.isEmpty()) {
             player.sendMessage(ChatColor.RED + "Withdraw failed - not enough in your bank.");
             return true;
         }
+        if (fee > 0) {
+            account.withdraw(fee);
+            stats.burn(fee);
+        }
         boolean dropped = banknotes.give(player, minted);
         messages.send(player, dropped ? "bank.cash-out-dropped" : "bank.cash-out",
                 "amount", format.format(amount));
+        ledger.record(player.getUniqueId(), -total, "withdraw", null);
+        if (fee > 0) {
+            messages.send(player, "bank.fee", "amount", format.format(fee));
+        }
         return true;
     }
 
@@ -157,6 +182,7 @@ public final class BankCommand implements CommandExecutor {
         } else {
             messages.send(player, "bank.deposited-notes", "amount", format.format(banked));
         }
+        ledger.record(player.getUniqueId(), banked, "deposit", null);
         return true;
     }
 }

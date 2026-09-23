@@ -1,5 +1,7 @@
 package dev.minted.bank;
 
+import dev.minted.ledger.LedgerService;
+
 import org.bukkit.plugin.Plugin;
 
 import java.util.HashMap;
@@ -18,15 +20,18 @@ public final class InterestTask implements Runnable {
     private final Plugin plugin;
     private final EconomyService bank;
     private final double ratePercent;
+    private final LedgerService ledger;
 
     /** May be null when loans are disabled; the sweep is skipped then. */
     private final LoanService loans;
 
-    public InterestTask(Plugin plugin, EconomyService bank, double ratePercent, LoanService loans) {
+    public InterestTask(Plugin plugin, EconomyService bank, double ratePercent, LoanService loans,
+                        LedgerService ledger) {
         this.plugin = plugin;
         this.bank = bank;
         this.ratePercent = ratePercent;
         this.loans = loans;
+        this.ledger = ledger;
     }
 
     @Override
@@ -84,6 +89,9 @@ public final class InterestTask implements Runnable {
             if (account != null) {
                 account.deposit(entry.getValue());
             }
+        }
+        for (Map.Entry<UUID, Double> entry : interest.entrySet()) {
+            ledger.record(entry.getKey(), entry.getValue(), "interest", null);
         }
     }
 

@@ -56,6 +56,18 @@ public final class ServerVersion {
         int minor = Integer.parseInt(matcher.group(2));
         int patch = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
 
+        // Minecraft dropped the leading "1." when 1.26 ended: a server now
+        // reports "26.2-R0.1-SNAPSHOT", which the regex reads as major 26 /
+        // minor 2. That would break every 1.x-based gate (the item registry's
+        // "since" line, NMS lookups, ...), so any leading number above 1 is
+        // re-mapped onto the 1.x line: major stays 1 and that leading number
+        // becomes the minor. "26.2" is really 1.26.2.
+        if (major > 1) {
+            patch = minor;
+            minor = major;
+            major = 1;
+        }
+
         String craftBukkitPackage = Bukkit.getServer().getClass().getPackage().getName();
         String nmsPackage = resolveNmsPackage(craftBukkitPackage);
 

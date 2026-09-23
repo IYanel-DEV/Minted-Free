@@ -20,6 +20,7 @@ import dev.minted.gui.PersonalMenu;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -51,7 +52,8 @@ import java.util.UUID;
 public final class NpcManager implements Listener {
 
     private static final String DEFAULT_SKIN_VALUE =
-            "e7a3357b7f0470f42f0767eb034e13b4304e2c226e3043e0676ed2a2d70ee95d";
+            "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTAxMDA4ZTFkOGI5MjRhOGQ0YjFkMTFmMmZkMWNmZmE0YzdjZWFlYTBlNzhiZmZkYWJkM2NlODFkZjdmOTI4YiJ9fX0=";
+    private static final String DEFAULT_NAME = "&eBanker";
     private static final java.util.regex.Pattern VALID_NAME =
             java.util.regex.Pattern.compile("[A-Za-z0-9_]{1,16}");
     private static final int ENTITY_ID_BASE = 2_000_000_000;
@@ -65,6 +67,10 @@ public final class NpcManager implements Listener {
     private final GuiContext gui;
     private final NpcStore store;
     private final long tabHideTicks;
+    private final String defaultName;
+    private final String defaultSkinValue;
+    private final String defaultSkinSignature;
+    private final String defaultSkinPlayer;
     private final ProtocolManager protocol;
     private final Map<Integer, BankNpc> npcs = new HashMap<Integer, BankNpc>();
     private final Map<Integer, Map<UUID, byte[]>> headYaws = new HashMap<Integer, Map<UUID, byte[]>>();
@@ -75,12 +81,19 @@ public final class NpcManager implements Listener {
     private PacketAdapter interactListener;
 
     public NpcManager(MintedPlugin plugin, ServerVersion version, GuiContext gui, NpcStore store,
-                      long tabHideSeconds) {
+                      long tabHideSeconds, String defaultName, String defaultSkinValue,
+                      String defaultSkinSignature, String defaultSkinPlayer) {
         this.plugin = plugin;
         this.version = version;
         this.gui = gui;
         this.store = store;
         this.tabHideTicks = Math.max(1L, tabHideSeconds) * 20L;
+        this.defaultName = defaultName == null || defaultName.isEmpty() ? DEFAULT_NAME : defaultName;
+        this.defaultSkinValue = defaultSkinValue == null || defaultSkinValue.isEmpty()
+                ? DEFAULT_SKIN_VALUE : defaultSkinValue;
+        this.defaultSkinSignature = defaultSkinSignature == null || defaultSkinSignature.isEmpty()
+                ? null : defaultSkinSignature;
+        this.defaultSkinPlayer = defaultSkinPlayer == null ? "" : defaultSkinPlayer;
         this.protocol = ProtocolLibrary.getProtocolManager();
     }
 
@@ -140,27 +153,35 @@ public final class NpcManager implements Listener {
     }
 
     /**
-     * Places a teller at the admin's location.
+     * Places a teller at the admin's location. The name is optional: when blank
+     * the config default is used ({@code integrations.npcs.name}). The skin is
+     * the config default ({@code integrations.npcs.skin-value/-signature})
+     * unless {@code skinPlayer} is given, in which case that player's skin is
+     * fetched from Mojang after spawning. {@code integrations.npcs.skin-player}
+     * acts as the config-level skinPlayer.
      *
      * @return an error message, or null when the teller was placed
      */
     public String create(Player admin, String name, String skinPlayer) {
-        if (!VALID_NAME.matcher(name).matches()) {
+        String display = name == null || name.isEmpty() ? defaultName : name;
+        String userName = deriveUsername(display);
+        if (!VALID_NAME.matcher(userName).matches()) {
             return "Name must be 1-16 letters, digits or underscores.";
         }
-        if (find(name) != null) {
-            return "A teller named '" + name + "' already exists.";
+        if (find(userName) != null) {
+            return "A teller named '" + userName + "' already exists.";
         }
+        String useSkinPlayer = skinPlayer == null || skinPlayer.isEmpty() ? defaultSkinPlayer : skinPlayer;
         Location spot = admin.getLocation();
-        BankNpc npc = new BankNpc(UUID.randomUUID(), name, spot.getWorld().getName(),
+        BankNpc npc = new BankNpc(UUID.randomUUID(), userName, spot.getWorld().getName(),
                 spot.getX(), spot.getY(), spot.getZ(), spot.getYaw(),
-                DEFAULT_SKIN_VALUE, null);
+                defaultSkinValue, defaultSkinSignature, display);
         npc.setEntityId(nextEntityId++);
         npcs.put(npc.entityId(), npc);
         save();
         spawnToAll(npc);
-        if (skinPlayer != null && !skinPlayer.isEmpty()) {
-            fetchSkin(admin, npc, skinPlayer);
+        if (useSkinPlayer != null && !useSkinPlayer.isEmpty()) {
+            fetchSkin(admin, npc, useSkinPlayer);
         }
         return null;
     }
@@ -226,13 +247,32 @@ public final class NpcManager implements Listener {
         if (!npc.world().equals(viewer.getWorld().getName())) {
             return;
         }
+        // The player-list entry and the named-entity spawn are sent
+        // independently. A 1.19.3+ server that refuses to construct the info
+        // packet (Mojang shuffles PLAYER_INFO layout almost every release) must
+        // not stop the teller from appearing in the world, so a failure on one
+        // side is logged and the other half still goes out.
+        boolean tabAdded = false;
         try {
             sendInfoAdd(viewer, npc);
+            tabAdded = true;
+        } catch (Throwable failure) {
+            plugin.getLogger().warning("Could not add teller '" + npc.name() + "' to "
+                    + viewer.getName() + "'s player list: " + failure);
+        }
+        try {
             sendSpawn(viewer, npc);
-            scheduleTabHide(viewer, npc);
         } catch (Throwable failure) {
             plugin.getLogger().warning("Could not spawn teller '" + npc.name() + "' for "
                     + viewer.getName() + ": " + failure);
+            return;
+        }
+        if (tabAdded) {
+            try {
+                scheduleTabHide(viewer, npc);
+            } catch (Throwable ignored) {
+                // Worst case the entry lingers until the player relogs.
+            }
         }
     }
 
@@ -261,12 +301,12 @@ public final class NpcManager implements Listener {
         profile.getProperties().put("textures",
                 new WrappedSignedProperty("textures", npc.skinValue(), npc.skinSignature()));
         if (version.isAtLeast(1, 19, 3)) {
-            ModernPlayerInfo.sendAdd(protocol, viewer, profile);
+            ModernPlayerInfo.sendAdd(protocol, viewer, profile, npc.display());
         } else {
             PacketContainer info = protocol.createPacket(PacketType.Play.Server.PLAYER_INFO);
             info.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
             PlayerInfoData data = new PlayerInfoData(profile, 2, EnumWrappers.NativeGameMode.SURVIVAL,
-                    WrappedChatComponent.fromText(npc.name()));
+                    WrappedChatComponent.fromText(npc.display()));
             info.getPlayerInfoDataLists().write(0, Collections.singletonList(data));
             protocol.sendServerPacket(viewer, info);
         }
@@ -274,12 +314,12 @@ public final class NpcManager implements Listener {
 
     private void sendInfoRemove(Player viewer, BankNpc npc) {
         if (version.isAtLeast(1, 19, 3)) {
-            ModernPlayerInfo.sendRemove(protocol, viewer, npc.uuid(), npc.name());
+            ModernPlayerInfo.sendRemove(protocol, viewer, npc.uuid(), npc.name(), npc.display());
         } else {
             PacketContainer info = protocol.createPacket(PacketType.Play.Server.PLAYER_INFO);
             info.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
             PlayerInfoData data = new PlayerInfoData(new WrappedGameProfile(npc.uuid(), npc.name()),
-                    0, EnumWrappers.NativeGameMode.SURVIVAL, WrappedChatComponent.fromText(npc.name()));
+                    0, EnumWrappers.NativeGameMode.SURVIVAL, WrappedChatComponent.fromText(npc.display()));
             info.getPlayerInfoDataLists().write(0, Collections.singletonList(data));
             protocol.sendServerPacket(viewer, info);
         }
@@ -305,6 +345,10 @@ public final class NpcManager implements Listener {
     // --- spawn packet --------------------------------------------------------
 
     private void sendSpawn(Player viewer, BankNpc npc) {
+        if (version.isAtLeast(1, 19, 4)) {
+            sendModernSpawn(viewer, npc);
+            return;
+        }
         boolean uuidField = version.isAtLeast(1, 9);
         PacketContainer spawn = protocol.createPacket(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
         spawn.getIntegers().write(0, npc.entityId());
@@ -327,16 +371,34 @@ public final class NpcManager implements Listener {
         protocol.sendServerPacket(viewer, spawn);
     }
 
+    /**
+     * Modern entity spawn. From 1.19.4 players are added with the generic
+     * SPAWN_ENTITY (AddEntity) packet; the classic NAMED_ENTITY_SPAWN was
+     * removed entirely in 1.20.2, so building it on a new server now throws
+     * "Could not find packet for type NAMED_ENTITY_SPAWN".
+     */
+    private void sendModernSpawn(Player viewer, BankNpc npc) {
+        PacketContainer spawn = protocol.createPacket(PacketType.Play.Server.SPAWN_ENTITY);
+        spawn.getModifier().writeDefaults();
+        spawn.getIntegers().write(0, npc.entityId());
+        spawn.getUUIDs().write(0, npc.uuid());
+        spawn.getEntityTypeModifier().write(0, EntityType.PLAYER);
+        spawn.getDoubles().write(0, npc.x()).write(1, npc.y()).write(2, npc.z());
+        byte yaw = toPacketByte(npc.yaw());
+        spawn.getBytes().write(0, (byte) 0).write(1, yaw).write(2, yaw);
+        protocol.sendServerPacket(viewer, spawn);
+    }
+
     private WrappedDataWatcher datawatcherFor(BankNpc npc) {
         WrappedDataWatcher watcher = new WrappedDataWatcher();
         try {
             if (version.isAtLeast(1, 13)) {
-                WrappedChatComponent component = WrappedChatComponent.fromText(npc.name());
+                WrappedChatComponent component = WrappedChatComponent.fromText(npc.display());
                 watcher.setObject(2, WrappedDataWatcher.Registry.getChatComponentSerializer(true),
                         Optional.of(component.getHandle()), true);
                 watcher.setObject(3, WrappedDataWatcher.Registry.get(Boolean.class), Boolean.TRUE, true);
             } else if (version.isAtLeast(1, 9)) {
-                watcher.setObject(2, npc.name(), true);
+                watcher.setObject(2, npc.display(), true);
                 watcher.setObject(3, (byte) 1, true);
             }
         } catch (Throwable ignored) {
@@ -518,6 +580,24 @@ public final class NpcManager implements Listener {
     }
 
     // --- helpers -------------------------------------------------------------
+
+    /**
+     * Derives the fake-player username from a display name: {@code &} colour
+     * codes are stripped and only letters, digits and underscores survive, so
+     * {@code "&eBanker"} becomes {@code "Banker"} - always a valid Minecraft
+     * name, never longer than 16 characters.
+     */
+    private String deriveUsername(String display) {
+        String plain = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', display));
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < plain.length() && builder.length() < 16; i++) {
+            char c = plain.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+                builder.append(c);
+            }
+        }
+        return builder.length() == 0 ? "Banker" : builder.toString();
+    }
 
     private byte toPacketByte(float degrees) {
         return (byte) Math.floor(degrees * 256.0 / 360.0);
