@@ -22,7 +22,14 @@ public final class AccountListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        if (economy.isReady()) {
+        if (!economy.isReady()) {
+            return;
+        }
+        if (economy.isNetworked()) {
+            // A player arriving from another server must be read from the
+            // shared database, not from this server's cache.
+            economy.reload(event.getPlayer().getUniqueId(), null);
+        } else {
             economy.load(event.getPlayer().getUniqueId(), null);
         }
     }

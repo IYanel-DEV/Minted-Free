@@ -21,13 +21,13 @@ api-version: 1.13
 # Optional hooks; Minted works fully without any of these present. ViaVersion
 # (with ViaBackwards/ViaRewind) makes the catalog and item handouts follow the
 # client's own Minecraft version; everything is reflection-guarded.
-softdepend: [Vault, PlaceholderAPI, Essentials, ProtocolLib, ViaVersion]
+softdepend: [Vault, VaultUnlocked, PlaceholderAPI, Essentials, ProtocolLib, ViaVersion, ItemsAdder, Nexo, Oraxen]
 
 commands:
   minted:
     description: Main Minted command.
     aliases: [mint]
-    usage: /minted [gui|dashboard|reload|report|npc]
+    usage: /minted [help|gui|dashboard|reload|report|npc|vip]
   balance:
     description: Check a balance.
     aliases: [bal, money]
@@ -117,6 +117,9 @@ permissions:
   minted.shop.own:
     description: Open your own player shop and list items in it.
     default: true
+  minted.vip:
+    description: Counts as a VIP and gets the automatic /<username> shop command when they own a shop. Grant it with your permission plugin.
+    default: false
   minted.eco:
     description: Give, take, set and reset player balances. Console only - never usable in game, even with op.
     default: op

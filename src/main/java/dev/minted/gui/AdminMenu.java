@@ -3,6 +3,7 @@ package dev.minted.gui;
 import dev.minted.bank.EconomyStats;
 import dev.minted.compat.Heads;
 import dev.minted.gui.theme.Design;
+import dev.minted.vip.VipService;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -55,6 +56,23 @@ public final class AdminMenu extends Menu {
                 Design.lore("Money that left the economy for good.",
                         Arrays.asList(Design.HINT + ctx.format().brief(stats.burned())),
                         "Notes dropped that despawn, plus digital shop spends and fees.")), null);
+
+        final VipService vipService = plugin().getVipService();
+        final int vipCount = vipService == null ? 0 : vipService.size();
+        set(13, Icon.of(Material.GOLDEN_APPLE, Design.MONEY + "" + ChatColor.BOLD + "VIP list",
+                Design.lore("Players who get a /<username> shop command.",
+                        Arrays.asList(Design.LABEL + String.valueOf(vipCount) + " VIP" + (vipCount == 1 ? "" : "s")),
+                        "Click to manage.")), new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                VipService service = plugin().getVipService();
+                if (service == null) {
+                    player.sendMessage(ChatColor.RED + "The VIP list is not available right now.");
+                    return;
+                }
+                new VipListMenu(ctx, service, viewer).open(player);
+            }
+        });
 
         set(19, Icon.of(Heads.icon(Heads.pouchSkin(), Material.GOLD_NUGGET),
                 Design.IN + "" + ChatColor.BOLD + "Interest",

@@ -30,6 +30,19 @@ public interface StorageProvider {
 
     void saveBalances(Map<UUID, Double> balances);
 
+    /**
+     * Applies a relative change to one stored balance atomically and returns
+     * the authoritative balance afterwards (null only when the account does
+     * not exist and the change cannot create it).
+     *
+     * <p>This is what makes a shared database safe across servers: deltas
+     * compose instead of overwriting each other, and a change that would
+     * overdraw the account or breach the ceiling is simply not applied - the
+     * caller sees the unchanged truth and corrects its cache. Implementations
+     * are blocking; async callers only.
+     */
+    Double applyDelta(UUID uuid, double delta, double seed, double ceiling);
+
     /** Sum of every stored balance in this table. */
     double sumBalances();
 

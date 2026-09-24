@@ -54,6 +54,10 @@ public final class ShopService {
     private volatile boolean ready;
     private int nextId = 1;
 
+    // Optional lifecycle callbacks (the VIP /<username> shop commands).
+    // Set once during startup; every fire happens on the main thread.
+    private PlayerShopHooks playerShopHooks;
+
     public ShopService(Plugin plugin, ShopDao dao, ServerVersion version, MaterialLookup materials) {
         this.plugin = plugin;
         this.dao = dao;
@@ -77,6 +81,11 @@ public final class ShopService {
 
     public boolean isReady() {
         return ready;
+    }
+
+    /** Attaches the player-shop lifecycle callbacks; call before initialize(). */
+    public void setPlayerShopHooks(PlayerShopHooks hooks) {
+        this.playerShopHooks = hooks;
     }
 
     /** First load: reads the DB off-thread, builds on the main thread, seeds if empty. */
@@ -129,6 +138,9 @@ public final class ShopService {
         } else {
             ShopSeeder.seed(this, version, materials, false);
         }
+        if (playerShopHooks != null) {
+            playerShopHooks.onShopsLoaded();
+        }
     }
 
     public Shop get(String name) {
@@ -179,6 +191,9 @@ public final class ShopService {
                 dao.insertShop(id, stored, iconData, currencyId, typeId, storedOwner);
             }
         });
+        if (type == ShopType.PLAYER && playerShopHooks != null) {
+            playerShopHooks.onPlayerShopCreated(shop);
+        }
         return shop;
     }
 
@@ -231,6 +246,9 @@ public final class ShopService {
                 dao.deleteShop(id);
             }
         });
+        if (shop.isPlayerShop() && playerShopHooks != null) {
+            playerShopHooks.onPlayerShopDeleted(shop);
+        }
     }
 
     public void rename(Shop shop, String newName) {

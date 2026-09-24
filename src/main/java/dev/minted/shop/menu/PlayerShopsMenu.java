@@ -26,14 +26,14 @@ public final class PlayerShopsMenu extends Menu {
     private final Player viewer;
 
     public PlayerShopsMenu(ShopContext ctx, Player viewer) {
-        super(Design.title(Design.Accent.SHOP, "Player shops"), 6);
+        super(Design.title(Design.Accent.NEUTRAL, "Player shops"), 6);
         this.ctx = ctx;
         this.viewer = viewer;
     }
 
     @Override
     protected void build() {
-        frame(ctx.design().border(Design.Accent.SHOP));
+        frame(ctx.design().border(Design.Accent.NEUTRAL));
         List<Shop> shops = new ArrayList<Shop>();
         for (Shop shop : ctx.shops().all()) {
             if (shop.isPlayerShop()) {

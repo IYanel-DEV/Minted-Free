@@ -58,6 +58,7 @@ import dev.minted.integration.via.ViaVersionHook;
 import dev.minted.lang.LanguageCommand;
 import dev.minted.lang.LanguageManager;
 import dev.minted.lang.Messages;
+import dev.minted.network.NetworkCoordinator;
 import dev.minted.request.RequestService;
 import dev.minted.sound.SoundFX;
 import dev.minted.shop.Market;
@@ -68,6 +69,10 @@ import dev.minted.shop.command.ShopCommand;
 import dev.minted.shop.command.ShopTabCompleter;
 import dev.minted.shop.log.SaleLog;
 import dev.minted.shop.storage.ShopDao;
+import dev.minted.vip.VipListener;
+import dev.minted.vip.VipService;
+import dev.minted.vip.VipShopCommands;
+import dev.minted.vip.VipStore;
 
 import org.bukkit.Material;
 import org.bukkit.command.CommandExecutor;
@@ -123,6 +128,7 @@ public final class MintedPlugin extends JavaPlugin {
     private MoneyFormat format;
     private Messages messages;
     private boolean vaultRegistered;
+    private boolean vaultUnlockedRegistered;
     private boolean papiRegistered;
     private NpcManager npcManager;
     private boolean npcsActive;
@@ -132,6 +138,8 @@ public final class MintedPlugin extends JavaPlugin {
     private AuctionService auctionService;
     private CurrencyManager currencyManager;
     private LanguageManager languageManager;
+    private VipService vipService;
+    private NetworkCoordinator network;
 
     public static MintedPlugin get() {
         return instance;
@@ -153,6 +161,13 @@ public final class MintedPlugin extends JavaPlugin {
         wire();
 
         getLogger().info("Minted " + getDescription().getVersion() + " enabled (server " + serverVersion + ").");
+        // One-line snapshot so an admin can see the mode of the server they
+        // just booted without opening config.yml or running /minted report.
+        getLogger().info("Storage: " + getConfig().getString("database.type", "sqlite")
+                + " | multi-server: " + networkStatus()
+                + (vaultRegistered ? " | Vault hooked" : "")
+                + (vaultUnlockedRegistered ? " | VaultUnlocked hooked" : "")
+                + (papiRegistered ? " | PlaceholderAPI hooked" : ""));
     }
 
     /**
@@ -177,6 +192,11 @@ public final class MintedPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (network != null) {
+            // Stop the tasks first; the shutdown flush below then runs as a
+            // normal, final delta commit.
+            network.stop();
+        }
         if (walletEconomy != null && walletEconomy.isReady()) {
             walletEconomy.saveAllBlocking();
         }
@@ -185,6 +205,9 @@ public final class MintedPlugin extends JavaPlugin {
         }
         if (shopService != null) {
             shopService.shutdown();
+        }
+        if (vipService != null) {
+            vipService.shutdown();
         }
         if (npcManager != null) {
             npcManager.shutdown();
@@ -210,6 +233,13 @@ public final class MintedPlugin extends JavaPlugin {
         boolean physical = getConfig().getBoolean("economy.physical", true);
         this.walletEconomy = new EconomyService(this, walletStorage, starting, max);
         this.bankEconomy = new EconomyService(this, bankStorage, 0, max);
+        if (getConfig().getBoolean("multi-server.enabled", false)) {
+            // Several servers, one database: both economies switch to atomic
+            // deltas, re-read players on join and announce committed changes.
+            this.network = new NetworkCoordinator(this, Arrays.asList(walletEconomy, bankEconomy));
+            walletEconomy.setNetworkHooks(network);
+            bankEconomy.setNetworkHooks(network);
+        }
         boolean walletPrimary = "wallet".equalsIgnoreCase(
                 getConfig().getString("integrations.primary-balance", "bank"));
         this.economy = new dev.minted.api.MintedEconomyImpl(walletEconomy, bankEconomy,
@@ -295,6 +325,14 @@ public final class MintedPlugin extends JavaPlugin {
         ShopContext shopContext = new ShopContext(shopService, trade, market, messages, format, chatPrompt,
                 design, walletService, materials);
 
+        // VIPs: the admin list behind /minted vip and the dashboard, plus the
+        // automatic /<username> shop commands derived from it. The shop hooks
+        // make those commands follow shop creation, deletion and reloads.
+        this.vipService = new VipService(this, new VipStore(getDataFolder()), namesDao, messages, shopContext);
+        vipService.setAliases(new VipShopCommands(this, shopContext, vipService));
+        shopService.setPlayerShopHooks(vipService);
+        getServer().getPluginManager().registerEvents(new VipListener(vipService), this);
+
         // Auction house
         AuctionDao auctionDao = new AuctionDao(pool, dialect);
         double listingFeePercent = getConfig().getDouble("auction.listing-fee-percent", 1.0);
@@ -343,6 +381,7 @@ public final class MintedPlugin extends JavaPlugin {
                 shopContext, getConfig().getInt("shops.max-player-shops", 1)));
         getCommand("pshop").setTabCompleter(new dev.minted.shop.command.PlayerShopTabCompleter(shopContext));
         hookVault();
+        hookVaultUnlocked();
         hookPapi();
         hookEssentials();
 
@@ -484,6 +523,7 @@ public final class MintedPlugin extends JavaPlugin {
 
     public dev.minted.integration.IntegrationReport integrationReport() {
         boolean vault = getServer().getPluginManager().getPlugin("Vault") != null;
+        boolean vaultUnlocked = dev.minted.integration.vaultunlocked.VaultUnlockedHook.apiPresent();
         boolean papi = getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
         boolean essentials = getServer().getPluginManager().getPlugin("Essentials") != null;
         boolean protocolLib = getServer().getPluginManager().getPlugin("ProtocolLib") != null;
@@ -491,6 +531,7 @@ public final class MintedPlugin extends JavaPlugin {
         boolean ready = walletEconomy != null && walletEconomy.isReady()
                 && bankEconomy != null && bankEconomy.isReady();
         return new dev.minted.integration.IntegrationReport(ready, vault, vaultRegistered,
+                vaultUnlocked, vaultUnlockedRegistered,
                 papi, papiRegistered, essentials, essentials && essentialsEconomyActive(),
                 protocolLib, npcsActive, via, npcHookError,
                 getConfig().getString("integrations.primary-balance", "bank"));
@@ -628,6 +669,9 @@ public final class MintedPlugin extends JavaPlugin {
             bankEconomy.load(player.getUniqueId(), null);
         }
         shopService.initialize();
+        if (network != null) {
+            network.start();
+        }
         stats.load();
         getServer().getScheduler().runTaskTimerAsynchronously(this,
                 new AccountSaveTask(walletEconomy, walletStorage), SAVE_INTERVAL_TICKS, SAVE_INTERVAL_TICKS);
@@ -724,6 +768,30 @@ public final class MintedPlugin extends JavaPlugin {
     }
 
     /**
+     * Registers Minted with VaultUnlocked when its API classes are on the
+     * server and the config allows it. The guard resolves the classes through
+     * this plugin's own classloader (which can see other plugins' jars), so
+     * nothing VaultUnlocked-specific is ever loaded when it is absent - same
+     * degradation contract as {@link #hookVault()}.
+     */
+    private void hookVaultUnlocked() {
+        if (!getConfig().getBoolean("integrations.vaultunlocked.register", true)) {
+            return;
+        }
+        if (!dev.minted.integration.vaultunlocked.VaultUnlockedHook.apiPresent()) {
+            return;
+        }
+        try {
+            dev.minted.integration.vaultunlocked.VaultUnlockedHook.register(this,
+                    dev.minted.api.MintedAPI.economy());
+            this.vaultUnlockedRegistered = true;
+        } catch (Throwable failure) {
+            getLogger().warning("Could not hook VaultUnlocked (" + failure.getClass().getSimpleName()
+                    + ": " + failure.getMessage() + "); continuing without it.");
+        }
+    }
+
+    /**
      * Registers the {@code %minted_*%} placeholders when PlaceholderAPI is
      * installed and enabled in config. Like the Vault hook, all PlaceholderAPI
      * references live in a separate class that is only loaded once this guard
@@ -767,5 +835,15 @@ public final class MintedPlugin extends JavaPlugin {
 
     public LanguageManager getLanguageManager() {
         return languageManager;
+    }
+
+    /** The VIP list behind /minted vip and the dashboard's VIP page. */
+    public VipService getVipService() {
+        return vipService;
+    }
+
+    /** "off" on a single server, otherwise a short multi-server status line. */
+    public String networkStatus() {
+        return network == null ? "off" : network.status();
     }
 }

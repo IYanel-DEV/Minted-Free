@@ -6,7 +6,7 @@
 
     <groupId>dev.minted</groupId>
     <artifactId>minted-free</artifactId>
-    <version>0.45.1</version>
+    <version>0.52.0</version>
     <packaging>jar</packaging>
 
     <name>Minted-Free</name>
@@ -34,6 +34,16 @@
         <repository>
             <id>extendedclip-repo</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+        </repository>
+        <!--
+            VaultUnlockedAPI (the vault2 economy API behind VaultUnlocked).
+            Provided only, like Vault below: the host server supplies it at
+            runtime, every reference is class-presence-guarded, and the jar
+            never contains a copy of either API.
+        -->
+        <repository>
+            <id>codemc-creatorfromhell</id>
+            <url>https://repo.codemc.io/repository/creatorfromhell/</url>
         </repository>
         <!-- ProtocolLib 5.x: the wire library behind the self-built bank tellers. -->
         <repository>
@@ -135,6 +145,20 @@
                     <artifactId>bukkit</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!--
+            VaultUnlockedAPI: the vault2 economy API served by the VaultUnlocked
+            plugin (https://github.com/TheNewEconomy/VaultUnlockedAPI). Its jar
+            also carries the classic net.milkbowl.vault API, which is why a
+            VaultUnlocked-only server still speaks old Vault - but Minted keeps
+            the two hooks separate so either side can be absent. Provided only,
+            never shaded.
+        -->
+        <dependency>
+            <groupId>net.milkbowl.vault</groupId>
+            <artifactId>VaultUnlockedAPI</artifactId>
+            <version>2.20</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>me.clip</groupId>

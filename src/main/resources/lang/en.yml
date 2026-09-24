@@ -224,6 +224,24 @@ pshop:
   withdraw:
     done: "&aWithdrew &f{quantity}&a units back to your inventory."
 
+vip:
+  usage: "&cUsage: /minted vip [add <player>|remove <player>|list]"
+  added: "&a{player} is now a VIP."
+  removed: "&aRemoved VIP from &f{player}&a."
+  already: "&c{player} is already a VIP."
+  already-permission: "&c{player} is already a VIP through the &fminted.vip&c permission."
+  remove-permission: "&c{player} is a VIP through the &fminted.vip&c permission - revoke that node in your permission plugin instead."
+  still-permission: "&7Note: &f{player}&7 still has the &fminted.vip&7 permission, so they remain a VIP."
+  not-vip: "&c{player} is not a VIP."
+  invalid-name: "&c&f{player}&c is not a valid player name."
+  unknown-player: "&cNo player named &f{player}&c has ever joined this server."
+  lookup-failed: "&cCould not look up &f{player}&c right now - try again."
+  welcome: "&6You are a VIP!&a Create your shop with &f/pshop create <name>&a and anyone will open it with &f/{command}&a."
+  welcome-shop: "&6You are a VIP!&a Anyone can open your shop with &f/{command}&a."
+  alias-live: "&aYour shop is live: anyone can open it with &f/{command}&a."
+  shop-gone: "&cThat VIP shop is no longer available."
+  ingame-only: "&cPlayer shops can only be opened in game."
+
 
 slot:
   title: "&2Edit slot"

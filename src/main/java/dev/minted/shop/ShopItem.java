@@ -115,13 +115,26 @@ public final class ShopItem {
         return sameStock(other, item);
     }
 
-    /** {@code a} and {@code b} are the same kind of goods; see {@link #sameAs}. */
+    /**
+     * {@code a} and {@code b} are the same kind of goods; see {@link #sameAs}.
+     *
+     * <p>When either stack is a custom item (ItemsAdder, Nexo, Oraxen), the
+     * owning plugin's item id decides identity: a custom item only ever
+     * matches the same custom item, never the vanilla material it is built
+     * on, and never another plugin's look-alike. With no custom item
+     * involved the material rule above applies unchanged.
+     */
     public static boolean sameStock(ItemStack a, ItemStack b) {
         if (a == null || b == null || a.getType() != b.getType()) {
             return false;
         }
         if (a.getType().getMaxDurability() == 0 && a.getDurability() != b.getDurability()) {
             return false;
+        }
+        String idA = dev.minted.integration.customitems.CustomItems.identity(a);
+        String idB = dev.minted.integration.customitems.CustomItems.identity(b);
+        if (idA != null || idB != null) {
+            return idA != null && idA.equals(idB);
         }
         return true;
     }

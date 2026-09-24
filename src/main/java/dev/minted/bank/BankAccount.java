@@ -19,6 +19,17 @@ public final class BankAccount {
     private double balance;
     private volatile boolean dirty;
 
+    /**
+     * The balance this account is known to hold in storage. The multi-server
+     * saver writes the difference between this baseline and the live balance as
+     * an atomic delta, so two servers can never overwrite each other's work and
+     * a stale cache cannot smuggle an old value back into the database.
+     */
+    private double persisted;
+
+    /** Set by admin-style absolute writes, which bypass the delta path. */
+    private boolean absolute;
+
     BankAccount(UUID uuid, double balance, double maxBalance) {
         this(uuid, balance, maxBalance, null);
     }
@@ -26,6 +37,7 @@ public final class BankAccount {
     BankAccount(UUID uuid, double balance, double maxBalance, BalanceChangeSink sink) {
         this.uuid = uuid;
         this.balance = balance;
+        this.persisted = balance;
         this.maxBalance = maxBalance;
         this.sink = sink;
     }
@@ -87,6 +99,9 @@ public final class BankAccount {
             before = balance;
             balance = amount;
             dirty = true;
+            // An admin write states the final balance outright, so the saver
+            // must write it as-is rather than as a delta.
+            absolute = true;
         }
         notifyChange(before);
         return true;
@@ -104,6 +119,42 @@ public final class BankAccount {
 
     boolean isDirty() {
         return dirty;
+    }
+
+    /** The balance this account is known to have in storage. */
+    double getPersisted() {
+        return persisted;
+    }
+
+    /** True when the next save must write the balance outright. */
+    boolean isAbsolute() {
+        return absolute;
+    }
+
+    /**
+     * Called after a successful save with the balance storage now holds: the
+     * live value and the baseline collapse onto the same number, so the next
+     * change is measured from the truth.
+     */
+    synchronized void synced(double stored) {
+        this.balance = stored;
+        this.persisted = stored;
+        this.dirty = false;
+        this.absolute = false;
+    }
+
+    /**
+     * Adopts a balance read back from the shared database - another server
+     * moved it, or a write was refused. Silently does nothing while the
+     * account has unsaved local changes; those are settled by the saver's own
+     * read-back.
+     */
+    synchronized void remoteRefresh(double stored) {
+        if (dirty) {
+            return;
+        }
+        this.balance = stored;
+        this.persisted = stored;
     }
 
     void markClean() {

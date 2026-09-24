@@ -61,6 +61,11 @@ public final class SqlStorageProvider implements StorageProvider {
     }
 
     @Override
+    public Double applyDelta(UUID uuid, double delta, double seed, double ceiling) {
+        return dao().applyDelta(uuid, delta, seed, ceiling);
+    }
+
+    @Override
     public double sumBalances() {
         return dao().sum();
     }

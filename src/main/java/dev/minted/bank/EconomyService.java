@@ -29,6 +29,7 @@ public final class EconomyService {
     private final Map<UUID, BankAccount> accounts = new ConcurrentHashMap<UUID, BankAccount>();
     private volatile boolean ready;
     private volatile BalanceChangeSink changeSink;
+    private volatile NetworkHooks network = NetworkHooks.NONE;
 
     public EconomyService(Plugin plugin, StorageProvider storage, double startingBalance, double maxBalance) {
         this.plugin = plugin;
@@ -43,6 +44,21 @@ public final class EconomyService {
      */
     public void setChangeSink(BalanceChangeSink sink) {
         this.changeSink = sink;
+    }
+
+    /**
+     * Attaches the multi-server hooks. While attached the service switches to
+     * network-safe persistence - atomic deltas against the stored baseline and
+     * fresh reads on join - and announces every committed change. Null puts it
+     * back on single-server behaviour.
+     */
+    public void setNetworkHooks(NetworkHooks hooks) {
+        this.network = hooks == null ? NetworkHooks.NONE : hooks;
+    }
+
+    /** True while multi-server persistence is active. */
+    public boolean isNetworked() {
+        return network.enabled();
     }
 
     /**
@@ -157,6 +173,45 @@ public final class EconomyService {
         });
     }
 
+    /**
+     * Re-reads an account from storage even when it is already cached, which
+     * is what a player switching servers needs: the balance must come from
+     * the shared database, not from whatever this server last saw. An account
+     * with unsaved local changes is left alone - the saver reconciles it.
+     */
+    public void reload(final UUID uuid, final Consumer<BankAccount> callback) {
+        BankAccount cached = accounts.get(uuid);
+        if (cached != null && cached.isDirty()) {
+            if (callback != null) {
+                callback.accept(cached);
+            }
+            return;
+        }
+        scheduler().runTaskAsynchronously(plugin, new Runnable() {
+            @Override
+            public void run() {
+                Double stored = storage.loadBalance(uuid);
+                BankAccount current = accounts.get(uuid);
+                if (current != null) {
+                    current.remoteRefresh(stored != null ? stored : startingBalance);
+                } else {
+                    adopt(uuid, stored);
+                }
+                if (callback != null) {
+                    scheduler().runTask(plugin, new Runnable() {
+                        @Override
+                        public void run() {
+                            BankAccount account = accounts.get(uuid);
+                            if (account != null) {
+                                callback.accept(account);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     /** Saves the account asynchronously, then drops it from the cache. */
     public void unload(final UUID uuid) {
         final BankAccount account = accounts.remove(uuid);
@@ -166,6 +221,16 @@ public final class EconomyService {
         scheduler().runTaskAsynchronously(plugin, new Runnable() {
             @Override
             public void run() {
+                if (isNetworked()) {
+                    // Commit through the delta path so a shared database never
+                    // loses this write, then let the other servers know.
+                    if (account.isDirty()) {
+                        persistOne(account);
+                    } else {
+                        network.announce(uuid);
+                    }
+                    return;
+                }
                 storage.saveBalance(uuid, account.getBalance());
             }
         });
@@ -200,6 +265,12 @@ public final class EconomyService {
 
     /** Flushes every cached balance synchronously; only for {@code onDisable}. */
     public void saveAllBlocking() {
+        if (isNetworked()) {
+            // The same guarded deltas as the live saver: the cache is about to
+            // die, but the shared database must keep the exact truth.
+            flushDirty();
+            return;
+        }
         Map<UUID, Double> snapshot = new HashMap<UUID, Double>();
         for (BankAccount account : accounts.values()) {
             snapshot.put(account.getUuid(), account.getBalance());
@@ -236,5 +307,111 @@ public final class EconomyService {
                 account.deposit(amount);
             }
         });
+    }
+
+    /**
+     * Writes every changed balance to storage. Non-blocking; the work runs on
+     * an async task, which is where storage is allowed to be touched.
+     */
+    public void flushDirtyAsync() {
+        if (!ready) {
+            return;
+        }
+        scheduler().runTaskAsynchronously(plugin, new Runnable() {
+            @Override
+            public void run() {
+                flushDirty();
+            }
+        });
+    }
+
+    /** Blocking; async callers only. Safe to call on a single server too. */
+    public void flushDirty() {
+        for (BankAccount account : accounts.values()) {
+            if (account.isDirty()) {
+                persistOne(account);
+            }
+        }
+    }
+
+    /**
+     * Commits one account. On a shared database the change goes out as a
+     * guarded delta measured from the balance storage is known to hold, and
+     * the authoritative value that comes back replaces the cached one - so a
+     * refused write (another server spent the money first) or a concurrent
+     * change from elsewhere is picked up instead of being overwritten.
+     */
+    private void persistOne(BankAccount account) {
+        synchronized (account) {
+            if (!account.isDirty()) {
+                return;
+            }
+            UUID uuid = account.getUuid();
+            try {
+                if (account.isAbsolute()) {
+                    storage.saveBalance(uuid, account.getBalance());
+                    account.synced(account.getBalance());
+                } else {
+                    Double stored = storage.applyDelta(uuid,
+                            account.getBalance() - account.getPersisted(), startingBalance, maxBalance);
+                    account.synced(stored != null ? stored : startingBalance);
+                }
+                network.announce(uuid);
+            } catch (RuntimeException failure) {
+                // Leave the account dirty; the next pass retries it.
+            }
+        }
+    }
+
+    /**
+     * Re-reads one account from the shared database after another server
+     * announced a change. Accounts with unsaved local changes are skipped -
+     * their saver pulls the truth in with its own read-back.
+     */
+    public void refreshAccount(final UUID uuid) {
+        BankAccount cached = accounts.get(uuid);
+        if (cached == null || cached.isDirty() || !ready) {
+            return;
+        }
+        scheduler().runTaskAsynchronously(plugin, new Runnable() {
+            @Override
+            public void run() {
+                BankAccount account = accounts.get(uuid);
+                if (account == null || account.isDirty()) {
+                    return;
+                }
+                try {
+                    Double stored = storage.loadBalance(uuid);
+                    account.remoteRefresh(stored != null ? stored : startingBalance);
+                } catch (RuntimeException failure) {
+                    // The next announcement or refresh pass heals it.
+                }
+            }
+        });
+    }
+
+    /**
+     * Re-reads every clean cached account in one query, so a server that
+     * missed an announcement catches up on its own. Blocking; async only.
+     */
+    public void refreshCleanAccounts() {
+        Map<UUID, BankAccount> clean = new HashMap<UUID, BankAccount>();
+        for (Map.Entry<UUID, BankAccount> entry : accounts.entrySet()) {
+            if (!entry.getValue().isDirty()) {
+                clean.put(entry.getKey(), entry.getValue());
+            }
+        }
+        if (clean.isEmpty()) {
+            return;
+        }
+        try {
+            Map<UUID, Double> stored = storage.batchLoad(clean.keySet());
+            for (Map.Entry<UUID, BankAccount> entry : clean.entrySet()) {
+                Double balance = stored.get(entry.getKey());
+                entry.getValue().remoteRefresh(balance != null ? balance : startingBalance);
+            }
+        } catch (RuntimeException failure) {
+            // Nothing to do: the next pass tries again.
+        }
     }
 }

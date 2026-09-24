@@ -71,6 +71,29 @@ database:
   pool-size: 8
 
 # -----------------------------------------------------------------------------
+# MULTI-SERVER (BungeeCord / Velocity networks)
+# -----------------------------------------------------------------------------
+# Point every server at the same MySQL database and turn this on. Balances are
+# then written as atomic deltas, so two servers can never overwrite or
+# double-spend each other's changes; players are re-read from the database on
+# join, so switching servers always shows the truth. With Redis configured the
+# change is announced to the other servers instantly; without it they notice
+# at most refresh-seconds late (money is never wrong, only briefly unseen).
+multi-server:
+  enabled: false
+  # Optional. Format: redis://[user:password@]host:port[/db]
+  redis: ""
+  # Pub/sub channel used to announce balance changes.
+  channel: "minted:balance"
+  # How often (seconds) changed balances are written to the database. This is
+  # the window in which another server could act on a slightly stale value -
+  # keep it small.
+  save-seconds: 2
+  # How often (seconds) idle cached accounts are re-read from the shared
+  # database, so a server that missed an announcement heals itself. 0 = off.
+  refresh-seconds: 15
+
+# -----------------------------------------------------------------------------
 # ECONOMY CORE
 # -----------------------------------------------------------------------------
 economy:
@@ -203,6 +226,16 @@ shops:
   max-player-shops: 1
 
 # -----------------------------------------------------------------------------
+# VIP
+# -----------------------------------------------------------------------------
+# VIPs come from two sources, both of which get the automatic /<username>
+# shop command: the in-game list (/minted vip add|remove|list, or the VIP list
+# tile in /minted dashboard) and the minted.vip permission (assign it with
+# LuckPerms or similar - revoke there, the dashboard cannot remove it).
+vip:
+  enabled: true
+
+# -----------------------------------------------------------------------------
 # SOUNDS
 # -----------------------------------------------------------------------------
 # Uses 1.8 sound names (auto-converted on newer versions)
@@ -236,6 +269,20 @@ integrations:
   # VAULT - Make Minted the server economy for EssentialsX, Towny, shops, etc.
   vault:
     register: false  # Set true if you have Vault and want other plugins to use Minted
+
+  # VAULTUNLOCKED - Same, for the vault2 economy API served by the VaultUnlocked
+  # plugin (https://github.com/TheNewEconomy/VaultUnlockedAPI). Independent of
+  # the Vault toggle: enable the one your server runs, or both.
+  vaultunlocked:
+    register: false  # Set true if you have VaultUnlocked and want its consumers to use Minted
+
+  # CUSTOM ITEMS - Shops, /sell and the marketplace tell ItemsAdder, Nexo and
+  # Oraxen items apart from the vanilla material they are built on, so a custom
+  # item only ever trades against the same custom item - never against a plain
+  # diamond sword that happens to share its base. Providers are auto-detected;
+  # without them this changes nothing. /minted report shows what was found.
+  customitems:
+    enabled: true
   
   # PLACEHOLDERAPI - Enable %minted_*% placeholders
   placeholders:

@@ -28,6 +28,12 @@ public final class AccountSaveTask implements Runnable {
 
     @Override
     public void run() {
+        if (economy.isNetworked()) {
+            // A shared database must never be fed absolute overwrites: the
+            // networked saver commits guarded deltas instead.
+            economy.flushDirty();
+            return;
+        }
         Map<java.util.UUID, Double> snapshot = new HashMap<java.util.UUID, Double>();
         List<BankAccount> flushed = new ArrayList<BankAccount>();
 

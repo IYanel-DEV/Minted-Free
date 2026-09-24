@@ -11,8 +11,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,6 +39,7 @@ final class ShopSeeder {
             seedGlobal(shops, version, materials);
         }
         seedMissing(shops, version, materials);
+        repairGlobalShops(shops, version, materials);
         if (shops.community() == null) {
             seedCommunity(shops, materials);
         }
@@ -109,6 +112,62 @@ final class ShopSeeder {
                 resolutionWarned = true;
                 shops.warn("Some catalog items could not be resolved on this server and were skipped"
                         + " (first " + unresolved.size() + "): " + String.join(", ", unresolved) + ".");
+            }
+        }
+    }
+
+    /**
+     * Re-resolves any global-shop row whose stored item carries a family's base
+     * variant instead of the distinct one. Rows written by an older Minted on an
+     * older server (or by a build whose modern material lookup collapsed) kept a
+     * legacy material plus its data value; reread on 1.13+ the data is ignored,
+     * so a seeded "Red Wool" decodes as WHITE_WOOL, every head as a skeleton.
+     * Each seeded row is named exactly {@code §f<entry.display>}, which survives
+     * the round trip - so the catalog's display-to-material map picks the row up,
+     * rewrites its type to this server's correct variant, and saves it back.
+     * The pass is precise (only rows named like a catalog entry) and idempotent
+     * (once the type matches, nothing more is written). Admin-stocked and player
+     * rows are never touched.
+     */
+    private static void repairGlobalShops(ShopService shops, ServerVersion version, MaterialLookup materials) {
+        Map<String, Material> expected = new HashMap<String, Material>();
+        for (Catalog.Entry entry : Catalog.entriesFor(version)) {
+            MaterialLookup.Resolved resolved = materials.item(entry.materialKey);
+            if (resolved == null || resolved.material() == null) {
+                continue;
+            }
+            expected.put(entry.display, resolved.material());
+        }
+
+        for (Shop shop : shops.all()) {
+            if (shop.getType() != ShopType.GLOBAL) {
+                continue;
+            }
+            int fixed = 0;
+            for (ShopItem item : shop.allItems()) {
+                ItemStack stored = item.raw();
+                if (stored == null) {
+                    continue;
+                }
+                ItemMeta meta = stored.getItemMeta();
+                if (meta == null || !meta.hasDisplayName()) {
+                    continue;
+                }
+                Material correct = expected.get(ChatColor.stripColor(meta.getDisplayName()));
+                if (correct == null || stored.getType() == correct) {
+                    continue;
+                }
+                ItemStack replacement = new ItemStack(correct, stored.getAmount());
+                ItemMeta replacementMeta = replacement.getItemMeta();
+                replacementMeta.setDisplayName(meta.getDisplayName());
+                replacement.setItemMeta(replacementMeta);
+                item.setItem(replacement);
+                shops.saveItem(shop, item);
+                fixed++;
+            }
+            if (fixed > 0) {
+                shops.info("Repaired " + fixed + " catalog item(s) in '" + shop.getName()
+                        + "' to their correct variants.");
             }
         }
     }

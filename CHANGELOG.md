@@ -4,6 +4,204 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.52.0] - 2026-09-24 - Public documentation and onboarding
+
+### Added
+
+- **README rebuilt as the plugin's storefront**: every feature that shipped in
+  0.47-0.51 is now documented (VIP `/username` shops, VaultUnlocked, custom
+  items, multi-server), plus a quick start, a configuration highlights block,
+  full **command** and **permission** tables, a **compatibility matrix**
+  (1.8-1.26, SQLite/MySQL, Bungee/Velocity, optional plugins), a support
+  section and the previously unused commands/permissions banner.
+- **Startup summary line** in the server log: storage backend, multi-server
+  state and which hooks (Vault, VaultUnlocked, PlaceholderAPI) came up - the
+  same facts as `/minted report`, visible at boot.
+
+### Notes
+
+- Documentation and onboarding only; no gameplay or storage behaviour changed.
+
+## [0.51.0] - 2026-09-24 - Multi-server networks
+
+### Added
+
+- **Multi-server mode** (`multi-server.enabled`): point every server at the
+  same MySQL database and balances stay correct across BungeeCord/Velocity
+  switches. Off by default - a single server behaves exactly as before.
+- **Atomic delta writes**: every account remembers the balance storage is
+  known to hold, and the saver writes the difference as a guarded
+  `balance = balance + delta` that only fires when the result stays in
+  range. Two servers changing the same player therefore *compose* instead of
+  overwriting each other, and an overdraft is refused by the database itself -
+  the cached value is then corrected from the authoritative row, so money can
+  never be duplicated or lost. Admin `/eco set` writes stay absolute.
+- **Fresh read on join**: a player arriving from another server is re-read
+  from the shared database instead of this server's cache.
+- **Cross-server announcements (optional)**: a dependency-free Redis pub/sub
+  client (`multi-server.redis`, e.g. `redis://localhost:6379`) tells the
+  other servers the moment a balance is committed, and they re-read it. With
+  no Redis configured the database guarantees still hold; servers simply
+  notice a change within `multi-server.refresh-seconds`.
+- `multi-server.save-seconds` (default 2) bounds how long a change can sit
+  unsaved, and `/minted report` shows a `Multi-server` line with the live
+  state (Redis connected, connecting, or database-only).
+
+### Notes
+
+- The saver, quit flush and shutdown flush all go through the same delta
+  path; the 60-second batch saver delegates to it while networked, so a
+  shared database is never fed an absolute overwrite.
+- Physical (banknote) wallets stay physical across servers - the notes
+  travel with the player's inventory, which is up to the proxy's transfer.
+- Long-running background writers such as bank interest still write whole
+  balances; run them on one server only while networked.
+
+## [0.50.0] - 2026-09-24 - Custom items (ItemsAdder, Nexo, Oraxen)
+
+### Added
+
+- **Custom item identity in every trade path**: shops, player shops, the
+  community marketplace, `/sell` and sell-all now tell ItemsAdder, Nexo and
+  Oraxen items apart from the vanilla material they are built on. A custom
+  "Ruby Sword" (diamond-sword base) can no longer merge with, pay out as, or
+  match an ordinary diamond sword - both sides of a match are resolved
+  through the owning plugin's own item id
+  (`CustomStack.byItemStack`, `NexoItems.idFromItem`, `OraxenItems.getIdByItem`).
+- All three providers are auto-detected reflectively at first use: **no
+  compile-time dependency, nothing bundled**, and if a plugin is absent (or
+  its API moves) that provider is skipped and matching falls back to the
+  exact pre-integration material rule. Custom item names, lore and model
+  data were already stored losslessly by the shop codec, so listings render
+  as the real item end to end.
+- `integrations.customitems.enabled` config option (default true), the three
+  plugins added to `softdepend` for deterministic load order, and a
+  **Custom items** line in `/minted report` showing which providers were
+  detected.
+
+### Notes
+
+- Detection keys off each plugin's public API and a null/empty id reads as
+  "vanilla", so an unknown or newly-added item type degrades to today's
+  behaviour instead of ever blocking a trade. The check runs on the main
+  thread where all trade paths already live.
+
+## [0.49.0] - 2026-09-24 - VaultUnlocked (vault2 API) support
+
+### Added
+
+- **VaultUnlocked support**: Minted can now register on the `vault2` economy
+  API served by the VaultUnlocked plugin
+  (<https://github.com/TheNewEconomy/VaultUnlockedAPI>), next to the classic
+  Vault provider. Every VaultUnlocked-aware consumer reads and moves money
+  through the same `MintedEconomy` balances as Vault, `/balance` and the
+  menus, so all APIs always agree.
+- `VaultUnlockedEconomy` implements the full vault2 surface honestly: world
+  parameters collapse onto Minted's single balance, a call in a currency
+  Minted does not have fails with a clear `NOT_IMPLEMENTED` message instead of
+  touching the wrong pot, and shared accounts / account rename / account
+  delete answer `false` rather than faking them.
+- `integrations.vaultunlocked.register` config option (ships `false`, same
+  opt-in stance as `integrations.vault.register`; set `true` if you run
+  VaultUnlocked), `VaultUnlocked` added to `softdepend`, and a new line in
+  `/minted report` showing whether Minted is registered on the vault2 API.
+- Compiles against `net.milkbowl.vault:VaultUnlockedAPI:2.20` from the CodeMC
+  repository, `provided` scope - never shaded.
+
+### Notes
+
+- The hook is class-presence-guarded: on a server without VaultUnlocked
+  neither the hook nor the adapter class is ever loaded, and everything else
+  keeps working exactly as before. The VaultUnlockedAPI jar also carries the
+  classic `net.milkbowl.vault` API (the two hooks stay independent, so either
+  side can be present alone), and both hooks register at highest priority so
+  Minted wins the provider selection consistently on both APIs.
+
+## [0.48.0] - 2026-09-24 - Permission-based VIPs
+
+### Added
+
+- **`minted.vip` permission**: players granted this node (LuckPerms,
+  PermissionsEx, any permission plugin) now count as VIPs alongside the
+  stored list, and the automatic `/<username>` shop command works for them
+  exactly the same way. The node is declared in `plugin.yml` (default: false).
+- The dashboard VIP page and `/minted vip list` show **both sources** in one
+  roster. Permission-based VIPs are marked (`[permission]` in the list, a
+  "Granted by the minted.vip permission" line in the menu) and are not
+  removable from the menu - `/minted vip remove` and a menu click explain that
+  the node must be revoked in the permission plugin instead.
+- Removing a list entry that also has the permission prints a note that the
+  player remains a VIP, and adding someone who already has the node reports
+  they are already covered.
+- Because Bukkit cannot read an offline player's permissions, Minted records
+  the state seen on join and quit in `vips.yml` (its own `permission`
+  section); restarts resume from it and it self-corrects the moment the
+  player is online again.
+
+### Notes
+
+- A player on both sources stays a VIP until both are taken away. The
+  `/<username>` command, shop lifecycle hooks and the `vip.enabled` switch
+  treat both sources identically.
+
+## [0.47.0] - 2026-09-24 - VIPs and automatic /<username> shop commands
+
+### Added
+
+- **VIP list**: admins can mark players as VIP with `/minted vip add <player>`,
+  take it back with `/minted vip remove <player>`, and see everyone with
+  `/minted vip list`. The list lives in `vips.yml` inside the plugin folder,
+  records when and by whom each VIP was added, and follows name changes
+  automatically.
+- **Automatic `/<username>` shop command**: the moment a VIP creates their
+  player shop (`/pshop create ...`), a command named after them goes live -
+  anyone typing `/TheirName` opens that shop. It appears with the shop, is
+  removed when the shop or the VIP is, survives restarts and `/eshop reload`,
+  and is registered in the server's own command map, so it behaves like any
+  other command. A name that is already a command is never overridden; the
+  shop stays reachable as `/minted:<name>` and Minted logs it.
+- **Dashboard "VIP list" tile**: `/minted dashboard` now shows the VIP count
+  and opens a paginated page listing each VIP - their head, their
+  `/<username>` command, and when they were added and by whom - with
+  click-to-remove on every entry and an **Add VIP** button that prompts for a
+  name in chat.
+- `/minted help` lists the new `vip` command in the admin section, and
+  `vip.enabled` in `config.yml` switches the `/<username>` commands off while
+  keeping the list itself.
+
+### Notes
+
+- The command registration is reflection-guarded: on a server where the
+  command map cannot be reached, Minted logs one warning and everything else
+  keeps working - players just use `/pshop open <name>` instead. No other
+  plugin is hard-depended on, and the commands re-check VIP status and shop
+  ownership on every use, so a stale registration can never serve a removed
+  VIP.
+
+## [0.46.1] - 2026-09-24 - Item variant repair and player-shop frame
+
+- Fixed: on modern servers (Spigot/Paper 1.13+) colored catalog items seeded by
+  an older install showed their base variant - every wool looked white, every
+  head a skeleton skull, and planks, beds, glass, and terracotta lost their
+  color. A one-shot repair pass now re-resolves any global-shop row whose stored
+  display name matches a catalog entry and whose material does not, rewriting
+  it to the correct variant and persisting the fix. Run once, it is idempotent
+  and never touches admin-priced or player-owned items.
+- Fixed: the "Player shops" directory menu framed itself in the green shop
+  accent; it now uses the same neutral gray frame as the shop chooser it opens
+  from, so the border matches the gray filler instead of clashing.
+
+## [0.46.0] - 2026-09-23 - Beautiful /minted help
+
+- `/minted help` (and bare `/minted`) now shows a bordered, palette-styled
+  command page instead of the old one-line tip.
+- The list is filtered by permissions: players see exactly the player commands
+  they may run, and staff-only pages (`admin`, `reload`, `report`, `npc`,
+  shop/eco/language administration) appear only when the sender has the
+  matching permission and are hidden from everyone else.
+- Commands are grouped into player and admin sections with per-section counts,
+  so the page reads like a proper manual rather than a wall of text.
+
 ## [0.45.1] - 2026-09-23 - Slimmed jar for resource upload
 
 - The fat jar dropped from ~11 MB to ~3.5 MB so it fits SpigotMC's ~4 MB

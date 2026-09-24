@@ -143,6 +143,63 @@ final class AccountDao {
         }
     }
 
+    /**
+     * Applies a relative change atomically and returns the balance the row
+     * holds afterwards. The guarded UPDATE is the whole point: it only fires
+     * when the result stays within [0, ceiling], and two servers updating the
+     * same row serialize at the database instead of overwriting each other.
+     */
+    Double applyDelta(UUID uuid, double delta, double seed, double ceiling) {
+        if (!applyGuardedDelta(uuid, delta, ceiling)) {
+            Double current = load(uuid);
+            if (current == null) {
+                // No row yet: create it with the starting balance plus the change.
+                double created = seed + delta;
+                if (created < 0 || created > ceiling) {
+                    return null;
+                }
+                if (insert(uuid, created)) {
+                    return created;
+                }
+                // Another server created the row between the select and the
+                // insert - retry the guarded update so the change still lands.
+                applyGuardedDelta(uuid, delta, ceiling);
+            }
+        }
+        return load(uuid);
+    }
+
+    /** @return true when the row was updated; false when missing or refused. */
+    private boolean applyGuardedDelta(UUID uuid, double delta, double ceiling) {
+        String sql = "UPDATE " + table + " SET balance = balance + ?"
+                + " WHERE uuid = ? AND balance + ? >= 0 AND balance + ? <= ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setDouble(1, delta);
+            statement.setString(2, uuid.toString());
+            statement.setDouble(3, delta);
+            statement.setDouble(4, delta);
+            statement.setDouble(5, ceiling);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new StorageException("Could not apply a balance change for " + uuid, e);
+        }
+    }
+
+    private boolean insert(UUID uuid, double balance) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "INSERT INTO " + table + " (uuid, balance) VALUES (?, ?)")) {
+            statement.setString(1, uuid.toString());
+            statement.setDouble(2, balance);
+            statement.executeUpdate();
+            return true;
+        } catch (SQLException raced) {
+            // Duplicate key: another server won the race - not an error here.
+            return false;
+        }
+    }
+
     private Map<UUID, Double> readBalances(PreparedStatement statement) throws SQLException {
         Map<UUID, Double> result = new HashMap<UUID, Double>();
         try (ResultSet rows = statement.executeQuery()) {
