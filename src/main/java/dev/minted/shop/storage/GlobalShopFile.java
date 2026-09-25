@@ -261,7 +261,9 @@ public final class GlobalShopFile {
                 || n.equals("MOB_SPAWNER") || n.equals("SPAWNER")
                 || n.startsWith("COMMAND") || n.startsWith("STRUCTURE") || n.equals("JIGSAW")
                 || n.equals("GLOWING_REDSTONE_ORE") || n.equals("BURNING_FURNACE")
-                || n.equals("FROSTED_ICE") || n.equals("LIT_")) {
+                || n.equals("FROSTED_ICE") || n.equals("LIT_")
+                || n.endsWith("_SPAWN_EGG") || n.equals("KNOWLEDGE_BOOK")
+                || n.equals("DEBUG_STICK")) {
             return false;
         }
         return true;
