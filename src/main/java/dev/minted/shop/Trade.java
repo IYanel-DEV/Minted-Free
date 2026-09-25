@@ -6,9 +6,11 @@ import dev.minted.bank.EconomyStats;
 import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.Purse;
 import dev.minted.bank.WalletService;
+import dev.minted.discord.DiscordWebhookService;
 import dev.minted.lang.Messages;
 import dev.minted.ledger.LedgerService;
 import dev.minted.shop.log.SaleLog;
+import dev.minted.tax.TaxService;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -30,16 +32,21 @@ import java.util.Map;
  */
 public final class Trade {
 
-    private final WalletService wallet;
+private final WalletService wallet;
     private final EconomyService bank;
     private final MoneyFormat format;
     private final Messages messages;
     private final EconomyStats stats;
     private final SaleLog sales;
     private final LedgerService ledger;
+    private final PaymentService payments;
+    private final DeliveryService deliveries;
+    private TaxService taxService;
+    private DiscordWebhookService discordWebhook;
 
     public Trade(WalletService wallet, EconomyService bank, MoneyFormat format, Messages messages,
-                 EconomyStats stats, SaleLog sales, LedgerService ledger) {
+                 EconomyStats stats, SaleLog sales, LedgerService ledger, PaymentService payments,
+                 DeliveryService deliveries, TaxService taxService, DiscordWebhookService discordWebhook) {
         this.wallet = wallet;
         this.bank = bank;
         this.format = format;
@@ -47,15 +54,24 @@ public final class Trade {
         this.stats = stats;
         this.sales = sales;
         this.ledger = ledger;
+        this.payments = payments;
+        this.deliveries = deliveries;
+        this.taxService = taxService;
+        this.discordWebhook = discordWebhook;
+    }
+
+    /** Called after TaxService is initialized. */
+    public void setTaxService(TaxService taxService) {
+        this.taxService = taxService;
+    }
+
+    /** Called after DiscordWebhookService is initialized. */
+    public void setDiscordWebhook(DiscordWebhookService discordWebhook) {
+        this.discordWebhook = discordWebhook;
     }
 
     public void buy(Player player, Shop shop, ShopItem item, int quantity) {
         if (quantity <= 0) {
-            return;
-        }
-        Purse purse = purseFor(shop, player);
-        if (purse == null) {
-            messages.send(player, "buy.not-ready");
             return;
         }
         if (!item.isBuyable()) {
@@ -63,31 +79,67 @@ public final class Trade {
             return;
         }
         double multiplier = Discounts.buyMultiplier(player, shop.getName());
-        double price = item.getBuyPrice() * quantity * multiplier;
-        if (!purse.charge(price)) {
-            messages.send(player, "buy.insufficient", "price", format.format(price));
+        double basePrice = item.getBuyPrice() * quantity * multiplier;
+        double taxAmount = 0.0;
+        if (taxService != null && taxService.isEnabled()) {
+            taxAmount = taxService.calculateGlobalShopBuyTax(item.getBuyPrice() * quantity * multiplier);
+        }
+        double totalPrice = basePrice + taxAmount;
+        // The player picks the purse (wallet, bank, or wallet-then-bank), and a
+        // bank-funded purchase starts the delivery cooldown.
+        PaymentService.Charge charge = payments.charge(player, totalPrice);
+        if (charge.isCooling()) {
+            messages.send(player, "buy.bank-cooldown", "seconds", String.valueOf(charge.remainingSeconds()));
             return;
         }
-        // Buying from a digital shop destroys the money (nothing receives it),
-        // so it joins the burned total. Physical-cash spends are exempt by
-        // contract: a consumed banknote is untracked pocket money, not a burned
-        // digital balance.
-        if (shop.getCurrency() == Currency.BANK || !wallet.isPhysical()) {
-            stats.burn(price);
+        if (charge.isNotReady()) {
+            messages.send(player, "buy.not-ready");
+            return;
         }
-        boolean overflowed = giveOrDrop(player, item.copy(), quantity);
-        sales.record("shop", null, player.getUniqueId(), describe(item.raw()), quantity, price);
-        ledger.record(player.getUniqueId(), -price, "shop-buy", describe(item.raw()));
+        if (!charge.isPaid()) {
+            messages.send(player, "buy.insufficient", "price", format.format(totalPrice));
+            return;
+        }
+        // Money that left the digital economy joins the burned total. Physical
+        // cash is exempt by contract: a consumed banknote is untracked pocket
+        // money, not a burned digital balance.
+        if (charge.usedBank() || !wallet.isPhysical()) {
+            stats.burn(basePrice);
+        }
+        // Burn tax amount (removed from economy)
+        if (taxAmount > 0) {
+            stats.burn(taxAmount);
+        }
+        String label = describe(item.raw());
+        boolean overflowed;
+        if (charge.usedBank() && deliveries.delaySeconds() > 0L) {
+            // A bank purchase is delivered, not handed over: the goods arrive
+            // after the cooldown the player was just told about.
+            deliveries.schedule(player, item.copy(), quantity, label);
+            overflowed = false;
+        } else {
+            overflowed = giveOrDrop(player, item.copy(), quantity);
+        }
+        sales.record("shop", null, player.getUniqueId(), label, quantity, basePrice);
+        ledger.record(player.getUniqueId(), -basePrice, "shop-buy", label);
+        if (taxAmount > 0) {
+            ledger.record(player.getUniqueId(), -taxAmount, "tax", "global-shop-buy");
+        }
         messages.send(player, "buy.success",
                 "quantity", String.valueOf(quantity),
-                "item", describe(item.raw()),
-                "price", format.format(price),
-                "balance", format.format(purse.balance()));
+                "item", label,
+                "price", format.format(basePrice),
+                "tax", format.format(taxAmount),
+                "total", format.format(basePrice + taxAmount),
+                "balance", format.format(charge.purse().balance()));
         if (multiplier < 1.0) {
             messages.send(player, "buy.discount", "percent", trim((1.0 - multiplier) * 100.0));
         }
         if (overflowed) {
             messages.send(player, "buy.overflow");
+        }
+        if (discordWebhook != null) {
+            discordWebhook.sendShopPurchase(player, shop, item, quantity, basePrice, taxAmount);
         }
     }
 
@@ -110,25 +162,35 @@ public final class Trade {
             return;
         }
         double multiplier = Discounts.sellMultiplier(player, shop.getName());
-        double earned = item.getSellPrice() * quantitySold * multiplier;
+        double baseEarned = item.getSellPrice() * quantitySold * multiplier;
+        double taxAmount = 0.0;
+        if (taxService != null && taxService.isEnabled()) {
+            taxAmount = taxService.calculateGlobalShopSellTax(item.getSellPrice() * quantitySold * multiplier);
+        }
+        double netEarned = baseEarned - taxAmount;
         // Remove the goods first: paying cash mints notes into the same inventory,
         // and we must not scan the sold stack as if it were still there.
         remove(player, item.raw(), quantitySold);
-        if (!purse.credit(earned)) {
+        if (!purse.credit(netEarned)) {
             // Only a digital bank cap can refuse a payout; hand the goods back.
             giveOrDrop(player, item.copy(), quantitySold);
             messages.send(player, "sell.cap");
             return;
         }
-        sales.record("shop", player.getUniqueId(), null, describe(item.raw()), quantitySold, earned);
-        ledger.record(player.getUniqueId(), earned, "shop-sell", describe(item.raw()));
+        sales.record("shop", player.getUniqueId(), null, describe(item.raw()), quantitySold, baseEarned);
+        ledger.record(player.getUniqueId(), netEarned, "shop-sell", describe(item.raw()));
+        if (taxAmount > 0) {
+            ledger.record(player.getUniqueId(), -taxAmount, "tax", "global-shop-sell");
+        }
         messages.send(player, "sell.success",
                 "quantity", String.valueOf(quantitySold),
                 "item", describe(item.raw()),
-                "earned", format.format(earned),
+                "earned", format.format(baseEarned),
+                "tax", format.format(taxAmount),
+                "net", format.format(netEarned),
                 "balance", format.format(purse.balance()));
-        if (multiplier > 1.0) {
-            messages.send(player, "sell.bonus", "factor", trim(multiplier));
+        if (discordWebhook != null) {
+            discordWebhook.sendShopSale(player, null, shop, item, quantitySold, baseEarned, taxAmount);
         }
     }
 

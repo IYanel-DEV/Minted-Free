@@ -4,9 +4,11 @@ import dev.minted.bank.MoneyFormat;
 import dev.minted.bank.Purse;
 import dev.minted.bank.WalletService;
 import dev.minted.banknote.BanknoteManager;
+import dev.minted.discord.DiscordWebhookService;
 import dev.minted.lang.Messages;
 import dev.minted.shop.catalog.Category;
 import dev.minted.shop.log.SaleLog;
+import dev.minted.tax.TaxService;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -29,21 +31,40 @@ public final class Market {
     /** Most units a single listing can hold - the physical cap anyone could carry. */
     public static final int LISTING_CAP = 999;
 
-    private final ShopService shops;
+private final ShopService shops;
     private final WalletService wallet;
     private final BanknoteManager banknotes;
     private final MoneyFormat format;
     private final Messages messages;
     private final SaleLog sales;
+    private final PaymentService payments;
+    private final DeliveryService deliveries;
+    private TaxService taxService;
+    private DiscordWebhookService discordWebhook;
 
     public Market(ShopService shops, WalletService wallet, BanknoteManager banknotes,
-                  MoneyFormat format, Messages messages, SaleLog sales) {
+                  MoneyFormat format, Messages messages, SaleLog sales, PaymentService payments,
+                  DeliveryService deliveries, TaxService taxService, DiscordWebhookService discordWebhook) {
         this.shops = shops;
         this.wallet = wallet;
         this.banknotes = banknotes;
         this.format = format;
         this.messages = messages;
         this.sales = sales;
+        this.payments = payments;
+        this.deliveries = deliveries;
+        this.taxService = taxService;
+        this.discordWebhook = discordWebhook;
+    }
+
+    /** Called after TaxService is initialized. */
+    public void setTaxService(TaxService taxService) {
+        this.taxService = taxService;
+    }
+
+    /** Called after DiscordWebhookService is initialized. */
+    public void setDiscordWebhook(DiscordWebhookService discordWebhook) {
+        this.discordWebhook = discordWebhook;
     }
 
     public boolean isBanknote(ItemStack item) {
@@ -79,8 +100,8 @@ public final class Market {
             return null;
         }
         int have = Inventories.count(owner, unit);
-        int stock = Math.min(Math.min(amount, have), LISTING_CAP);
-        if (stock <= 0) {
+        int wanted = Math.min(Math.min(amount, have), LISTING_CAP);
+        if (wanted <= 0) {
             messages.send(owner, k(shop, "list.none"));
             return null;
         }
@@ -89,16 +110,24 @@ public final class Market {
             messages.send(owner, k(shop, "list.full"));
             return null;
         }
-        Inventories.remove(owner, unit, stock);
+        // Only the units that actually left the inventory become stock. If the
+        // inventory changed between the count and the take (creative mode, a
+        // shift-click, another plugin), the listing follows reality - a listing
+        // may never claim more goods than the owner really gave up.
+        int taken = Inventories.remove(owner, unit, wanted);
+        if (taken <= 0) {
+            messages.send(owner, k(shop, "list.none"));
+            return null;
+        }
         ShopItem listing = new ShopItem(shop.getId(),
                 address / Shop.SLOTS_PER_PAGE, address % Shop.SLOTS_PER_PAGE,
                 unit.clone(), price, ShopItem.NOT_OFFERED, category.key());
         listing.setOwner(owner.getUniqueId());
-        listing.setStock(stock);
+        listing.setStock(taken);
         listing.setBuyBackPrice(buyBack > 0 ? buyBack : ShopItem.NOT_OFFERED);
         shops.saveItem(shop, listing);
         messages.send(owner, k(shop, "list.created"),
-                "quantity", String.valueOf(stock), "item", name(unit), "price", format.format(price));
+                "quantity", String.valueOf(taken), "item", name(unit), "price", format.format(price));
         return listing;
     }
 
@@ -111,30 +140,49 @@ public final class Market {
             messages.send(buyer, k(shop, "buy.own"));
             return;
         }
-        Purse purse = wallet.purseFor(buyer);
-        if (purse == null) {
-            messages.send(buyer, k(shop, "buy.not-ready"));
-            return;
-        }
         int qty = (int) Math.min(quantity, listing.getStock());
         if (qty <= 0) {
             messages.send(buyer, k(shop, "buy.gone"));
             return;
         }
         double price = listing.getBuyPrice() * qty;
-        if (!purse.charge(price)) {
+        // The buyer's own payment source decides the purse, exactly like the
+        // global shop path; the seller's earnings always land in their wallet.
+        PaymentService.Charge charge = payments.charge(buyer, price);
+        if (charge.isCooling()) {
+            messages.send(buyer, "buy.bank-cooldown", "seconds", String.valueOf(charge.remainingSeconds()));
+            return;
+        }
+        if (charge.isNotReady()) {
+            messages.send(buyer, k(shop, "buy.not-ready"));
+            return;
+        }
+        if (!charge.isPaid()) {
             messages.send(buyer, k(shop, "buy.insufficient"), "price", format.format(price));
             return;
         }
         listing.setStock(listing.getStock() - qty);
         listing.addEarnings(price);
-        boolean dropped = Inventories.giveOrDrop(buyer, listing.copy(), qty);
-        sales.record("market", listing.getOwner(), buyer.getUniqueId(), name(listing.raw()), qty, price);
+        String label = name(listing.raw());
+        boolean dropped;
+        if (charge.usedBank() && deliveries.delaySeconds() > 0L) {
+            // Bank purchases are delivered after the cooldown, exactly like the
+            // global shop path; the stock is already reserved for this buyer.
+            deliveries.schedule(buyer, listing.copy(), qty, label);
+            dropped = false;
+        } else {
+            dropped = Inventories.giveOrDrop(buyer, listing.copy(), qty);
+        }
+        sales.record("market", listing.getOwner(), buyer.getUniqueId(), label, qty, price);
         persist(shop, listing);
         messages.send(buyer, k(shop, "buy.success"),
-                "quantity", String.valueOf(qty), "item", name(listing.raw()), "price", format.format(price));
+                "quantity", String.valueOf(qty), "item", label, "price", format.format(price));
         if (dropped) {
             messages.send(buyer, k(shop, "buy.overflow"));
+        }
+        if (discordWebhook != null) {
+            Player owner = Bukkit.getPlayer(listing.getOwner());
+            discordWebhook.sendPlayerShopPurchase(buyer, owner, shop, listing, qty, price, 0);
         }
     }
 
@@ -189,6 +237,9 @@ public final class Market {
         messages.send(seller, k(shop, "sell.success"),
                 "quantity", String.valueOf(removed), "item", name(listing.raw()),
                 "earned", format.format(earned));
+        if (discordWebhook != null) {
+            discordWebhook.sendPlayerShopSale(seller, owner, shop, listing, removed, earned, 0);
+        }
     }
 
     /** Mints the listing's earnings to the owner's purse and resets them to zero. */

@@ -198,6 +198,26 @@ auction:
   max-per-player: 10
 
 # -----------------------------------------------------------------------------
+# TAX SYSTEM
+# -----------------------------------------------------------------------------
+# Configure transaction taxes. Taxes are collected from the BUYER on purchases
+# and from the SELLER on sales. Collected taxes are removed from the economy
+# (burned) and logged. Set to 0 to disable.
+tax:
+  enabled: false
+  # Global shop tax (percentage)
+  global-shop-buy: 0.0      # Tax on player buying from global shop
+  global-shop-sell: 0.0     # Tax on player selling to global shop
+  # Player shop / community market tax
+  player-shop-buy: 0.0      # Tax on player buying from player shop
+  player-shop-sell: 0.0     # Tax on player selling to player shop (buy-back)
+  # Auction house tax
+  auction-buy: 0.0          # Tax on winning bid/buyout
+  auction-sell: 0.0         # Tax on auction proceeds (on top of listing fee)
+  # Minimum transaction amount for tax to apply (0 = all transactions)
+  minimum-amount: 0
+
+# -----------------------------------------------------------------------------
 # RESOURCE PACK
 # -----------------------------------------------------------------------------
 # Prompts players to download custom textures for banknotes/wallet (1.14+)
@@ -241,6 +261,37 @@ shops:
   global: "Spawn"
   # How many personal (player-owned) shops one account may open with /pshop.
   max-player-shops: 1
+  # Rotating/Scheduled Stock
+  # Configure stock that automatically rotates or restocks on a schedule.
+  rotating-stock:
+    enabled: false
+    # Default rotation interval in hours (0 = disabled)
+    default-interval-hours: 24
+    # Maximum number of rotating slots per shop
+    max-rotating-slots: 10
+    # Rotation behavior: "replace" (remove old, add new) or "restock" (refill existing)
+    behavior: "replace"
+    # Predefined rotation pools (can be referenced by name in shop editor)
+    pools:
+      # Example pool - uncomment and customize:
+      # daily-essentials:
+      #   items:
+      #     - material: "DIAMOND"
+      #       amount: 1
+      #       buy-price: 1000
+      #       sell-price: 500
+      #       probability: 0.1
+      #     - material: "IRON_INGOT"
+      #       amount: 16
+      #       buy-price: 50
+      #       sell-price: 10
+      #       probability: 0.5
+      #     - material: "BREAD"
+      #       amount: 32
+      #       buy-price: 10
+      #       sell-price: 2
+      #       probability: 0.8
+      #   interval-hours: 24
 
 # -----------------------------------------------------------------------------
 # VIP
@@ -325,6 +376,57 @@ integrations:
     skin-value: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTAxMDA4ZTFkOGI5MjRhOGQ0YjFkMTFmMmZkMWNmZmE0YzdjZWFlYTBlNzhiZmZkYWJkM2NlODFkZjdmOTI4YiJ9fX0="
     skin-signature: ""
     skin-player: ""
+
+# -----------------------------------------------------------------------------
+# DISCORD WEBHOOKS
+# -----------------------------------------------------------------------------
+# Send beautiful embeds to Discord channels for economy events.
+# Create webhooks in Discord: Server Settings → Integrations → Webhooks → New Webhook
+discord:
+  enabled: false
+  # Default webhook URL (used when no specific webhook is set for an event type)
+  default-webhook-url: ""
+  # Per-event webhook URLs (override default). Leave empty to use default.
+  webhooks:
+    # Shop sales/purchases
+    shop-sale: ""
+    shop-purchase: ""
+    # Player shop events
+    player-shop-sale: ""
+    player-shop-purchase: ""
+    # Auction events
+    auction-create: ""
+    auction-bid: ""
+    auction-buyout: ""
+    auction-expire: ""
+    auction-claim: ""
+    # Bounty events
+    bounty-place: ""
+    bounty-claim: ""
+    # Economy events
+    balance-milestone: ""      # Player reaches balance milestone
+    large-transfer: ""         # Transfers over threshold
+    # Server events
+    server-start: ""
+    server-stop: ""
+  # Embed customization
+  embed:
+    # Show server name in footer
+    show-server-name: true
+    # Show server icon (requires server-icon.png in plugin folder)
+    show-server-icon: false
+    # Custom color (hex, e.g., "#4CAF50" for green)
+    color: "#4CAF50"
+    # Thumbnail image URL (optional)
+    thumbnail-url: ""
+    # Footer text (optional)
+    footer-text: "Minted Economy"
+    # Ping roles/users on specific events (comma-separated role/user IDs)
+    ping-on:
+      large-transfer: ""
+      auction-buyout: ""
+  # Minimum amount for large-transfer ping (default 10000)
+  large-transfer-threshold: 10000
 
 # =============================================================================
 # QUICK REFERENCE: COMMON SETUPS

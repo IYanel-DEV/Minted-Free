@@ -4,6 +4,18 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.65.0] - 2026-09-25 - Discord webhooks + Tax system
+
+### Added
+- **Discord webhooks with beautiful embeds** for all economy events (shop sales, auctions, bounties, large transfers, balance milestones, server start/stop)
+- **Configurable tax system** — per-shop-type buy/sell taxes (global shop, player shop, auctions) with minimum amount threshold
+- Tax amounts are burned from economy and logged in ledger
+- Per-event webhook URLs with ping support for important events
+
+### Fixed
+- INK_SACK compatibility fix finalized (uses COAL/GOLD_INGOT, no MaterialLookup needed)
+- Tax amounts properly burned from economy and logged in ledger
+
 ## [0.64.0] - 2026-09-25 - Persistent price sort preference
 
 ### Added

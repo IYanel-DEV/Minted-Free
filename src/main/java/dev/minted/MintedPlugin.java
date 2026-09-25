@@ -59,15 +59,19 @@ import dev.minted.lang.LanguageCommand;
 import dev.minted.lang.LanguageManager;
 import dev.minted.lang.Messages;
 import dev.minted.network.NetworkCoordinator;
+import dev.minted.shop.DeliveryService;
+import dev.minted.shop.PaymentService;
 import dev.minted.request.RequestService;
 import dev.minted.sound.SoundFX;
 import dev.minted.shop.Market;
 import dev.minted.shop.ShopContext;
 import dev.minted.shop.ShopService;
 import dev.minted.shop.Trade;
+import dev.minted.tax.TaxService;
 import dev.minted.shop.command.ShopCommand;
 import dev.minted.shop.command.ShopTabCompleter;
 import dev.minted.shop.log.SaleLog;
+import dev.minted.shop.menu.BrowseHistory;
 import dev.minted.shop.storage.ShopDao;
 import dev.minted.vip.VipListener;
 import dev.minted.vip.VipService;
@@ -140,6 +144,10 @@ public final class MintedPlugin extends JavaPlugin {
     private LanguageManager languageManager;
     private VipService vipService;
     private NetworkCoordinator network;
+    private dev.minted.shop.PaymentService paymentService;
+    private dev.minted.discord.DiscordWebhookService discordWebhook;
+    private Trade trade;
+    private Market market;
 
     public static MintedPlugin get() {
         return instance;
@@ -192,6 +200,9 @@ public final class MintedPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (discordWebhook != null) {
+            discordWebhook.shutdown();
+        }
         if (network != null) {
             // Stop the tasks first; the shutdown flush below then runs as a
             // normal, final delta commit.
@@ -320,10 +331,17 @@ public final class MintedPlugin extends JavaPlugin {
         this.shopService = new ShopService(this, new ShopDao(pool, dialect), serverVersion, materials);
         getServer().getServicesManager().register(dev.minted.api.MintedItems.class,
                 new dev.minted.api.MintedItems(materials, serverVersion), this, ServicePriority.Normal);
-        Trade trade = new Trade(walletService, bankEconomy, format, messages, stats, saleLog, ledgerService);
-        Market market = new Market(shopService, walletService, banknotes, format, messages, saleLog);
-        ShopContext shopContext = new ShopContext(shopService, trade, market, messages, format, chatPrompt,
-                design, walletService, materials);
+        PaymentService payments = new PaymentService(this, walletService, bankEconomy);
+        DeliveryService deliveries = new DeliveryService(this, messages);
+        deliveries.listen();
+        this.paymentService = payments;
+        TaxService taxService = new TaxService(this, format);
+        this.trade = new Trade(walletService, bankEconomy, format, messages, stats, saleLog, ledgerService,
+                payments, deliveries, taxService, null); // discordWebhook set later in finishStartup
+        this.market = new Market(shopService, walletService, banknotes, format, messages, saleLog,
+                payments, deliveries, taxService, null); // discordWebhook set later in finishStartup
+        ShopContext shopContext = new ShopContext(shopService, trade, this.market, messages, format, chatPrompt,
+                design, walletService, materials, new BrowseHistory());
 
         // VIPs: the admin list behind /minted vip and the dashboard, plus the
         // automatic /<username> shop commands derived from it. The shop hooks
@@ -332,16 +350,28 @@ public final class MintedPlugin extends JavaPlugin {
         vipService.setAliases(new VipShopCommands(this, shopContext, vipService));
         shopService.setPlayerShopHooks(vipService);
         getServer().getPluginManager().registerEvents(new VipListener(vipService), this);
+        // A VIP granted (or stripped) while already online would otherwise keep
+        // a stale /<username> command state until they reconnected.
+        getServer().getScheduler().runTaskTimer(this, new Runnable() {
+            @Override
+            public void run() {
+                vipService.observeOnline();
+            }
+        }, 100L, 100L);
 
         // Auction house
-        AuctionDao auctionDao = new AuctionDao(pool, dialect);
-        double listingFeePercent = getConfig().getDouble("auction.listing-fee-percent", 1.0);
-        double minStartPrice = getConfig().getDouble("auction.min-start-price", 1.0);
-        int maxDurationHours = getConfig().getInt("auction.max-duration-hours", 168);
-        int minDurationMinutes = getConfig().getInt("auction.min-duration-minutes", 10);
-        int maxItemsPerPlayer = getConfig().getInt("auction.max-per-player", 10);
-        this.auctionService = new AuctionService(auctionDao, walletService, walletEconomy, format, messages, ledgerService,
-                listingFeePercent, minStartPrice, maxDurationHours, minDurationMinutes, maxItemsPerPlayer);
+        if (getConfig().getBoolean("auction.enabled", true)) {
+            AuctionDao auctionDao = new AuctionDao(pool, dialect);
+            double listingFeePercent = getConfig().getDouble("auction.listing-fee-percent", 1.0);
+            double minStartPrice = getConfig().getDouble("auction.min-start-price", 1.0);
+            int maxDurationHours = getConfig().getInt("auction.max-duration-hours", 168);
+            int minDurationMinutes = getConfig().getInt("auction.min-duration-minutes", 10);
+            int maxItemsPerPlayer = getConfig().getInt("auction.max-per-player", 10);
+            this.auctionService = new AuctionService(auctionDao, walletService, walletEconomy, format, messages, ledgerService,
+                    listingFeePercent, minStartPrice, maxDurationHours, minDurationMinutes, maxItemsPerPlayer);
+        } else {
+            getLogger().info("The auction house is disabled in config.yml.");
+        }
 
         // Multi-currency
         this.currencyManager = new CurrencyManager(pool, dialect, messages);
@@ -374,12 +404,16 @@ public final class MintedPlugin extends JavaPlugin {
         if (bountyService != null) {
             setExecutor("bounty", new dev.minted.command.BountyCommand(gui));
         }
-        setExecutor("ah", new AuctionCommand(shopContext, auctionService, messages));
+        if (auctionService != null) {
+            setExecutor("ah", new AuctionCommand(shopContext, auctionService, messages));
+        }
         setExecutor("language", new LanguageCommand(languageManager));
         registerShopCommand(shopContext);
         setExecutor("pshop", new dev.minted.shop.command.PlayerShopCommand(
                 shopContext, getConfig().getInt("shops.max-player-shops", 1)));
         getCommand("pshop").setTabCompleter(new dev.minted.shop.command.PlayerShopTabCompleter(shopContext));
+        setExecutor("sh", new dev.minted.shop.command.LastViewCommand(shopContext, false));
+        setExecutor("psh", new dev.minted.shop.command.LastViewCommand(shopContext, true));
         hookVault();
         hookVaultUnlocked();
         hookPapi();
@@ -669,6 +703,11 @@ public final class MintedPlugin extends JavaPlugin {
             bankEconomy.load(player.getUniqueId(), null);
         }
         shopService.initialize();
+        if (auctionService != null) {
+            // Auction tables open with the same pool; the loader thread that
+            // flips the auction house ready runs here, after storage is up.
+            auctionService.initialize();
+        }
         if (network != null) {
             network.start();
         }
@@ -710,6 +749,20 @@ public final class MintedPlugin extends JavaPlugin {
                 }
             }
         }, 20L * 60L, 20L * 60L);
+
+        // Initialize Discord webhook service
+        this.discordWebhook = new dev.minted.discord.DiscordWebhookService(this, messages);
+        if (discordWebhook != null) {
+            discordWebhook.sendServerStart();
+            // Set the Discord webhook on the Trade instance for shop transaction notifications
+            if (this.trade != null) {
+                this.trade.setDiscordWebhook(this.discordWebhook);
+            }
+            // Set the Discord webhook on the Market instance for player shop transaction notifications
+            if (this.market != null) {
+                this.market.setDiscordWebhook(this.discordWebhook);
+            }
+        }
     }
 
     private double[] presets() {
@@ -845,5 +898,35 @@ public final class MintedPlugin extends JavaPlugin {
     /** "off" on a single server, otherwise a short multi-server status line. */
     public String networkStatus() {
         return network == null ? "off" : network.status();
+    }
+
+    /** True when the Redis announcement channel is connected right now. */
+    public boolean redisConnected() {
+        return network != null && network.redisConnected();
+    }
+
+    /** The wallet storage, so the in-game self-test can exercise real SQL. */
+    public dev.minted.backend.StorageProvider storageForSelfTest() {
+        return walletStorage;
+    }
+
+    /** The shop model, so the in-game self-test can confirm it loaded. */
+    public dev.minted.shop.ShopService shopService() {
+        return shopService;
+    }
+
+    /** Where players pay from (wallet, bank, or both) and the bank cooldown. */
+    public dev.minted.shop.PaymentService getPaymentService() {
+        return paymentService;
+    }
+
+    /** Discord webhook service for sending economy event notifications. */
+    public dev.minted.discord.DiscordWebhookService getDiscordWebhook() {
+        return discordWebhook;
+    }
+
+    /** The core trade engine for shop transactions. */
+    public Trade getTrade() {
+        return trade;
     }
 }
