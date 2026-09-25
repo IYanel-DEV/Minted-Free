@@ -289,4 +289,5 @@ Output: `target/Minted-<version>.jar`
   fastest way to diagnose "why isn't X hooked".
 - Anonymous usage stats (bStats, id 34228) can be disabled in
   `plugins/bStats/config.yml`; no balance or player data is ever collected.   
+    
  
