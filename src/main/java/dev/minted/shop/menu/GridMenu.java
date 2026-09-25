@@ -87,9 +87,8 @@ public final class GridMenu extends Menu {
         set(47, d.pageInfo(current + 1, pages), null);
         set(48, d.next(), openPage(current + 1, pages));
         
-// Price sort toggles with highlighting
-        set(50, priceSortButton(Sort.PRICE_LOW, "Low → High", Material.EMERALD, Material.INK_SACK), setSortLow());
-        set(51, priceSortButton(Sort.PRICE_HIGH, "High → Low", Material.DIAMOND, Material.INK_SACK), setSortHigh());
+        // Single price sort toggle button
+        set(50, priceSortToggle(), togglePriceSort());
         
         set(52, d.search(query), reSearch());
         set(53, d.close(), new Consumer<Player>() {
@@ -102,23 +101,51 @@ public final class GridMenu extends Menu {
     }
 
     /**
-     * Creates a price sort toggle button that highlights when active.
-     * @param mode The sort mode this button represents
-     * @param label Display label
-     * @param activeMaterial Material when this mode is active (highlighted)
-     * @param inactiveMaterial Material when this mode is inactive
+     * Creates a single price sort toggle button.
+     * Shows current mode, toggles between Low→High and High→Low on click.
+     * Yellow = active/enabled, Gray = inactive.
      */
-    private ItemStack priceSortButton(Sort mode, String label, Material activeMaterial, Material inactiveMaterial) {
-        boolean active = sort == mode;
-        Material mat = active ? activeMaterial : inactiveMaterial;
-        ChatColor nameColor = active ? ChatColor.GREEN : ChatColor.WHITE;
+    private ItemStack priceSortToggle() {
+        boolean isLow = sort == Sort.PRICE_LOW;
+        boolean isHigh = sort == Sort.PRICE_HIGH;
+        
+        String label = isLow ? "Low → High" : "High → Low";
+        String nextLabel = isLow ? "High → Low" : "Low → High";
+        
+        // Yellow when active (either low or high), gray when default/none
+        boolean active = isLow || isHigh;
+        Material mat = active ? Material.GOLD_INGOT : Material.INK_SACK;
+        ChatColor nameColor = active ? ChatColor.YELLOW : ChatColor.GRAY;
+        
         List<String> lore = new ArrayList<String>();
-        lore.add(Design.HINT + "Click to sort by " + label.toLowerCase());
+        lore.add(Design.HINT + "Current: " + ChatColor.WHITE + label);
+        lore.add(Design.HINT + "Click to toggle: " + ChatColor.WHITE + nextLabel);
         if (active) {
             lore.add("");
-            lore.add(Design.IN + "" + ChatColor.BOLD + "► ACTIVE ◄");
+            lore.add(Design.IN + "" + ChatColor.BOLD + "► ENABLED ◄");
+        } else {
+            lore.add("");
+            lore.add(Design.HINT + "Default (shop order)");
         }
         return Icon.of(mat, nameColor + "" + ChatColor.BOLD + label, lore.toArray(new String[0]));
+    }
+
+    /** Toggles between PRICE_LOW, PRICE_HIGH, and NONE (default). */
+    private Consumer<Player> togglePriceSort() {
+        return new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                Sort next;
+                if (sort == Sort.PRICE_LOW) {
+                    next = Sort.PRICE_HIGH;
+                } else if (sort == Sort.PRICE_HIGH) {
+                    next = Sort.NONE;
+                } else {
+                    next = Sort.PRICE_LOW;
+                }
+                new GridMenu(ctx, shop, viewer, category, query, next, 0).open(player);
+            }
+        };
     }
 
     private List<ShopItem> view() {

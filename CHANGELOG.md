@@ -4,7 +4,20 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
-## [0.61.0] - 2026-09-25 - File-driven global shops
+## [0.63.0] - 2026-09-25 - Single price sort toggle with highlighting
+
+### Added
+- **Single toggle button for price sort** in shop grids (slot 50).
+- Cycles: Default (shop order) → Low→High → High→Low → Default.
+- Visual feedback: **Yellow (Gold Ingot)** when active, **Gray (Ink Sack)** when default.
+- Lore shows current mode and next mode on click; active shows "► ENABLED ◄".
+- Resets to page 1 when toggling.
+
+### Fixed
+- Creative-only items removed from shops: all spawn eggs, KNOWLEDGE_BOOK, DEBUG_STICK.
+- Added to `isSellable` denylist across all versions.
+
+## [0.62.0] - 2026-09-25 - Every item of your version is for sale
 
 ### Added
 
