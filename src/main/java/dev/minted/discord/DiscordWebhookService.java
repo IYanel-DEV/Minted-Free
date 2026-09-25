@@ -104,7 +104,7 @@ public final class DiscordWebhookService {
         if (taxAmount > 0) {
             embed.addField("Tax Collected", formatPrice(taxAmount), true);
         }
-        embed.setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+        embed.setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -127,7 +127,7 @@ public final class DiscordWebhookService {
         if (taxAmount > 0) {
             embed.addField("Tax Paid", formatPrice(taxAmount), true);
         }
-        embed.setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+        embed.setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -151,7 +151,7 @@ public final class DiscordWebhookService {
         if (taxAmount > 0) {
             embed.addField("Tax Collected", formatPrice(taxAmount), true);
         }
-        embed.setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+        embed.setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -175,7 +175,7 @@ public final class DiscordWebhookService {
         if (taxAmount > 0) {
             embed.addField("Tax Paid", formatPrice(taxAmount), true);
         }
-        embed.setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+        embed.setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -196,7 +196,7 @@ public final class DiscordWebhookService {
                 .addField("Starting Bid", formatPrice(startPrice), true)
                 .addField("Buyout", buyoutPrice > 0 ? formatPrice(buyoutPrice) : "None", true)
                 .addField("Duration", durationHours + "h", true)
-                .setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+                .setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -215,7 +215,7 @@ public final class DiscordWebhookService {
                 .addField("Item", itemName, true)
                 .addField("New Bid", formatPrice(bidAmount), true)
                 .addField("Previous Bid", previousBid > 0 ? formatPrice(previousBid) : "None", true)
-                .setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+                .setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -236,7 +236,7 @@ public final class DiscordWebhookService {
                 .addField("Item", itemName, true)
                 .addField("Quantity", formatNumber(quantity), true)
                 .addField("Buyout Price", formatPrice(buyoutPrice), true)
-                .setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+                .setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build(), ping);
@@ -261,7 +261,7 @@ public final class DiscordWebhookService {
         } else {
             embed.addField("Result", "No bids — item returned", true);
         }
-        embed.setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+        embed.setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -280,7 +280,7 @@ public final class DiscordWebhookService {
                 .addField("Item", itemName, true)
                 .addField("Quantity", formatNumber(quantity), true)
                 .addField("Price Paid", formatPrice(price), true)
-                .setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+                .setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -301,7 +301,7 @@ public final class DiscordWebhookService {
         if (note != null && !note.isEmpty()) {
             embed.addField("Note", note, false);
         }
-        embed.setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+        embed.setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -319,7 +319,7 @@ public final class DiscordWebhookService {
                 .addField("Killer", killer.getName(), true)
                 .addField("Target", target.getName(), true)
                 .addField("Reward Collected", formatPrice(amount), true)
-                .setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+                .setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -337,7 +337,7 @@ public final class DiscordWebhookService {
                 .addField("Player", player.getName(), true)
                 .addField("New Balance", formatPrice(balance), true)
                 .addField("Milestone", milestone, true)
-                .setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+                .setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
@@ -360,7 +360,7 @@ public final class DiscordWebhookService {
         if (reason != null && !reason.isEmpty()) {
             embed.addField("Reason", reason, false);
         }
-        embed.setFooter(config.footerText + " | " + plugin.getServer().getServerName())
+        embed.setFooter(config.footerText + " | " + getServerNameSafe())
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build(), ping);
