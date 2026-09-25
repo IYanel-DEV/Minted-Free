@@ -596,16 +596,25 @@ public final class DiscordWebhookService {
             return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
         }
 
-        private static class Field {
-            private final String name, value;
-            private final boolean inline;
-            Field(String name, String value, boolean inline) { this.name = name; this.value = value; this.inline = inline; }
-            String toJson() {
-                return "{\"name\":\"" + escapeJson(name) + "\",\"value\":\"" + escapeJson(value) + "\",\"inline\":" + inline + "}";
-            }
-            private String escapeJson(String input) {
-                return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
-            }
+private static class Field {
+        private final String name, value;
+        private final boolean inline;
+        Field(String name, String value, boolean inline) { 
+            this.name = name != null && !name.isEmpty() ? name : "\u200b";
+            this.value = value != null && !value.isEmpty() ? value : "\u200b";
+            this.inline = inline;
         }
+        String toJson() {
+            String nameJson = escapeJson(this.name);
+            String valueJson = escapeJson(this.value);
+            // Discord limits: name max 256, value max 1024
+            if (nameJson.length() > 256) nameJson = nameJson.substring(0, 253) + "...";
+            if (valueJson.length() > 1024) valueJson = valueJson.substring(0, 1021) + "...";
+            return "{\"name\":\"" + nameJson + "\",\"value\":\"" + valueJson + "\",\"inline\":" + inline + "}";
+        }
+        private String escapeJson(String input) {
+            return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
+        }
+    }
     }
 }
