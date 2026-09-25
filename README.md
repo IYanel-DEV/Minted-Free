@@ -272,6 +272,12 @@ Output: `target/Minted-<version>.jar`
    directly. Use `dev.minted.util.Reflection`.
 3. Keep every database operation off the main thread.
 
+## Contributors
+
+- [Iyouniss](https://github.com/Iyouniss)
+- [iyanel01](https://github.com/iyanel01)
+- [vexx-rain](https://github.com/vexx-rain)
+
 ## Support and links
 
 - Releases and downloads: <https://github.com/IYanel-DEV/Minted-Free/releases>
