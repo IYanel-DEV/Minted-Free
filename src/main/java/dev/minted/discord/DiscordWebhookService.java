@@ -544,25 +544,50 @@ public final class DiscordWebhookService {
         String build() {
             StringBuilder sb = new StringBuilder();
             sb.append("{\"embeds\":[{");
-            if (title != null) sb.append("\"title\":\"").append(escapeJson(title)).append("\",");
-            if (description != null) sb.append("\"description\":\"").append(escapeJson(description)).append("\",");
-            sb.append("\"color\":").append(color).append(",");
+            boolean first = true;
+            if (title != null) {
+                sb.append("\"title\":\"").append(escapeJson(title)).append("\"");
+                first = false;
+            }
+            if (description != null) {
+                if (!first) sb.append(",");
+                sb.append("\"description\":\"").append(escapeJson(description)).append("\"");
+                first = false;
+            }
+            if (!first) sb.append(",");
+            sb.append("\"color\":").append(color);
+            first = false;
             if (!fields.isEmpty()) {
-                sb.append("\"fields\":[");
+                sb.append(",\"fields\":[");
                 for (int i = 0; i < fields.size(); i++) {
                     if (i > 0) sb.append(",");
                     sb.append(fields.get(i).toJson());
                 }
-                sb.append("],");
+                sb.append("]");
+                first = false;
             }
             if (footerText != null) {
+                if (!first) sb.append(",");
                 sb.append("\"footer\":{\"text\":\"").append(escapeJson(footerText)).append("\"");
                 if (footerIconUrl != null) sb.append(",\"icon_url\":\"").append(escapeJson(footerIconUrl)).append("\"");
-                sb.append("},");
+                sb.append("}");
+                first = false;
             }
-            if (thumbnailUrl != null) sb.append("\"thumbnail\":{\"url\":\"").append(escapeJson(thumbnailUrl)).append("\"},");
-            if (imageUrl != null) sb.append("\"image\":{\"url\":\"").append(escapeJson(imageUrl)).append("\"},");
-            if (timestamp != null) sb.append("\"timestamp\":\"").append(timestamp).append("\",");
+            if (thumbnailUrl != null) {
+                if (!first) sb.append(",");
+                sb.append("\"thumbnail\":{\"url\":\"").append(escapeJson(thumbnailUrl)).append("\"}");
+                first = false;
+            }
+            if (imageUrl != null) {
+                if (!first) sb.append(",");
+                sb.append("\"image\":{\"url\":\"").append(escapeJson(imageUrl)).append("\"}");
+                first = false;
+            }
+            if (timestamp != null) {
+                if (!first) sb.append(",");
+                sb.append("\"timestamp\":\"").append(timestamp).append("\"");
+                first = false;
+            }
             sb.append("}],\"content\":\"\"}");
             return sb.toString();
         }
