@@ -543,7 +543,7 @@ public final class DiscordWebhookService {
 
         String build() {
             StringBuilder sb = new StringBuilder();
-            sb.append("{");
+            sb.append("{\"embeds\":[{");
             if (title != null) sb.append("\"title\":\"").append(escapeJson(title)).append("\",");
             if (description != null) sb.append("\"description\":\"").append(escapeJson(description)).append("\",");
             sb.append("\"color\":").append(color).append(",");
@@ -563,8 +563,7 @@ public final class DiscordWebhookService {
             if (thumbnailUrl != null) sb.append("\"thumbnail\":{\"url\":\"").append(escapeJson(thumbnailUrl)).append("\"},");
             if (imageUrl != null) sb.append("\"image\":{\"url\":\"").append(escapeJson(imageUrl)).append("\"},");
             if (timestamp != null) sb.append("\"timestamp\":\"").append(timestamp).append("\",");
-            sb.append("\"content\":\"\"");
-            sb.append("}");
+            sb.append("}],\"content\":\"\"}");
             return sb.toString();
         }
 
