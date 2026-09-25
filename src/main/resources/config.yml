@@ -217,9 +217,26 @@ wallet:
   material: "LEATHER"
 
 # -----------------------------------------------------------------------------
+# PAYMENTS
+# -----------------------------------------------------------------------------
+# Players choose where their shop purchases are paid from with
+# /minted source [wallet|bank|both] ("both" tries the wallet first and takes
+# the full amount from the bank when the wallet cannot cover it). A
+# bank-funded purchase is DELIVERED after a few seconds: the goods arrive
+# after that wait, further bank spends are refused with the time left, and
+# wallet spends are never blocked.
+payments:
+  default: both           # wallet, bank or both (used until a player picks)
+  bank-cooldown-seconds: 7
+
+# -----------------------------------------------------------------------------
 # SHOPS
 # -----------------------------------------------------------------------------
 shops:
+  # Shop mode:
+  #   default   - Global Shop + Community Marketplace (two tiles in /eshop)
+  #   community - Single unified Community Shop (player-to-player only, no admin shop)
+  mode: "default"
   # Shop name used by /sell command (must match a created shop)
   global: "Spawn"
   # How many personal (player-owned) shops one account may open with /pshop.

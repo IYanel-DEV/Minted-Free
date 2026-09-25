@@ -17,12 +17,17 @@ shop:
   usage: "&cUsage: /{label} [shop]"
   no-permission: "&cYou do not have permission to use shops here."
 
+  last:
+    none-global: "&7Nothing bookmarked in the global shop yet - opening it fresh."
+    none-player: "&7Nothing bookmarked in a player shop yet - opening your shop."
+
   admin:
     no-permission: "&cYou do not have permission to manage shops."
     hold-item: "&cHold the item you want to use in your hand first."
     create-usage: "&cUsage: /{label} create <name>"
     exists: "&cA shop called &f{shop}&c already exists."
     created: "&aCreated shop &f{shop}&a. Use &f/eshop edit {shop}&a to stock it."
+    create-disabled-community: "&cGlobal shop creation is disabled in Community mode."
     delete-usage: "&cUsage: /{label} delete <name>"
     deleted: "&aDeleted shop &f{shop}&a."
     edit-usage: "&cUsage: /{label} edit <name>"
@@ -73,6 +78,14 @@ buy:
   not-ready: "&cYour account is still loading, try again in a moment."
   not-buyable: "&cThat item is not for sale here."
   insufficient: "&cYou cannot afford that. It costs &f{price}&c."
+  # Shown when a bank-funded purchase is refused because the previous delivery
+  # is still on its way; {seconds} is the whole seconds left.
+  bank-cooldown: "&cYour bank purchase is still on its way - &f{seconds}&c more second(s)."
+
+delivery:
+  queued: "&7Paid from your bank. Your &f{item}&7 arrives in &f{seconds}&7s."
+  arrived: "&aYour &f{item}&a arrived."
+  overflow: "&7Your inventory was full, so part of it dropped at your feet."
   success: "&aBought &f{quantity}x {item}&a for &f{price}&a. Balance: &f{balance}&a."
   discount: "&7A &f{percent}%&7 discount was applied."
   overflow: "&7Your inventory was full, so some items dropped at your feet."
@@ -223,6 +236,12 @@ pshop:
     cap: "&cThat collect would pass your balance limit - spend or bank some first."
   withdraw:
     done: "&aWithdrew &f{quantity}&a units back to your inventory."
+
+payment:
+  current: "&7Paying with: &f{source}"
+  set: "&aPaying with &f{source}&a from now on."
+  usage: "&cUsage: /minted source [wallet|bank|both]"
+  cooldown-note: "&7Bank purchases have a &f{seconds}&7s delivery cooldown."
 
 vip:
   usage: "&cUsage: /minted vip [add <player>|remove <player>|list]"

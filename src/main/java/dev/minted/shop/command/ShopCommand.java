@@ -40,6 +40,11 @@ public final class ShopCommand implements CommandExecutor {
         this.ctx = ctx;
     }
 
+    /** @return true when config {@code shops.mode} is "community". */
+    private boolean isCommunityMode() {
+        return "community".equalsIgnoreCase(ctx.shops().getPlugin().getConfig().getString("shops.mode", "default"));
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
@@ -59,6 +64,16 @@ public final class ShopCommand implements CommandExecutor {
         }
         if (ctx.shops().first() == null) {
             ctx.messages().send(player, "shop.no-shops");
+            return true;
+        }
+        if (isCommunityMode()) {
+            // Community mode: open the community marketplace directly
+            Shop community = ctx.shops().community();
+            if (community != null) {
+                new HomeMenu(ctx, community, player).open(player);
+            } else {
+                ctx.messages().send(player, "shop.no-shops");
+            }
             return true;
         }
         new ChooseMenu(ctx, player).open(player);
@@ -109,6 +124,10 @@ public final class ShopCommand implements CommandExecutor {
         String name = args[1];
         if (ctx.shops().exists(name)) {
             ctx.messages().send(sender, "shop.admin.exists", "shop", name);
+            return true;
+        }
+        if (isCommunityMode()) {
+            ctx.messages().send(sender, "shop.admin.create-disabled-community");
             return true;
         }
         ctx.shops().create(name, defaultIcon(name), Currency.WALLET);
