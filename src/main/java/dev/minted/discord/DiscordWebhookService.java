@@ -372,10 +372,12 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("server-start");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
+        String serverName = getServerNameSafe();
+        
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🟢 Server Started")
                 .setColor(new Color(0x4CAF50))
-                .addField("Server", plugin.getServer().getServerName(), true)
+                .addField("Server", serverName, true)
                 .addField("Version", Bukkit.getVersion(), true)
                 .addField("Minted Version", plugin.getDescription().getVersion(), true)
                 .setFooter(config.footerText)
@@ -390,14 +392,31 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("server-stop");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
+        String serverName = getServerNameSafe();
+        
         EmbedBuilder embed = new EmbedBuilder()
                 .setTitle("🔴 Server Stopped")
                 .setColor(new Color(0xF44336))
-                .addField("Server", plugin.getServer().getServerName(), true)
+                .addField("Server", serverName, true)
                 .setFooter(config.footerText)
                 .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
+    }
+
+    /** Safely get server name across different Bukkit/Paper versions. */
+    private String getServerNameSafe() {
+        try {
+            // Try static Bukkit.getServerName() (newer versions)
+            return (String) Bukkit.class.getMethod("getServerName").invoke(null);
+        } catch (Exception e) {
+            try {
+                // Fallback to Bukkit.getServer().getName()
+                return Bukkit.getServer().getName();
+            } catch (Exception e2) {
+                return "Unknown Server";
+            }
+        }
     }
 
     private String getWebhookUrl(String event) {

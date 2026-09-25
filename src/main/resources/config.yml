@@ -428,6 +428,13 @@ discord:
   # Minimum amount for large-transfer ping (default 10000)
   large-transfer-threshold: 10000
 
+# -----------------------------------------------------------------------------
+# UPDATE CHECKER
+# -----------------------------------------------------------------------------
+# Checks GitHub releases for new versions on startup and notifies admins.
+update-checker:
+  enabled: true
+
 # =============================================================================
 # QUICK REFERENCE: COMMON SETUPS
 # =============================================================================

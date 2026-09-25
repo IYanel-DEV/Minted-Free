@@ -68,6 +68,7 @@ import dev.minted.shop.ShopContext;
 import dev.minted.shop.ShopService;
 import dev.minted.shop.Trade;
 import dev.minted.tax.TaxService;
+import dev.minted.VersionChecker;
 import dev.minted.shop.command.ShopCommand;
 import dev.minted.shop.command.ShopTabCompleter;
 import dev.minted.shop.log.SaleLog;
@@ -148,6 +149,7 @@ public final class MintedPlugin extends JavaPlugin {
     private dev.minted.discord.DiscordWebhookService discordWebhook;
     private Trade trade;
     private Market market;
+    private VersionChecker versionChecker;
 
     public static MintedPlugin get() {
         return instance;
@@ -763,6 +765,10 @@ public final class MintedPlugin extends JavaPlugin {
                 this.market.setDiscordWebhook(this.discordWebhook);
             }
         }
+
+        // Initialize version checker (checks for updates on GitHub)
+        this.versionChecker = new VersionChecker(this);
+        this.versionChecker.checkForUpdates();
     }
 
     private double[] presets() {
