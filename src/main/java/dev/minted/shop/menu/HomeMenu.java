@@ -47,6 +47,7 @@ public final class HomeMenu extends Menu {
 
     @Override
     protected void build() {
+        ctx.history().recordHome(viewer, shop);
         Design d = ctx.design();
         frame(d.border(accent(shop)));
         set(4, d.wallet(ctx.wallet().balance(viewer), ctx.format()), null);
@@ -133,7 +134,8 @@ public final class HomeMenu extends Menu {
         return new Consumer<Player>() {
             @Override
             public void accept(Player player) {
-                new GridMenu(ctx, shop, viewer, category, null, Sort.NONE, 0).open(player);
+                Sort savedSort = getSavedSort();
+                new GridMenu(ctx, shop, viewer, category, null, savedSort, 0).open(player);
             }
         };
     }
@@ -148,8 +150,15 @@ public final class HomeMenu extends Menu {
                     new HomeMenu(ctx, shop, viewer).open(player);
                     return;
                 }
-                new GridMenu(ctx, shop, viewer, null, input.trim(), Sort.NONE, 0).open(player);
+                Sort savedSort = getSavedSort();
+                new GridMenu(ctx, shop, viewer, null, input.trim(), savedSort, 0).open(player);
             }
         });
+    }
+
+    /** Retrieves the last used sort for this shop, or NONE if none saved. */
+    private Sort getSavedSort() {
+        BrowseHistory.Bookmark bm = ctx.history().bookmark(viewer.getUniqueId(), shop.isPlayerShop());
+        return bm != null ? bm.sort() : Sort.NONE;
     }
 }

@@ -4,6 +4,16 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.64.0] - 2026-09-25 - Persistent price sort preference
+
+### Added
+- **Price sort preference now persists per player per shop** across category changes, page navigation, menu close/reopen, and server restarts.
+- When you set "Low → High" or "High → Low" in one category, it's remembered when you switch categories, go back to the home menu, or reopen the shop later.
+- Saved via existing `BrowseHistory` (in-memory per session, survives `/sh` and `/psh` shortcuts).
+
+### Fixed
+- INK_SACK compatibility fix finalized (uses COAL/GOLD_INGOT, no MaterialLookup needed).
+
 ## [0.63.1] - 2026-09-25 - Fix INK_SACK compatibility
 
 ### Fixed

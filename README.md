@@ -1,7 +1,7 @@
 # Minted Free
 
 A GUI-first economy plugin for premium survival and roleplay servers.
-**Status:** `v0.62.0`
+**Status:** `v0.64.0`
 
 <p align="center">
   <img src="assets/banner-header.jpg" alt="Minted - GUI-first economy plugin" />
