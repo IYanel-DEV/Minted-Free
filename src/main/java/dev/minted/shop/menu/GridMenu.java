@@ -114,7 +114,10 @@ public final class GridMenu extends Menu {
         
         // Yellow when active (either low or high), gray when default/none
         boolean active = isLow || isHigh;
-        Material mat = active ? Material.GOLD_INGOT : Material.INK_SACK;
+        // INK_SACK (1.8-1.12) -> BLACK_DYE (1.13+); use MaterialLookup for compat
+        Material inactiveMat = ctx.materials().get("ink_sack");
+        if (inactiveMat == null) inactiveMat = Material.INK_SACK; // fallback
+        Material mat = active ? Material.GOLD_INGOT : inactiveMat;
         ChatColor nameColor = active ? ChatColor.YELLOW : ChatColor.GRAY;
         
         List<String> lore = new ArrayList<String>();
