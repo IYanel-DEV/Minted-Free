@@ -444,6 +444,10 @@ public final class DiscordWebhookService {
     }
 
     private void sendAsync(String webhookUrl, String jsonPayload, String pingContent) {
+        // Skip if no webhook URL configured
+        if (webhookUrl == null || webhookUrl.isEmpty()) {
+            return;
+        }
         CompletableFuture.runAsync(() -> {
             try {
                 String finalPayload = jsonPayload;

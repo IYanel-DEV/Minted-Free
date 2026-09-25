@@ -10,7 +10,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -49,61 +48,89 @@ public final class VersionChecker {
         });
     }
 
-    private void checkVersion() throws Exception {
-        URL url = new URL(GITHUB_API_URL);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("User-Agent", "Minted-Plugin/" + plugin.getDescription().getVersion());
-        conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(10000);
+    private void checkVersion() {
+        try {
+            URL url = new URL(GITHUB_API_URL);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("User-Agent", "Minted-Plugin/" + plugin.getDescription().getVersion() + " (+https://github.com/IYanel-DEV/Minted-Free)");
+            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(10000);
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 403) {
+                // Rate limited - check headers for reset time
+                String resetHeader = conn.getHeaderField("X-RateLimit-Reset");
+                if (resetHeader != null) {
+                    try {
+                        long resetTime = Long.parseLong(resetHeader) * 1000L;
+                        long waitTime = resetTime - System.currentTimeMillis();
+                        if (waitTime > 0 && waitTime < 3600000) { // Less than 1 hour
+                            plugin.getLogger().warning("GitHub API rate limited. Retrying after " + (waitTime / 1000) + " seconds.");
+                            Thread.sleep(Math.min(waitTime, 300000)); // Max 5 min wait
+                            checkVersion(); // Retry once
+                            return;
+                        }
+                    } catch (Exception ignored) {}
+                }
+                plugin.getLogger().warning("GitHub API rate limited (403). Skipping version check. Consider setting a GitHub token in config for higher limits.");
+                return;
             }
-
-            // Parse JSON for tag_name
-            String json = response.toString();
-            String latestVersion = extractVersionFromJson(json);
-            
-            if (latestVersion == null) {
-                plugin.getLogger().warning("Could not parse latest version from GitHub API response");
+            if (responseCode != 200) {
+                plugin.getLogger().warning("GitHub API returned " + responseCode + ". Skipping version check.");
                 return;
             }
 
-            int comparison = compareVersions(currentVersion, latestVersion);
-            
-            if (comparison < 0) {
-                // New version available
-                String downloadUrl = "https://github.com/IYanel-DEV/Minted-Free/releases/tag/v" + latestVersion;
-                String downloadLink = "https://github.com/IYanel-DEV/Minted-Free/releases/tag/v" + latestVersion;
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    String msg = "§e[Minted] §6New version available: §ev" + latestVersion + " §6(current: v" + currentVersion + ")";
-                    String urlMsg = "§bDownload: §b" + downloadLink;
-                    plugin.getLogger().info("[Minted] New version available: v" + latestVersion + " (current: v" + currentVersion + ")");
-                    for (Player p : Bukkit.getOnlinePlayers()) {
-                        if (p.hasPermission("minted.admin") || p.isOp()) {
-                            p.sendMessage(msg);
-                            p.sendMessage(urlMsg);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                // Parse JSON for tag_name
+                String json = response.toString();
+                String latestVersion = extractVersionFromJson(json);
+                
+                if (latestVersion == null) {
+                    plugin.getLogger().warning("Could not parse latest version from GitHub API response");
+                    return;
+                }
+
+                int comparison = compareVersions(currentVersion, latestVersion);
+                
+                if (comparison < 0) {
+                    // New version available
+                    String downloadLink = "https://github.com/IYanel-DEV/Minted-Free/releases/tag/v" + latestVersion;
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        String msg = "§e[Minted] §6New version available: §ev" + latestVersion + " §6(current: v" + currentVersion + ")";
+                        String urlMsg = "§bDownload: §bhttps://github.com/IYanel-DEV/Minted-Free/releases/tag/v" + latestVersion;
+                        plugin.getLogger().info("[Minted] New version available: v" + latestVersion + " (current: v" + currentVersion + ")");
+                        for (Player p : Bukkit.getOnlinePlayers()) {
+                            if (p.hasPermission("minted.admin") || p.isOp()) {
+                                p.sendMessage("§e[Minted] §6New version available: §ev" + latestVersion + " §6(current: v" + currentVersion + ")");
+                                p.sendMessage("§bDownload: §bhttps://github.com/IYanel-DEV/Minted-Free/releases/tag/v" + latestVersion);
+                            }
                         }
-                    }
-                });
-            } else if (comparison == 0) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    plugin.getLogger().info("[Minted] You are running the latest version (v" + currentVersion + ").");
-                });
-            } else {
-                // Current is newer (dev build)
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    plugin.getLogger().info("[Minted] You are running a development build (v" + currentVersion + "). Latest release: v" + latestVersion);
-                });
+                    });
+                } else if (comparison == 0) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        plugin.getLogger().info("[Minted] You are running the latest version (v" + currentVersion + ").");
+                    });
+                } else {
+                    // Current is newer (dev build)
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        plugin.getLogger().info("[Minted] You are running a development build (v" + currentVersion + "). Latest release: v" + latestVersion);
+                    });
+                }
+
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "Failed to check version: " + e.getMessage(), e);
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to check version: " + e.getMessage(), e);
+            plugin.getLogger().log(Level.WARNING, "Failed to check version: " + e.getMessage(), e);
         }
     }
 
