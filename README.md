@@ -275,10 +275,10 @@ Output: `target/Minted-<version>.jar`
 ## Contributors
 
 <p align="right">
-  <a href="https://github.com/Iyouniss"><img src="https://github.com/Iyouniss.png" width="32" height="32" alt="Iyouniss" style="border-radius:50%;margin:2px;"></a>
-  <a href="https://github.com/iyanel01"><img src="https://github.com/iyanel01.png" width="32" height="32" alt="iyanel01" style="border-radius:50%;margin:2px;"></a>
-  <a href="https://github.com/vexx-rain"><img src="https://github.com/vexx-rain.png" width="32" height="32" alt="vexx-rain" style="border-radius:50%;margin:2px;"></a>
-  <a href="https://github.com/IYanel-DEV"><img src="https://github.com/IYanel-DEV.png" width="32" height="32" alt="IYanel-DEV" style="border-radius:50%;margin:2px;"></a>
+  <a href="https://github.com/Iyouniss"><img src="https://github.com/Iyouniss.png?size=64" width="48" height="48" alt="Iyouniss" style="border-radius:50%;margin:4px;"></a>
+  <a href="https://github.com/iyanel01"><img src="https://github.com/iyanel01.png?size=64" width="48" height="48" alt="iyanel01" style="border-radius:50%;margin:4px;"></a>
+  <a href="https://github.com/vexx-rain"><img src="https://github.com/vexx-rain.png?size=64" width="48" height="48" alt="vexx-rain" style="border-radius:50%;margin:4px;"></a>
+  <a href="https://github.com/IYanel-DEV"><img src="https://github.com/IYanel-DEV.png?size=64" width="48" height="48" alt="IYanel-DEV" style="border-radius:50%;margin:4px;"></a>
 </p>
 
 ## Support and links
