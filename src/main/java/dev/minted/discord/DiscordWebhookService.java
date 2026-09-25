@@ -10,6 +10,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.awt.Color;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -455,6 +457,10 @@ public final class DiscordWebhookService {
                     // Add ping content to the payload
                     finalPayload = finalPayload.replace("\"content\":\"\"", "\"content\":\"" + escapeJson(pingContent) + "\"");
                 }
+                // Log payload size for debugging
+                if (finalPayload.length() > 2000) {
+                    plugin.getLogger().warning("Discord webhook payload may be too large: " + finalPayload.length() + " chars");
+                }
                 HttpURLConnection conn = (HttpURLConnection) new URL(webhookUrl).openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
@@ -467,7 +473,17 @@ public final class DiscordWebhookService {
                 }
                 int responseCode = conn.getResponseCode();
                 if (responseCode >= 400) {
-                    plugin.getLogger().warning("Discord webhook returned " + responseCode + ": " + conn.getResponseMessage());
+                    // Read error response body for debugging
+                    String errorBody = "";
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8))) {
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            sb.append(line);
+                        }
+                        errorBody = sb.toString();
+                    } catch (Exception ignored) {}
+                    plugin.getLogger().warning("Discord webhook returned " + responseCode + ": " + conn.getResponseMessage() + (errorBody.isEmpty() ? "" : " - " + errorBody));
                 }
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to send Discord webhook", e);
