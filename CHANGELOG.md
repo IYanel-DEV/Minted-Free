@@ -4,6 +4,12 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.63.1] - 2026-09-25 - Fix INK_SACK compatibility
+
+### Fixed
+- **Price sort toggle NoSuchFieldError on 1.13+** — `INK_SACK` renamed to `BLACK_DYE`.
+- Used `MaterialLookup.get("ink_sack")` for cross-version compatibility (1.8-1.26).
+
 ## [0.63.0] - 2026-09-25 - Single price sort toggle with highlighting
 
 ### Added
