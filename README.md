@@ -290,4 +290,5 @@ Output: `target/Minted-<version>.jar`
 - Anonymous usage stats (bStats, id 34228) can be disabled in
   `plugins/bStats/config.yml`; no balance or player data is ever collected.   
     
+    
  
