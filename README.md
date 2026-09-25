@@ -1,7 +1,7 @@
 # Minted Free
 
 A GUI-first economy plugin for premium survival and roleplay servers.
-**Status:** `v0.52.0`
+**Status:** `v0.62.0`
 
 <p align="center">
   <img src="assets/banner-header.jpg" alt="Minted - GUI-first economy plugin" />
@@ -36,6 +36,11 @@ Latest release (with jar attached): <https://github.com/IYanel-DEV/Minted-Free/r
 - **Banking** - interest, loans with fees and late fees, withdrawal/transfer
   fees, and player-to-player requests (`/pay` and the clickable request
   message).
+- **Payment source of your choice** - `/minted source wallet|bank|both`.
+  `both` pays from the wallet and falls back to the **full amount** from the
+  bank when the wallet cannot cover it. A bank-funded purchase starts a
+  short delivery cooldown (`payments.bank-cooldown-seconds`, default 7),
+  announced in chat; wallet purchases are never blocked.
 - **Multi-currency** - an optional base currency with exchange rates for
   shops and auctions (`/currency`).
 - **Stats** - server-wide totals, rich list and burn tracking (`/mstats`), and
@@ -181,6 +186,24 @@ integrations:
   customitems:
     enabled: true         # ItemsAdder / Nexo / Oraxen identity
 ```
+
+## Testing
+
+Minted ships one self-test catalogue (`dev.minted.selftest`) with two runners,
+so "correct" is defined exactly once:
+
+- **At build time** - `.\mvnw.cmd test` (or simply `.\mvnw.cmd clean package`,
+  which runs it too). Covers the money rules: amount tokens, deposit/withdraw
+  and the cap, the admin-set path, the remote-sync path, and a two-server
+  simulation proving that concurrent balance changes compose instead of
+  overwriting each other, that an overdraft is refused, and that a stale cache
+  can never push a balance past the cap.
+- **On a running server** - `/minted selftest` (admin) runs the same checks
+  plus the parts only a live server can prove: a real guarded-delta round-trip
+  against your database (cleaned up afterwards), the public economy API, the
+  loaded shop model, every command executor, the VIP list, detected custom-item
+  providers and the Redis announcement channel. Results are printed in chat
+  and logged to the console.
 
 ## Building
 
