@@ -1,5 +1,6 @@
 package dev.minted.shop.menu;
 
+import dev.minted.gui.Icon;
 import dev.minted.gui.Menu;
 import dev.minted.gui.theme.Design;
 import dev.minted.shop.Shop;
@@ -9,6 +10,7 @@ import dev.minted.shop.catalog.Category;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -65,6 +67,7 @@ public final class GridMenu extends Menu {
 
     @Override
     protected void build() {
+        ctx.history().record(viewer, shop, category, query, sort, page);
         Design d = ctx.design();
         frame(d.border(accent(shop)));
 
@@ -83,7 +86,11 @@ public final class GridMenu extends Menu {
         set(46, d.prev(), openPage(current - 1, pages));
         set(47, d.pageInfo(current + 1, pages), null);
         set(48, d.next(), openPage(current + 1, pages));
-        set(50, d.sort(sort.label()), cycleSort());
+        
+// Price sort toggles with highlighting
+        set(50, priceSortButton(Sort.PRICE_LOW, "Low → High", Material.EMERALD, Material.INK_SACK), setSortLow());
+        set(51, priceSortButton(Sort.PRICE_HIGH, "High → Low", Material.DIAMOND, Material.INK_SACK), setSortHigh());
+        
         set(52, d.search(query), reSearch());
         set(53, d.close(), new Consumer<Player>() {
             @Override
@@ -92,6 +99,26 @@ public final class GridMenu extends Menu {
             }
         });
         fillEmpty(d.filler());
+    }
+
+    /**
+     * Creates a price sort toggle button that highlights when active.
+     * @param mode The sort mode this button represents
+     * @param label Display label
+     * @param activeMaterial Material when this mode is active (highlighted)
+     * @param inactiveMaterial Material when this mode is inactive
+     */
+    private ItemStack priceSortButton(Sort mode, String label, Material activeMaterial, Material inactiveMaterial) {
+        boolean active = sort == mode;
+        Material mat = active ? activeMaterial : inactiveMaterial;
+        ChatColor nameColor = active ? ChatColor.GREEN : ChatColor.WHITE;
+        List<String> lore = new ArrayList<String>();
+        lore.add(Design.HINT + "Click to sort by " + label.toLowerCase());
+        if (active) {
+            lore.add("");
+            lore.add(Design.IN + "" + ChatColor.BOLD + "► ACTIVE ◄");
+        }
+        return Icon.of(mat, nameColor + "" + ChatColor.BOLD + label, lore.toArray(new String[0]));
     }
 
     private List<ShopItem> view() {
@@ -213,6 +240,24 @@ public final class GridMenu extends Menu {
             @Override
             public void accept(Player player) {
                 new GridMenu(ctx, shop, viewer, category, query, sort.nextMode(), page).open(player);
+            }
+        };
+    }
+
+    private Consumer<Player> setSortLow() {
+        return new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                new GridMenu(ctx, shop, viewer, category, query, Sort.PRICE_LOW, 0).open(player);
+            }
+        };
+    }
+
+    private Consumer<Player> setSortHigh() {
+        return new Consumer<Player>() {
+            @Override
+            public void accept(Player player) {
+                new GridMenu(ctx, shop, viewer, category, query, Sort.PRICE_HIGH, 0).open(player);
             }
         };
     }
