@@ -423,8 +423,16 @@ public final class DiscordWebhookService {
 
     private String getWebhookUrl(String event) {
         String url = config.webhookUrls.get(event);
-        if (url != null && !url.isEmpty()) return url;
-        return config.defaultWebhookUrl.isEmpty() ? null : config.defaultWebhookUrl;
+        if (url != null && !url.isEmpty()) {
+            plugin.getLogger().info("[Discord] Using event-specific webhook for: " + event);
+            return url;
+        }
+        if (!config.defaultWebhookUrl.isEmpty()) {
+            plugin.getLogger().info("[Discord] Using default webhook for: " + event);
+            return config.defaultWebhookUrl;
+        }
+        plugin.getLogger().warning("[Discord] No webhook URL configured for event: " + event);
+        return null;
     }
 
     private String formatItemName(ShopItem item) {
@@ -448,6 +456,11 @@ public final class DiscordWebhookService {
     private void sendAsync(String webhookUrl, String jsonPayload, String pingContent) {
         // Skip if no webhook URL configured
         if (webhookUrl == null || webhookUrl.isEmpty()) {
+            plugin.getLogger().info("[Discord] No webhook URL configured, skipping send");
+            return;
+        }
+        if (!enabled) {
+            plugin.getLogger().info("[Discord] Webhook service is disabled, skipping send");
             return;
         }
         CompletableFuture.runAsync(() -> {
