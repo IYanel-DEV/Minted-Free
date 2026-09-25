@@ -4,6 +4,391 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.61.0] - 2026-09-25 - File-driven global shops
+
+### Added
+
+- **Global shops now live in `global-shops.yml`** inside the plugin folder
+  instead of the database. Items are stored as version-safe data (canonical
+  material keys, optional legacy data values, plain-text name/lore/enchant
+  lines), so one file stocks a 1.8 and a 1.26 server alike and is what a shop
+  website would generate or download in place of base64 item blobs. Community
+  and player shops keep their real stock and ownership in the database.
+- On a fresh install Minted writes a default file seeded with the full catalog
+  for the running server version. Existing installs upgrade in place: any
+  global shop still in the database is exported to the file exactly once.
+- The in-game `/eshop` editor keeps working unchanged - every global-shop edit
+  now rewrites the file instead of the database, so what you change in game is
+  what the file says.
+- **`catalog: true`** on a shop entry makes Minted append any new preset
+  catalog item on load (the old auto-grow behaviour, now opt-in). Hand-written
+  or website-generated files without the flag are never touched.
+
+### Changed
+
+- `/eshop create`, `delete`, `edit`, `rename` and `setcurrency` operate on
+  file-managed global shops only; their inventory is no longer stored as
+  base64 blobs. A broken entry in the file is skipped with a warning, never
+  fatal, and the damaged shop is regenerated from the catalog instead.
+
+## [0.61.1] - 2026-09-25 - The auction house actually opens now
+
+### Changed
+
+- **Fixed: `/ah` reported the auction house was "still loading" forever.** The
+  auction service was constructed at startup but its loader (which flips it
+  ready by reading the auction tables) was never started, so every command
+  answered `auction.not_ready` regardless of config or restarts. It now
+  initialises when the rest of the database-backed services come up.
+- **`auction.enabled` is now honoured.** Like bounties, the house is only
+  built, and `/ah` only registered, when the flag is true (default true). It
+  was previously ignored entirely, so the config switch did nothing.
+
+## [0.62.0] - 2026-09-25 - Every item of your version is for sale
+
+### Added
+
+- **A `catalog: true` shop now sells every single item its Minecraft version
+  has, not just the curated preset.** Alongside the curated entries (which keep
+  the best display names, categories and prices), the plugin enumerates the
+  running server's whole `Material` set on a fresh install and on every growth
+  pass, and shelves anything the curated catalog missed - each with a prettified
+  name, a best-guess category and that category's default price. Curated rows
+  still win on name/category/price; the every-material pass only fills gaps, so
+  the two never fight over the same slot. On 1.8 the default shop stocks
+  roughly 380 materials; on 1.26 the same mechanism stocks the full 1000+-item
+  enum, so no server ever has an unsold item it can represent.
+- Technical placeholder blocks are never sold: air, water/lava states, pistons
+  mid-extend, portals, fire, bedrock, barriers, spawners, command/structure
+  blocks, light, frost, and the legacy glowing-ore/burning-furnace/lit-* states
+  stay out of the shop.
+- Growth stays idempotent and cheap: each material is added at most once, the
+  self-test now asserts the fresh file sells every sellable material, and a
+  second growth pass changes nothing.
+
+## [0.61.4] - 2026-09-25 - Site exports are version-growing catalogs
+
+### Changed
+
+- **Website-generated files now carry `catalog: true`** so the shop they
+  define is a version-growing catalog: whatever Minecraft version loads the
+  file, the plugin appends every preset item that version supports and the
+  shop does not yet sell, and skips what it cannot. One download now works on
+  any server - a file edited on 1.8 auto-fills up to 1.26.2 when moved there,
+  and stays 1.8-only on 1.8. The site keeps a `catalog: true` toggle (checked
+  by default) and preserves an imported file's flag through the editor.
+
+## [0.61.3] - 2026-09-25 - Site import reads real shop files
+
+### Fixed
+
+- **The shop website's ".yml" import found nothing in a real
+  `global-shops.yml`.** The plugin writes SnakeYAML's "indentless list" style
+  (`- name: Spawn` at column 0, shop/item fields indented, dash items at the
+  parent key's column), but the site's old parser only matched its own
+  fully-indented export format - so the browser reported "No shops found" for
+  an otherwise valid, 500+-item file. The site now ships a small
+  indentation-based YAML reader that handles both styles and both directions
+  (import and download round-trip cleanly), and item materials are normalized
+  to canonical keys (`lapis` -> `LAPIS_LAZULI`, `melon` -> `MELON_SLICE`,
+  `totem` -> `TOTEM_OF_UNDYING`, `cooked_beef` -> `STEAK`, ...) so every
+  imported item resolves to a real Minecraft icon.
+
+### Added
+
+- **Subtle particle-free animations across the site** - pixel-styled panel
+  slide/fade-ins, slot pop and hover lifts, tab pops, button press feedback,
+  picker zoom, and a toast that slides in and out. Pure CSS `steps()` timing,
+  no glow or neon, so the editor still feels like Minecraft rather than a
+  web app.
+
+## [0.61.2] - 2026-09-25 - Auction creation keeps state and always banks the item
+
+### Changed
+
+- **Fixed: creating an auction made you pick the item twice.** Picking an item
+  in the inventory selector - and entering the starting bid, buyout and
+  duration afterward - rebuilt the create menu from scratch each time, which
+  silently threw away the item you had just chosen and asked for it again. The
+  whole flow now reuses the same menu, so the chosen item and every entered
+  price stick as you move through the steps. `/ah create` also jumps straight
+  to the create screen, `/ah my` opens your listings and `/ah bids` your bids,
+  instead of all three dumping you in the browser.
+- **Fixed: the "next page" button in the auction browser and the item picker
+  never worked** - it shared an inventory slot with the close button, so close
+  overwrote it whenever a second page existed.
+- **Hardened: an auction can never be created while the player keeps the
+  item.** The item stack is now the source of truth: the listing fee is only
+  kept once the item actually leaves the seller's inventory, and if the stack
+  cannot be removed the fee is refunded and no auction is registered - the
+  seller never both holds the item and has it up for sale. The menu also
+  stores a copy of the chosen stack instead of a live handle on inventory
+  contents.
+
+## [0.60.0] - 2026-09-25 - Remember where you left off: /sh and /psh
+
+### Added
+
+- **`/sh` reopens your last view in the global shop** - the category, search
+  result or page of items you were looking at, instead of making you walk from
+  the front door again. With nothing bookmarked (or the shop it pointed at
+  gone), it opens the normal shop exactly like `/shop`.
+- **`/psh` reopens the last player shop you were looking at** - the same store
+  and item view, whether you reached it through `/pshop browse` or by name.
+  With nothing bookmarked it opens your own storefront like a bare `/pshop`.
+- Browsing anywhere in `HomeMenu` or a `GridMenu` now bookmarks that spot in
+  memory, per player, and the shortcut commands re-open the exact grid state
+  (page, sort and search included).
+
+## [0.59.0] - 2026-09-24 - The pshop browser shows sellers, not emeralds
+
+### Changed
+
+- **Every storefront tile in the player-shop browser now shows the seller's
+  own head** instead of the shop's generic icon (usually an emerald), so
+  `/pshop browse` reads as a wall of players. The head is built through the
+  version-safe `Heads.player` path - it works from 1.8 to 1.26 - and the tile
+  keeps the owner's name in gold underneath.
+- When the owner cannot be named - an administrative shop with no owner, or a
+  UUID the server has never seen - the tile keeps the shop's own icon, so a
+  slot is never a nameless head.
+
+## [0.58.1] - 2026-09-24 - README tells the truth about the version
+
+### Fixed
+
+- **README status line caught up** - it still advertised `v0.53.0` five
+  releases behind the jar it describes, so the front page of the repo
+  understated what servers were actually downloading. It now reads `v0.58.1`.
+
+## [0.58.0] - 2026-09-24 - Global opens items, Community opens players
+
+### Changed
+
+- **Global Shop now opens the shop's items immediately** - never a list of
+  shops. Clicking Global lands in the server catalog's item grid, and only
+  server shops (no owner) are eligible, so a player's storefront can never be
+  reached from there. When a server really does run several global shops, the
+  others stay reachable by name (`/eshop <name>`).
+- **Community Shops now lists every shop a player owns**, deciding by the
+  **owner** rather than only the type column, so a storefront written before
+  types existed still appears there instead of hiding in Global.
+
+### Notes
+
+- Together with the loader guards (an owned shop is always a player shop; a
+  global-typed shop whose listings name a seller is adopted by that seller),
+  a player shop is now reachable in exactly one place - Community Shops - and
+  Global shows only the server's own catalog.
+
+## [0.57.0] - 2026-09-24 - Hand a shop to a player (or back to the server)
+
+### Added
+
+- **`/minted shops own <shop> <player|none>`** - the decisive repair. Giving a
+  shop to an online player rewrites its owner and type, in memory and in
+  storage, so it **leaves the global catalog immediately and appears in
+  Community Shops** (no restart, no database editing). `none` hands it back to
+  the server. This exists because a storefront stored before shops recorded an
+  owner carries no evidence of who owns it - the type column, the owner column
+  and its listings can all be empty, and only an admin can say whose it is.
+- `/minted shops` now prints the exact command to fix a shop, so the output is
+  self-explaining.
+
+### Notes
+
+- The automatic guards stay in place: a shop with an owner is always served as
+  a player shop, and a global-typed shop whose listings name a seller is
+  adopted by that seller on load. The command is the manual override for the
+  case where nothing in the row says who owns it.
+
+## [0.56.1] - 2026-09-24 - Ownerless storefronts are repaired on load
+
+### Fixed
+
+- **A player shop with no owner recorded can no longer hide in the global
+  catalog.** If a storefront was opened before shops stored an owner, its row
+  says `type = global` and `owner = null`, so no type check can tell it apart
+  from a server shop - which is why it appeared in Global and was missing from
+  the community directory. The loader now inspects the shop's **own listings**:
+  a global-typed shop whose items name a seller is served as that seller's
+  player shop, so it moves into the community directory by itself, with a log
+  line explaining what it did. No database editing needed.
+- The earlier guards remain: a shop with an owner is always a player shop
+  (0.55.1), and each browser lists only its own type (0.55.0).
+
+### Added
+
+- **`/minted shops`** (admin): prints every loaded shop with its name, type,
+  owner and item count - the fastest way to see exactly what the server thinks
+  each shop is, and what to report if anything still looks wrong.
+
+## [0.56.0] - 2026-09-24 - A two-tile shop front door
+
+### Changed
+
+- **`/eshop` now opens exactly two tiles**, as asked:
+  - **Global Shop** - the server's own shops, and only those. If there is just
+    one, it opens straight into it.
+  - **Community Shops** - the player storefronts. It lists every shop a player
+    runs, **by owner name**, and clicking one opens that shop showing what they
+    are selling.
+- The separate "Player shops" tile and the separate "Community Market" tile are
+  gone from the front door, so there is one obvious way in to each kind of
+  shop and the two can never be confused again. The shared community market is
+  still reachable by name (`/eshop <market>`) for anyone who needs it.
+- Player-shop tiles now show the **owner's name** as the item name, with the
+  shop name and how many items they are selling underneath, so a directory
+  reads as "who is selling what" at a glance.
+- A VIP's shop remains reachable by typing `/<playername>` - the same template
+  as before, now the companion to the community directory.
+
+## [0.55.1] - 2026-09-24 - Owned shops can never be served as global
+
+### Fixed
+
+- **A player shop that was stored with the wrong type can no longer show up in
+  the global catalog.** Shops carry a `type` column that only arrived with the
+  player-shop feature, and a row written before that (or by a version that
+  defaulted it to `global`) was served as a server shop even though it had an
+  owner. The loader now treats **any shop that has an owner as a player
+  storefront**, whatever the stored type says, so the global browser, the
+  player-shop directory and the community market always disagree on nothing.
+  This is on top of the 0.55.0 fix that made each browser list only its own
+  shop type.
+
+### Notes
+
+- Existing databases need no manual repair: restart the server and the shop
+  loads as the player shop it actually is.
+
+## [0.55.0] - 2026-09-24 - Separate shop types and real bank deliveries
+
+### Fixed
+
+- **Player shops no longer appear in the global shop list.** The global
+  browser skipped only the community market, so every player storefront was
+  listed next to the server's own shops. The three shop types are now fully
+  separate: **Global shops** (admin catalog), **Player shops** (their own
+  directory) and the **Community Market**, and each browser only ever lists its
+  own kind - including the row count used to size the menu.
+- **A bank purchase is now actually delivered after the wait.** Previously
+  the money was taken instantly and the item was handed over immediately, so
+  the "7 second cooldown" only blocked the *next* bank purchase without the
+  goods ever arriving late. A bank-funded purchase now queues a delivery: the
+  player is told what is coming and when ("Your <item> arrives in 7s"), the
+  goods are handed over when the wait is up, and a purchase made while the
+  player is offline waits in the queue and is delivered the moment they rejoin
+  - so nothing paid for can be lost. Set
+  `payments.bank-cooldown-seconds: 0` for instant handover.
+
+## [0.54.0] - 2026-09-24 - Payment sources, bank delivery cooldown, and three fixes
+
+### Added
+
+- **Player-chosen payment source**: `/minted source [wallet|bank|both]`
+  decides where a shop purchase is paid from. `both` (the default) tries the
+  wallet first and, when the wallet cannot cover the whole price, takes the
+  **full amount** from the bank - never a split payment. The choice persists
+  per player in `payment-sources.yml`, so it survives restarts.
+- **Bank delivery cooldown** (`payments.bank-cooldown-seconds`, default 7):
+  after a purchase paid from the bank, further bank-funded purchases are
+  refused with the exact seconds remaining ("Your bank delivery is
+  recharging - 5 more second(s)"), while wallet-funded purchases are never
+  blocked. The cooldown is in-memory, so a restart never penalises a player.
+- The same rule now drives **both** purchase paths (global/player shops and
+  the community marketplace), so a bank purchase behaves identically
+  everywhere, and the "balance" line always shows the purse that was charged.
+- `payments.default` config option sets the source new players start with.
+
+### Fixed
+
+- **VIP granted mid-session never registered its `/<username>` command**:
+  the `minted.vip` permission was only read on join and quit, so granting it
+  to an online player (LuckPerms group change, or after they created their
+  shop) did nothing until they reconnected. A 5-second observer now re-checks
+  everyone online and re-syncs only when a player's VIP state actually
+  changes.
+- **Player-shop listings could duplicate items**: the listing recorded the
+  number of units *requested* instead of the number that actually left the
+  inventory, so if the inventory shifted in between (creative mode, moving
+  items while the price prompt was open, another plugin) the shop was
+  credited with goods the owner still held. Stock is now exactly what was
+  taken, and a listing is refused outright when nothing was taken.
+- **The shop icon could not be chosen**: the editor's icon button demanded
+  the item already be in the player's hand. It now opens an inventory picker
+  - click the button, click the item you want as the icon.
+
+## [0.53.2] - 2026-09-24 - Self-test: the legacy data-value rule only where it exists
+
+### Fixed
+
+- The self-test asserted the legacy data-value rule (`sameStock` treating a
+  differing data value on a non-durable item as different goods) on every
+  server. That rule only exists for 1.8-1.12: from 1.13 on, item data lives in
+  components and `setDurability` on a non-damageable item is silently
+  discarded, so the assertion was wrong on 1.13+ (it reported a failure for
+  behaviour the platform cannot even express). The check now probes the
+  platform first and **skips with a reason** where the rule cannot apply,
+  while still enforcing it on legacy servers, where it matters.
+- The material/durability part of the check was split out so the version-
+  independent rules (two apples match, apple never matches dirt, tool damage
+  never changes identity) are asserted everywhere.
+
+### Notes
+
+- No production behaviour changed: `sameStock` was, and remains, correct on
+  both eras. Only the test's assumption was wrong.
+
+## [0.53.1] - 2026-09-24 - Self-test version-proofing
+
+### Fixed
+
+- The self-test's shop-matching check no longer references the legacy
+  `Material.WOOL` constant. A compiled material constant is a direct field
+  read, so on 1.13+ it threw `NoSuchFieldError` and failed the check there
+  (it passed in the build, which compiles against 1.8.8). The suite now
+  resolves every material it needs **by name** through the same resolution
+  path as the rest of the plugin, so a name that does not exist on the
+  running version skips with a readable reason instead of crashing the check.
+
+### Added
+
+- New live check `catalog: every category icon resolves on this server`, which
+  runs the real `MaterialLookup` over every shop category and reports any
+  icon key this server version cannot resolve - the same class of version
+  drift the suite just proved is worth catching.
+
+## [0.53.0] - 2026-09-24 - Self-tests (build-time and in-game)
+
+### Added
+
+- **One self-test catalogue, two runners** (`dev.minted.selftest`), so
+  "correct" is defined once and can never drift between them:
+  - `.\mvnw.cmd test` (also run automatically by `clean package`) asserts the
+    money rules headlessly: amount tokens, deposit/withdraw and the cap, the
+    absolute admin-set path, the remote-sync path, shop item matching, custom
+    item degrade, VIP name validation, and a **two-server simulation** proving
+    concurrent balance changes compose, an overdraft is refused, and a stale
+    cache can never push a balance past the cap.
+  - `/minted selftest` (admin) runs the same checks on the live server and
+    adds what only a real server can prove: a guarded-delta round-trip against
+    the configured database (the row is deleted afterwards), the public
+    economy API, the loaded shop model, every command executor, the VIP list,
+    detected custom-item providers and the Redis announcement channel.
+    Results are printed in chat and logged to the console.
+- Every check is total: it reports pass, skip (with a reason) or a short
+  failure, and can never throw into the caller. The suite includes guard
+  tests proving the harness can actually fail and skip.
+- `StorageProvider.deleteBalance` (a small storage addition the self-test uses
+  to clean up after itself) and read-only accessors for the account save state,
+  used by the suite and by tooling.
+
+### Notes
+
+- Test scope only: JUnit 5 never ships inside the jar, and the checks live in
+  the plugin so the in-game runner and the build runner cannot diverge.
+
 ## [0.52.0] - 2026-09-24 - Public documentation and onboarding
 
 ### Added

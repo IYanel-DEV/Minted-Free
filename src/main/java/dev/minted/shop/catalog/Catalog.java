@@ -50,6 +50,40 @@ public final class Catalog {
         return out;
     }
 
+    /** The curated entry for a canonical material key, or null when not catalogued. */
+    public static Entry find(String materialKey) {
+        if (materialKey == null) {
+            return null;
+        }
+        for (Entry entry : ALL) {
+            if (materialKey.equals(entry.materialKey)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * A sane default pair of {buy, sell} for a category. Used when a material is
+     * not curated (the "sell every item" fill), so every item still has a price.
+     */
+    public static double[] defaultPrice(Category category) {
+        switch (category) {
+            case TOOLS: return new double[]{60, 15};
+            case ARMOR: return new double[]{120, 30};
+            case FOOD: return new double[]{15, 4};
+            case ORES: return new double[]{40, 12};
+            case REDSTONE: return new double[]{50, 14};
+            case DECORATION: return new double[]{30, 8};
+            case TRANSPORT: return new double[]{200, 60};
+            case NATURE: return new double[]{20, 5};
+            case BREWING: return new double[]{100, 28};
+            case ENCHANTED: return new double[]{600, 180};
+            case BUILDING: return new double[]{8, 2};
+            default: return new double[]{40, 10};
+        }
+    }
+
     private static Entry e(String display, String key, Category cat, double buy, double sell) {
         return new Entry(display, key, cat, buy, sell);
     }

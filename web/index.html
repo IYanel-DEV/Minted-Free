@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minted Global Shop Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="top-bar">
+        <div class="logo-col">MINTED</div>
+        <div class="title-col">
+            <div class="page-title">Global Shop</div>
+            <div class="page-sub">Edit your shop's item list &rarr; download global-shops.yml</div>
+        </div>
+        <div class="btn-col">
+            <button class="mc-btn" id="btnImport">Import .yml</button>
+            <button class="mc-btn primary" id="btnDownload">Download .yml</button>
+            <input type="file" id="fileImport" accept=".yml,.yaml" style="display:none">
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Chest window -->
+        <div class="chest-window">
+            <div class="chest-strip">
+                <label class="shop-name-label">Shop name</label>
+                <input type="text" class="shop-name-input" id="shopName" maxlength="32" value="Global Shop">
+                <label class="template-pick">
+                    <span>Version template</span>
+                    <select id="versionTemplate">
+                        <option value="">custom</option>
+                    </select>
+                </label>
+                <label class="catalog-check">
+                    <input type="checkbox" id="catalogToggle" checked>
+                    <span>catalog: true</span>
+                </label>
+            </div>
+            <div class="tabs-row" id="catTabs"></div>
+            <div class="grid-wrap">
+                <div class="grid" id="grid"></div>
+            </div>
+            <div class="chest-strip footer">
+                <span class="hud" id="pageLabel">Page 1/1</span>
+                <span class="hud" id="templateHint" style="display:none;color:#ffd968"></span>
+                <button class="mc-btn mini" id="btnNewCat">+ Category</button>
+            </div>
+        </div>
+
+        <!-- Item config -->
+        <div class="config-window">
+            <div class="config-head" id="configHead">Item Settings</div>
+
+            <div class="config-body" id="emptyHint">
+                <div class="big-icon" id="bigIcon"></div>
+                <div class="empty-text" id="emptyText">Click an item slot to edit it.<br>Click empty slot to add an item.</div>
+            </div>
+
+            <div class="config-body" id="configForm" style="display:none">
+                <div class="field">
+                    <div class="frow">
+                        <label>Material</label>
+                        <button class="mc-btn mini" id="btnPickMaterial">Open item list</button>
+                    </div>
+                    <div class="mat-preview" id="matPreview"></div>
+                    <input type="hidden" id="fMaterial">
+                </div>
+
+                <div class="frow">
+                    <label>Amount</label>
+                    <input type="number" id="fAmount" min="1" max="64" value="1">
+                </div>
+
+                <div class="frow">
+                    <label>Custom name <span class="dim">(& codes ok)</span></label>
+                    <input type="text" id="fName" placeholder="&bExcalibur">
+                </div>
+
+                <div class="frow">
+                    <label>Lore <span class="dim">(one per line, & codes ok)</span></label>
+                    <textarea id="fLore" rows="4" placeholder="&7A legendary sword"></textarea>
+                </div>
+
+                <div class="two-col">
+                    <div class="frow">
+                        <label>Buy price</label>
+                        <input type="number" id="fBuy" min="0" step="0.01" placeholder="none">
+                    </div>
+                    <div class="frow">
+                        <label>Sell price</label>
+                        <input type="number" id="fSell" min="0" step="0.01" placeholder="none">
+                    </div>
+                </div>
+
+                <div class="two-col">
+                    <div class="frow">
+                        <label>Page</label>
+                        <input type="number" id="fPage" min="1" value="1">
+                    </div>
+                    <div class="frow">
+                        <label>Slot <span class="dim">(auto if empty)</span></label>
+                        <input type="number" id="fSlot" min="0" max="53" placeholder="auto">
+                    </div>
+                </div>
+
+                <div class="frow">
+                    <label>Category</label>
+                    <input type="text" id="fCategory" placeholder="Type to name a new tab">
+                </div>
+
+                <div class="frow">
+                    <label>Enchantments <span class="dim">(enchant:level each line)</span></label>
+                    <textarea id="fEnchants" rows="3" placeholder="sharpness:5"></textarea>
+                </div>
+
+                <div class="frow">
+                    <label>Legacy data <span class="dim">(1.12- only)</span></label>
+                    <input type="number" id="fData" min="0" max="15" value="0">
+                </div>
+
+                <div class="btn-row">
+                    <button class="mc-btn" id="btnClearItem">Clear</button>
+                    <button class="mc-btn danger" id="btnDeleteItem">Remove</button>
+                    <button class="mc-btn primary" id="btnSaveItem">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item picker -->
+    <div class="overlay" id="overlay">
+        <div class="picker">
+            <div class="picker-top">
+                <div class="picker-search">
+                    <input type="text" id="search" placeholder="Search items..." autocomplete="off">
+                </div>
+                <button class="mc-btn mini" id="searchClose">Close</button>
+            </div>
+            <div class="picker-cats" id="pickerCats"></div>
+            <div class="picker-grid" id="pickerGrid"></div>
+        </div>
+    </div>
+
+    <script src="items.js"></script>
+    <script src="templates.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

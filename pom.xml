@@ -6,7 +6,7 @@
 
     <groupId>dev.minted</groupId>
     <artifactId>minted-free</artifactId>
-    <version>0.52.0</version>
+    <version>0.62.0</version>
     <packaging>jar</packaging>
 
     <name>Minted-Free</name>
@@ -191,6 +191,17 @@
             <version>21.0</version>
             <scope>provided</scope>
         </dependency>
+        <!--
+            JUnit 5 for the self-test suite (test scope only, never shipped).
+            The checks live in the plugin itself - see dev.minted.selftest - so
+            `mvn test` runs exactly the same catalogue as /minted selftest.
+        -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -209,6 +220,16 @@
                 <configuration>
                     <release>8</release>
                 </configuration>
+            </plugin>
+            <!--
+                Runs the self-test suite during `mvn test`, and therefore also
+                during every `mvn package`. The default surefire bundled with
+                Maven predates JUnit 5, so the version is pinned here.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

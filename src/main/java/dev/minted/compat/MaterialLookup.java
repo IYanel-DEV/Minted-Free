@@ -704,6 +704,44 @@ public final class MaterialLookup {
         return entry == null ? 1 : entry.since;
     }
 
+    /**
+     * The reverse of {@link #item(String)}: the registry key that resolves to
+     * {@code material} carrying {@code data} on this server. Prefers the most
+     * specific key among matches (white red wool stays {@code white_wool}, never
+     * the family base) and, when only a damaged-item fallback remains, accepts
+     * any key whose identity data is zero - a legacy damaged tool is matched by
+     * its material, not its wear. Returns null when nothing in the registry
+     * represents the given material. Used to write items back to the
+     * version-safe shop file.
+     */
+    public String keyFor(Material material, short data) {
+        if (material == null) {
+            return null;
+        }
+        String best = null;
+        for (Map.Entry<String, Entry> row : ENTRIES.entrySet()) {
+            Resolved resolved = resolveItem(row.getKey(), serverMinor);
+            if (resolved == null || resolved.material() != material || resolved.data() != data) {
+                continue;
+            }
+            if (best == null || row.getKey().length() > best.length()) {
+                best = row.getKey();
+            }
+        }
+        if (best == null) {
+            for (Map.Entry<String, Entry> row : ENTRIES.entrySet()) {
+                Resolved resolved = resolveItem(row.getKey(), serverMinor);
+                if (resolved == null || resolved.material() != material || resolved.data() != 0) {
+                    continue;
+                }
+                if (best == null || row.getKey().length() > best.length()) {
+                    best = row.getKey();
+                }
+            }
+        }
+        return best;
+    }
+
     private static final String[] PROBE = {
             "STONE", "COBBLESTONE", "OAK_PLANKS", "SPRUCE_PLANKS", "RED_WOOL", "WHITE_WOOL",
             "RED_BED", "RED_STAINED_GLASS", "RED_TERRACOTTA", "TERRACOTTA", "IRON_CHAIN",
