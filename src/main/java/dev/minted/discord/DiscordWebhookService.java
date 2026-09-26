@@ -543,7 +543,7 @@ public final class DiscordWebhookService {
 
         EmbedBuilder setTitle(String title) { this.title = title; return this; }
         EmbedBuilder setDescription(String desc) { this.description = desc; return this; }
-        EmbedBuilder setColor(Color color) { this.color = color.getRGB(); return this; }
+        EmbedBuilder setColor(Color color) { this.color = color.getRGB() & 0xFFFFFF; return this; }
         EmbedBuilder addField(String name, String value, boolean inline) {
             fields.add(new Field(name, value, inline));
             return this;

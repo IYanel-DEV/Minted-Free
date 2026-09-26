@@ -4,6 +4,11 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.65.2] - 2026-09-26 - Fix Discord webhook embed color
+
+### Fixed
+- Discord webhooks now work — embed `color` sent as a signed 32-bit int (`0xFF4CAF50` = `-11751600`) was rejected by Discord with `{"embeds": ["0"]}`. Color is now masked to 24 bits (`& 0xFFFFFF`), which Discord accepts (0–16777215).
+
 ## [0.65.0] - 2026-09-25 - Discord webhooks + Tax system
 
 ### Added
