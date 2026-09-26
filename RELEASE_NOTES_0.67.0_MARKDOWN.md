@@ -1,6 +1,6 @@
 # Minted Free 0.67.0 — /donate Command
 
-![Donation celebration](https://tenor.com/plUdpAI4qjy.gif)
+![Donation celebration](https://media1.tenor.com/m/sOua8BEwJeYAAAAd/bosnov-67.gif)
 
 [![Download](https://img.shields.io/badge/Download-Minted--0.67.0.jar-brightgreen?style=for-the-badge)](https://github.com/IYanel-DEV/Minted-Free/releases/tag/v0.67.0)
 [![Version](https://img.shields.io/badge/Version-0.67.0-blue?style=for-the-badge)](https://github.com/IYanel-DEV/Minted-Free/releases/tag/v0.67.0)
