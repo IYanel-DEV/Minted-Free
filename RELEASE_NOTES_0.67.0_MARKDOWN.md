@@ -1,5 +1,7 @@
 # Minted Free 0.67.0 — /donate Command
 
+![Donation celebration](https://tenor.com/plUdpAI4qjy.gif)
+
 [![Download](https://img.shields.io/badge/Download-Minted--0.67.0.jar-brightgreen?style=for-the-badge)](https://github.com/IYanel-DEV/Minted-Free/releases/tag/v0.67.0)
 [![Version](https://img.shields.io/badge/Version-0.67.0-blue?style=for-the-badge)](https://github.com/IYanel-DEV/Minted-Free/releases/tag/v0.67.0)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.8%E2%80%931.26-green?style=for-the-badge)](https://github.com/IYanel-DEV/Minted-Free)

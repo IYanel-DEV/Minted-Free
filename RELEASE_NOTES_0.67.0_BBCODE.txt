@@ -1,0 +1,91 @@
+[center][img]https://tenor.com/plUdpAI4qjy.gif[/img][/center]
+
+[center][size=18][b]Minted Free 0.67.0 — The /donate Command[/b][/size][/center]
+
+[center][url=https://github.com/IYanel-DEV/Minted-Free/releases/tag/v0.67.0][b][color=#4CAF50]⬇ Download Minted-0.67.0.jar[/color][/b][/url]  •  [url=https://github.com/IYanel-DEV/Minted-Free][b]Source & Issues[/b][/url]  •  [url=https://IYanel-DEV.github.io/Minted-Free/][b]Web Editor[/b][/url]  •  [url=https://github.com/IYanel-DEV/Minted-Free/wiki][b]Wiki[/b][/url][/center]
+
+[center][b]One jar. Minecraft 1.8 → 1.26. No per-version downloads. No required dependencies.[/b][/center]
+
+[size=14][b][color=#E91E63]🎁 What's New in 0.67.0[/color][/b][/size]
+
+[spoiler=💸 /donate — No-Fee Gifts with a Fanfare]
+[list]
+[*][b]New [b]/donate <player> <amount>[/b] command[/b] (alias [b]/tip[/b])
+[*][b]No fee[/b] — every coin lands with the receiver
+[*][b]Instagram-worthy arrival:[/b] the receiver gets the money, a chat line, and text floating [b]above the health bar[/b] (action bar)
+[*][b]Fanfare melody[/b] plays around the receiver when the money lands
+[*][b]Spam-proof music:[/b] the melody won't replay for the same receiver within [b][i]donate.music-cooldown-seconds[/i][/b] (default 5s)
+[*][b]Tab completion[/b] lists online players
+[/list]
+[/spoiler]
+
+[spoiler=🔐 Permissions]
+[list]
+[*][b][i]minted.donate[/i][/b] (default [b]true[/b]) — use [b]/donate[/b]
+[*][b][i]minted.donate.others[/i][/b] (default [b]true[/b]) — tab-complete other players
+[/list]
+[/spoiler]
+
+[size=14][b][color=#9C27B0]💰 Donation Configuration[/color][/b][/size]
+
+[code]donate:
+  # How long before the fanfare can play again for the same receiver (seconds)
+  music-cooldown-seconds: 5
+
+sounds:
+  enabled: true
+  volume: 1.0
+  donate-sent: "NOTE_PLING"   # sound the donor hears[/code]
+
+[size=14][b][color=#9C27B0]💻 In-Game[/color][/b][/size]
+
+[code]/donate Steve 500       # give $500 to the online player Steve
+/tip Steve 500              # same thing[/code]
+
+[size=14][b][color=#9C27B0]📦 Also in This Release Line (0.66.0 / 0.65.x)[/color][/b][/size]
+
+[list]
+[*][b]Redesigned Discord webhook embeds[/b] — card-style with event colors, summaries, dividers, server author header, normalized version
+[*][b]Webhooks + tax system[/b] — every economy event hooked, configurable per-shop-type taxes
+[*][b]Crash-proofing[/b] — fixed Paper 1.26.2 server-name crash, defensive [i]onEnable()[/i], version checker
+[/list]
+
+[size=14][b][color=#E91E63]👥 Credits & Acknowledgments[/color][/b][/size]
+
+[b]Core Development:[/b] [b]IYanel-DEV[/b] — Lead developer, architecture, all systems
+
+[b]Community Contributors:[/b]
+• [b]LlmDl[/b] (https://www.spigotmc.org/members/llmdl.33402/) — [b]Suggested VaultUnlocked (vault2 API) support[/b] implemented in 0.49.0
+• [b]Iyouniss[/b] — Contributor
+• [b]iyanel01[/b] — Contributor
+• [b]vexx-rain[/b] — Contributor
+
+[b]Third-Party Libraries (Bundled & Relocated):[/b]
+HikariCP • MariaDB Connector/J • sqlite-jdbc • bStats (id 34228) • JUnit 5 (test scope) • VaultUnlockedAPI (provided)
+
+[size=14][b][color=#00BCD4]📥 Installation & Upgrade[/color][/b][/size]
+
+[b]Fresh Install:[/b]
+1. Drop [b]Minted-0.67.0.jar[/b] in [i]plugins/[/i]
+2. Start server — SQLite works with zero config
+3. Try [b]/minted gui[/b] — personal hub with balance, bank, wallet, stats, requests
+
+[b]Upgrade from Any Version:[/b]
+1. Replace jar, restart
+2. Existing global shops → auto-exported to [i]global-shops.yml[/i] exactly once
+3. Existing player shops → already in database, no action needed
+
+[size=14][b][color=#607D8B]🔗 Links[/color][/b][/size]
+
+[list]
+[*][url=https://github.com/IYanel-DEV/Minted-Free/releases]Releases & Downloads[/url]
+[*][url=https://github.com/IYanel-DEV/Minted-Free]Source & Issues[/url]
+[*][url=https://IYanel-DEV.github.io/Minted-Free/]Web Editor[/url]
+[*][url=https://github.com/IYanel-DEV/Minted-Free/wiki]Wiki[/url]
+[*][b]In-Game Diagnostics:[/b] [b]/minted report[/b] — live state of every integration
+[*][url=https://bstats.org/plugin/bukkit/Minted/34228]bStats[/url]
+[/list]
+
+[size=12][color=#757575]One jar, 1.8 → 1.26 • Compile against 1.8.8 API • api-version: 1.13 • Fully async storage • No required dependencies • Self-tests as source of truth[/color][/size]
+
+[center][b]Enjoy Minted 0.67.0! 🎉[/b][/center]
