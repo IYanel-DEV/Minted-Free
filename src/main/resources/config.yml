@@ -419,6 +419,8 @@ discord:
     color: "#4CAF50"
     # Thumbnail image URL (optional)
     thumbnail-url: ""
+    # Small icon shown next to the server name at the top of every embed (optional)
+    author-icon-url: ""
     # Footer text (optional)
     footer-text: "Minted Economy"
     # Ping roles/users on specific events (comma-separated role/user IDs)

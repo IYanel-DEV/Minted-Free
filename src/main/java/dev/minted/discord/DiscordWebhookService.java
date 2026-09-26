@@ -63,6 +63,7 @@ public final class DiscordWebhookService {
         }
         cfg.embedColor = parseColor(plugin.getConfig().getString("discord.embed.color", "#4CAF50"));
         cfg.thumbnailUrl = plugin.getConfig().getString("discord.embed.thumbnail-url", "");
+        cfg.authorIconUrl = plugin.getConfig().getString("discord.embed.author-icon-url", "");
         cfg.footerText = plugin.getConfig().getString("discord.embed.footer-text", "Minted Economy");
         cfg.showServerName = plugin.getConfig().getBoolean("discord.embed.show-server-name", true);
         cfg.showServerIcon = plugin.getConfig().getBoolean("discord.embed.show-server-icon", false);
@@ -88,26 +89,54 @@ public final class DiscordWebhookService {
         }
     }
 
+    /**
+     * Base embed with the branded header (author = server name, optional icon),
+     * configurable color and thumbnail. All event embeds build on this.
+     */
+    private EmbedBuilder baseEmbed(String title, String emoji, Color color) {
+        EmbedBuilder embed = new EmbedBuilder()
+                .setTitle(emoji + " " + title)
+                .setColor(color)
+                .setTimestamp()
+                .setFooter(config.footerText + " | " + getServerNameSafe(),
+                        config.showServerIcon && config.authorIconUrl != null && !config.authorIconUrl.isEmpty()
+                                ? config.authorIconUrl : null);
+        if (config.showServerName) {
+            if (config.authorIconUrl != null && !config.authorIconUrl.isEmpty()) {
+                embed.setAuthor(getServerNameSafe(), config.authorIconUrl);
+            } else {
+                embed.setAuthor(getServerNameSafe());
+            }
+        }
+        if (config.thumbnailUrl != null && !config.thumbnailUrl.isEmpty()) {
+            embed.setThumbnail(config.thumbnailUrl);
+        }
+        return embed;
+    }
+
+    /** A full-width blank divider field that visually groups field rows. */
+    private static String DIVIDER = "\u200b";
+
     /** Send a shop sale notification (global/community shop). */
     public void sendShopSale(Player buyer, Player seller, Shop shop, ShopItem item, int quantity, double totalPrice, double taxAmount) {
         if (!enabled) return;
         String webhookUrl = getWebhookUrl("shop-sale");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🛒 Shop Sale")
-                .setColor(config.embedColor)
-                .addField("Buyer", buyer.getName(), true)
-                .addField("Seller", seller != null ? seller.getName() : "Server", true)
-                .addField("Shop", shop.getName(), true)
-                .addField("Item", formatItemName(item), true)
-                .addField("Quantity", formatNumber(quantity), true)
-                .addField("Total", formatPrice(totalPrice), true);
+        EmbedBuilder embed = baseEmbed("Shop Sale", "\ud83d\uded2", config.embedColor)
+                .setDescription("**" + buyer.getName() + "** bought **" + formatNumber(quantity)
+                        + " × " + formatItemName(item) + "** from **" + shop.getName() + "**")
+                .addField("**Buyer**", buyer.getName(), true)
+                .addField("**Seller**", seller != null ? seller.getName() : "Server", true)
+                .addField("**Shop**", shop.getName(), true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Item**", formatItemName(item), true)
+                .addField("**Quantity**", formatNumber(quantity), true)
+                .addField("**Total**", "💰 " + formatPrice(totalPrice), true);
         if (taxAmount > 0) {
-            embed.addField("Tax Collected", formatPrice(taxAmount), true);
+            embed.addField(DIVIDER, DIVIDER, false)
+                    .addField("**Tax Collected**", "🧾 " + formatPrice(taxAmount), true);
         }
-        embed.setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -118,19 +147,18 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("shop-purchase");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🛍️ Shop Purchase")
-                .setColor(config.embedColor)
-                .addField("Buyer", buyer.getName(), true)
-                .addField("Shop", shop.getName(), true)
-                .addField("Item", formatItemName(item), true)
-                .addField("Quantity", formatNumber(quantity), true)
-                .addField("Total", formatPrice(totalPrice), true);
+        EmbedBuilder embed = baseEmbed("Shop Purchase", "\ud83d\uded0", config.embedColor)
+                .setDescription("**" + buyer.getName() + "** purchased **" + formatNumber(quantity)
+                        + " × " + formatItemName(item) + "** from **" + shop.getName() + "**")
+                .addField("**Buyer**", buyer.getName(), true)
+                .addField("**Shop**", shop.getName(), true)
+                .addField("**Total**", "💰 " + formatPrice(totalPrice), true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Item**", formatItemName(item), true)
+                .addField("**Quantity**", formatNumber(quantity), true);
         if (taxAmount > 0) {
-            embed.addField("Tax Paid", formatPrice(taxAmount), true);
+            embed.addField("**Tax Paid**", "🧾 " + formatPrice(taxAmount), true);
         }
-        embed.setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -141,20 +169,19 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("player-shop-sale");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏪 Player Shop Sale")
-                .setColor(config.embedColor)
-                .addField("Buyer", buyer.getName(), true)
-                .addField("Shop Owner", shopOwner.getName(), true)
-                .addField("Shop", shop.getName(), true)
-                .addField("Item", formatItemName(item), true)
-                .addField("Quantity", formatNumber(quantity), true)
-                .addField("Total", formatPrice(totalPrice), true);
+        EmbedBuilder embed = baseEmbed("Player Shop Sale", "\ud83c\udfea", new Color(0x26A69A))
+                .setDescription("**" + buyer.getName() + "** bought **" + formatNumber(quantity)
+                        + " × " + formatItemName(item) + "** from **" + shopOwner.getName() + "**")
+                .addField("**Buyer**", buyer.getName(), true)
+                .addField("**Shop Owner**", shopOwner.getName(), true)
+                .addField("**Shop**", shop.getName(), true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Item**", formatItemName(item), true)
+                .addField("**Quantity**", formatNumber(quantity), true)
+                .addField("**Total**", "💰 " + formatPrice(totalPrice), true);
         if (taxAmount > 0) {
-            embed.addField("Tax Collected", formatPrice(taxAmount), true);
+            embed.addField("**Tax Collected**", "🧾 " + formatPrice(taxAmount), true);
         }
-        embed.setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -165,20 +192,19 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("player-shop-purchase");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🛍️ Player Shop Purchase")
-                .setColor(config.embedColor)
-                .addField("Buyer", buyer.getName(), true)
-                .addField("Shop Owner", shopOwner.getName(), true)
-                .addField("Shop", shop.getName(), true)
-                .addField("Item", formatItemName(item), true)
-                .addField("Quantity", formatNumber(quantity), true)
-                .addField("Total", formatPrice(totalPrice), true);
+        EmbedBuilder embed = baseEmbed("Player Shop Purchase", "\ud83d\uded0", new Color(0x26A69A))
+                .setDescription("**" + buyer.getName() + "** purchased **" + formatNumber(quantity)
+                        + " × " + formatItemName(item) + "** from **" + shopOwner.getName() + "**")
+                .addField("**Buyer**", buyer.getName(), true)
+                .addField("**Shop Owner**", shopOwner.getName(), true)
+                .addField("**Shop**", shop.getName(), true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Item**", formatItemName(item), true)
+                .addField("**Quantity**", formatNumber(quantity), true)
+                .addField("**Total**", "💰 " + formatPrice(totalPrice), true);
         if (taxAmount > 0) {
-            embed.addField("Tax Paid", formatPrice(taxAmount), true);
+            embed.addField("**Tax Paid**", "🧾 " + formatPrice(taxAmount), true);
         }
-        embed.setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -189,17 +215,16 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("auction-create");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("📦 Auction Created")
-                .setColor(config.embedColor)
-                .addField("Seller", seller.getName(), true)
-                .addField("Item", itemName, true)
-                .addField("Quantity", formatNumber(quantity), true)
-                .addField("Starting Bid", formatPrice(startPrice), true)
-                .addField("Buyout", buyoutPrice > 0 ? formatPrice(buyoutPrice) : "None", true)
-                .addField("Duration", durationHours + "h", true)
-                .setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
+        EmbedBuilder embed = baseEmbed("Auction Created", "\ud83d\udce6", new Color(0x7E57C2))
+                .setDescription("**" + seller.getName() + "** is auctioning **" + formatNumber(quantity)
+                        + " × " + itemName + "**")
+                .addField("**Seller**", seller.getName(), true)
+                .addField("**Item**", itemName, true)
+                .addField("**Quantity**", formatNumber(quantity), true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Starting Bid**", "💲 " + formatPrice(startPrice), true)
+                .addField("**Buyout**", buyoutPrice > 0 ? "⚡ " + formatPrice(buyoutPrice) : "—", true)
+                .addField("**Duration**", "⏱️ " + durationHours + "h", true);
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -210,15 +235,13 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("auction-bid");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("💰 Auction Bid")
-                .setColor(config.embedColor)
-                .addField("Bidder", bidder.getName(), true)
-                .addField("Item", itemName, true)
-                .addField("New Bid", formatPrice(bidAmount), true)
-                .addField("Previous Bid", previousBid > 0 ? formatPrice(previousBid) : "None", true)
-                .setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
+        EmbedBuilder embed = baseEmbed("Auction Bid", "\ud83d\udcb0", new Color(0x42A5F5))
+                .setDescription("**" + bidder.getName() + "** placed a bid on **" + itemName + "**")
+                .addField("**Bidder**", bidder.getName(), true)
+                .addField("**Item**", itemName, true)
+                .addField("**New Bid**", "💲 " + formatPrice(bidAmount), true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Previous Bid**", previousBid > 0 ? "💲 " + formatPrice(previousBid) : "—", true);
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -230,16 +253,15 @@ public final class DiscordWebhookService {
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
         String ping = config.pingRoles.getOrDefault("auction-buyout", "");
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("⚡ Auction Buyout!")
-                .setColor(new Color(0xFFD700)) // Gold for buyout
-                .addField("Buyer", buyer.getName(), true)
-                .addField("Seller", seller != null ? seller.getName() : "Unknown", true)
-                .addField("Item", itemName, true)
-                .addField("Quantity", formatNumber(quantity), true)
-                .addField("Buyout Price", formatPrice(buyoutPrice), true)
-                .setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
+        EmbedBuilder embed = baseEmbed("Auction Buyout", "\u26a1", new Color(0xFFD700))
+                .setDescription("**" + buyer.getName() + "** instantly bought **" + formatNumber(quantity)
+                        + " × " + itemName + "** for **" + formatPrice(buyoutPrice) + "**")
+                .addField("**Buyer**", buyer.getName(), true)
+                .addField("**Seller**", seller != null ? seller.getName() : "Unknown", true)
+                .addField("**Item**", itemName, true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Quantity**", formatNumber(quantity), true)
+                .addField("**Buyout Price**", "⚡ " + formatPrice(buyoutPrice), true);
 
         sendAsync(webhookUrl, embed.build(), ping);
     }
@@ -250,21 +272,19 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("auction-expire");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("⏰ Auction Expired")
-                .setColor(new Color(0xFF5722))
-                .addField("Seller", seller.getName(), true)
-                .addField("Item", itemName, true)
-                .addField("Quantity", formatNumber(quantity), true);
+        EmbedBuilder embed = baseEmbed("Auction Expired", "\u23f0", new Color(0xFF7043))
+                .setDescription("The auction for **" + formatNumber(quantity) + " × " + itemName + "** by **" + seller.getName() + "** has ended")
+                .addField("**Seller**", seller.getName(), true)
+                .addField("**Item**", itemName, true)
+                .addField("**Quantity**", formatNumber(quantity), true)
+                .addField(DIVIDER, DIVIDER, false);
         if (highestBid > 0 && highestBidder != null) {
-            embed.addField("Highest Bid", formatPrice(highestBid), true)
-                    .addField("Highest Bidder", highestBidder.getName(), true)
-                    .addField("Result", "Item returned to seller", true);
+            embed.addField("**Highest Bid**", "💲 " + formatPrice(highestBid), true)
+                    .addField("**Highest Bidder**", highestBidder.getName(), true)
+                    .addField("**Result**", "📦 Item returned to seller", false);
         } else {
-            embed.addField("Result", "No bids — item returned", true);
+            embed.addField("**Result**", "📦 No bids — item returned to seller", false);
         }
-        embed.setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -275,15 +295,14 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("auction-claim");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle(wasBuyout ? "⚡ Auction Buyout Claimed" : "✅ Auction Won")
-                .setColor(config.embedColor)
-                .addField("Winner", claimer.getName(), true)
-                .addField("Item", itemName, true)
-                .addField("Quantity", formatNumber(quantity), true)
-                .addField("Price Paid", formatPrice(price), true)
-                .setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
+        EmbedBuilder embed = baseEmbed(wasBuyout ? "Auction Buyout Claimed" : "Auction Won", "\u2705", new Color(0x4CAF50))
+                .setDescription("**" + claimer.getName() + "** claimed **" + formatNumber(quantity)
+                        + " × " + itemName + "**" + (wasBuyout ? " via buyout" : ""))
+                .addField("**Winner**", claimer.getName(), true)
+                .addField("**Item**", itemName, true)
+                .addField("**Quantity**", formatNumber(quantity), true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Price Paid**", "💰 " + formatPrice(price), true);
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -294,17 +313,16 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("bounty-place");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🎯 Bounty Placed")
-                .setColor(new Color(0xE91E63))
-                .addField("Placer", placer.getName(), true)
-                .addField("Target", target.getName(), true)
-                .addField("Reward", formatPrice(amount), true);
+        EmbedBuilder embed = baseEmbed("Bounty Placed", "\ud83c\udfaf", new Color(0xE91E63))
+                .setDescription("**" + placer.getName() + "** placed a **" + formatPrice(amount)
+                        + "** bounty on **" + target.getName() + "**")
+                .addField("**Placer**", placer.getName(), true)
+                .addField("**Target**", target.getName(), true)
+                .addField("**Reward**", "🎯 " + formatPrice(amount), true);
         if (note != null && !note.isEmpty()) {
-            embed.addField("Note", note, false);
+            embed.addField(DIVIDER, DIVIDER, false)
+                    .addField("**Note**", note, false);
         }
-        embed.setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -315,14 +333,11 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("bounty-claim");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("💀 Bounty Claimed!")
-                .setColor(new Color(0xE91E63))
-                .addField("Killer", killer.getName(), true)
-                .addField("Target", target.getName(), true)
-                .addField("Reward Collected", formatPrice(amount), true)
-                .setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
+        EmbedBuilder embed = baseEmbed("Bounty Claimed", "\ud83d\udc80", new Color(0xAD1457))
+                .setDescription("**" + killer.getName() + "** claimed the bounty on **" + target.getName() + "**")
+                .addField("**Killer**", killer.getName(), true)
+                .addField("**Target**", target.getName(), true)
+                .addField("**Reward Collected**", "🎯 " + formatPrice(amount), true);
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -333,14 +348,11 @@ public final class DiscordWebhookService {
         String webhookUrl = getWebhookUrl("balance-milestone");
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🏆 Balance Milestone Reached!")
-                .setColor(new Color(0x9C27B0))
-                .addField("Player", player.getName(), true)
-                .addField("New Balance", formatPrice(balance), true)
-                .addField("Milestone", milestone, true)
-                .setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
+        EmbedBuilder embed = baseEmbed("Balance Milestone Reached", "\ud83c\udfc6", new Color(0x9C27B0))
+                .setDescription("**" + player.getName() + "** just hit the **" + milestone + "** milestone!")
+                .addField("**Player**", player.getName(), true)
+                .addField("**Milestone**", "🏆 " + milestone, true)
+                .addField("**New Balance**", "💰 " + formatPrice(balance), true);
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -353,17 +365,16 @@ public final class DiscordWebhookService {
         if (webhookUrl == null || webhookUrl.isEmpty()) return;
 
         String ping = config.pingRoles.getOrDefault("large-transfer", "");
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("💸 Large Transfer")
-                .setColor(new Color(0x2196F3))
-                .addField("From", from.getName(), true)
-                .addField("To", to.getName(), true)
-                .addField("Amount", formatPrice(amount), true);
+        EmbedBuilder embed = baseEmbed("Large Transfer", "\ud83d\udcb8", new Color(0x2196F3))
+                .setDescription("**" + formatPrice(amount) + "** was transferred from **" + from.getName()
+                        + "** to **" + to.getName() + "**")
+                .addField("**From**", from.getName(), true)
+                .addField("**To**", to.getName(), true)
+                .addField("**Amount**", "💸 " + formatPrice(amount), true);
         if (reason != null && !reason.isEmpty()) {
-            embed.addField("Reason", reason, false);
+            embed.addField(DIVIDER, DIVIDER, false)
+                    .addField("**Reason**", reason, false);
         }
-        embed.setFooter(config.footerText + " | " + getServerNameSafe())
-                .setTimestamp();
 
         sendAsync(webhookUrl, embed.build(), ping);
     }
@@ -376,14 +387,13 @@ public final class DiscordWebhookService {
 
         String serverName = getServerNameSafe();
         
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🟢 Server Started")
-                .setColor(new Color(0x4CAF50))
-                .addField("Server", serverName, true)
-                .addField("Version", Bukkit.getVersion(), true)
-                .addField("Minted Version", plugin.getDescription().getVersion(), true)
-                .setFooter(config.footerText)
-                .setTimestamp();
+        EmbedBuilder embed = baseEmbed("Server Started", "\ud83d\udfe2", new Color(0x4CAF50))
+                .setDescription("The server is now **online**.")
+                .addField("**Server**", serverName, true)
+                .addField("**Version**", normalizeVersion(Bukkit.getVersion()), true)
+                .addField("**Minted Version**", plugin.getDescription().getVersion(), true)
+                .addField(DIVIDER, DIVIDER, false)
+                .addField("**Players Online**", "👥 " + Bukkit.getOnlinePlayers().size(), true);
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -396,12 +406,11 @@ public final class DiscordWebhookService {
 
         String serverName = getServerNameSafe();
         
-        EmbedBuilder embed = new EmbedBuilder()
-                .setTitle("🔴 Server Stopped")
-                .setColor(new Color(0xF44336))
-                .addField("Server", serverName, true)
-                .setFooter(config.footerText)
-                .setTimestamp();
+        EmbedBuilder embed = baseEmbed("Server Stopped", "\ud83d\udd34", new Color(0xF44336))
+                .setDescription("The server is now **offline**.")
+                .addField("**Server**", serverName, true)
+                .addField("**Version**", normalizeVersion(Bukkit.getVersion()), true)
+                .addField("**Minted Version**", plugin.getDescription().getVersion(), true);
 
         sendAsync(webhookUrl, embed.build());
     }
@@ -447,6 +456,22 @@ public final class DiscordWebhookService {
 
     private String formatPrice(double price) {
         return plugin.getConfig().getString("currency.symbol", "$") + NUMBER_FORMAT.format(price);
+    }
+
+    /** Turn "git-Paper-432 (MC: 1.26.2)" into "Paper 1.26.2" style for display. */
+    private String normalizeVersion(String version) {
+        if (version == null || version.isEmpty()) return "Unknown";
+        String mc = "1.x";
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("MC:\\s*([0-9._]+)").matcher(version);
+        if (m.find()) mc = m.group(1);
+        String server = "Server";
+        if (version.toLowerCase(Locale.ROOT).contains("paper")) server = "Paper";
+        else if (version.toLowerCase(Locale.ROOT).contains("spigot")) server = "Spigot";
+        else if (version.toLowerCase(Locale.ROOT).contains("purpur")) server = "Purpur";
+        else if (version.toLowerCase(Locale.ROOT).contains("fabric")) server = "Fabric";
+        else if (version.toLowerCase(Locale.ROOT).contains("forge")) server = "Forge";
+        else if (version.toLowerCase(Locale.ROOT).contains("vanilla")) server = "Vanilla";
+        return server + " " + mc;
     }
 
     private void sendAsync(String webhookUrl, String jsonPayload) {
@@ -519,6 +544,7 @@ public final class DiscordWebhookService {
         java.util.Map<String, String> webhookUrls;
         Color embedColor;
         String thumbnailUrl;
+        String authorIconUrl;
         String footerText;
         boolean showServerName;
         boolean showServerIcon;
@@ -548,6 +574,8 @@ public final class DiscordWebhookService {
             fields.add(new Field(name, value, inline));
             return this;
         }
+        EmbedBuilder setAuthor(String name) { this.authorName = name; return this; }
+        EmbedBuilder setAuthor(String name, String iconUrl) { this.authorName = name; this.authorIconUrl = iconUrl; return this; }
         EmbedBuilder setFooter(String text, String iconUrl) { this.footerText = text; this.footerIconUrl = iconUrl; return this; }
         EmbedBuilder setFooter(String text) { return setFooter(text, null); }
         EmbedBuilder setThumbnail(String url) { this.thumbnailUrl = url; return this; }
@@ -558,7 +586,16 @@ public final class DiscordWebhookService {
             StringBuilder sb = new StringBuilder();
             sb.append("{\"embeds\":[{");
             boolean first = true;
+            if (authorName != null) {
+                sb.append("\"author\":{\"name\":\"").append(escapeJson(authorName)).append("\"");
+                if (authorIconUrl != null && !authorIconUrl.isEmpty()) {
+                    sb.append(",\"icon_url\":\"").append(escapeJson(authorIconUrl)).append("\"");
+                }
+                sb.append("}");
+                first = false;
+            }
             if (title != null) {
+                if (!first) sb.append(",");
                 sb.append("\"title\":\"").append(escapeJson(title)).append("\"");
                 first = false;
             }

@@ -4,6 +4,20 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.66.0] - 2026-09-26 - Beautiful Discord webhook embeds
+
+### Added
+- **Redesigned Discord webhook embeds** into polished card-style notifications:
+  - Author header shows the server name (with optional icon) at the top of every embed
+  - Event-specific colors: green sales, teal player shops, purple auctions, gold buyouts, pink bounties, purple milestones, blue transfers, green/red server start/stop
+  - A short readable summary line (`**Steve** bought **5 × Diamond** from **Global Shop**`) under the title
+  - Bold-labelled fields laid out in rows of three for a clean look
+  - Blank divider rows separate logical groups (sale details vs. tax, etc.)
+  - Server version is normalized to display like `Paper 1.26.2` instead of raw `git-Paper-432 (MC: 1.26.2)`
+  - Server start embeds now include current player count
+  - New `discord.embed.author-icon-url` config for the small icon next to the server name
+- The footer icon is now auto-enabled when `show-server-icon` is on and an author icon is set.
+
 ## [0.65.2] - 2026-09-26 - Fix Discord webhook embed color
 
 ### Fixed
