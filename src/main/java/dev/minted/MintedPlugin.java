@@ -396,6 +396,11 @@ public final class MintedPlugin extends JavaPlugin {
         setExecutor("wallet", new WalletCommand(wallets));
         setExecutor("pay", new PayCommand(this, walletService, bankEconomy, namesDao, format, sounds, ledgerService,
                 transferFeePercent, stats));
+        dev.minted.command.DonateCommand donateCommand = new dev.minted.command.DonateCommand(walletService, format, sounds, ledgerService,
+                new dev.minted.sound.DonationMusic(this, getConfig().getConfigurationSection("sounds"),
+                        getConfig().getLong("donate.music-cooldown-seconds", 5) * 1000L));
+        setExecutor("donate", donateCommand);
+        getCommand("donate").setTabCompleter(donateCommand);
         setExecutor("bank", new BankCommand(bankService, bankEconomy, banknotes, noteInventory, gui, format,
                 messages, physical, combatLock, ledgerService, withdrawPercent, stats));
         setExecutor("sell", new SellCommand(shopContext, banknotes, getConfig().getString("shops.global", "Spawn")));

@@ -4,6 +4,16 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.67.0] - 2026-09-26 - /donate command
+
+### Added
+- New **/donate <player> <amount>** command (alias `/tip`): a no-fee, happy-spirited gift from wallet to wallet.
+  - The receiver must be online so they see it land: they get the money, a chat line, and text floating above the health bar (action bar).
+  - A little fanfare melody plays around the receiver when the money arrives.
+  - Donation spam guard: the music won't replay for the same receiver within `donate.music-cooldown-seconds` (default 5s).
+- New `minted.donate` (default true) and `minted.donate.others` permissions, plus a player-name tab completer on the command.
+- New configurable `donate.music-cooldown-seconds` and `sounds.donate-sent` sound.
+
 ## [0.66.0] - 2026-09-26 - Beautiful Discord webhook embeds
 
 ### Added

@@ -250,6 +250,14 @@ payments:
   bank-cooldown-seconds: 7
 
 # -----------------------------------------------------------------------------
+# DONATIONS (/donate)
+# -----------------------------------------------------------------------------
+donate:
+  # How long to wait before the fanfare can play again for the same receiver,
+  # so donation spam does not replay the music every time. Seconds.
+  music-cooldown-seconds: 5
+
+# -----------------------------------------------------------------------------
 # SHOPS
 # -----------------------------------------------------------------------------
 shops:
@@ -314,6 +322,7 @@ sounds:
   pay-received: "ORB_PICKUP"
   request-received: "NOTE_PLING"
   bounty-collected: "ANVIL_LAND"
+  donate-sent: "NOTE_PLING"
 
 # -----------------------------------------------------------------------------
 # BANKNOTE DENOMINATIONS

@@ -27,7 +27,7 @@ commands:
   minted:
     description: Main Minted command.
     aliases: [mint]
-    usage: /minted [help|gui|dashboard|reload|report|npc|vip]
+    usage: /minted [help|gui|dashboard|reload|report|npc|vip|selftest|source|shops]
   balance:
     description: Check a balance.
     aliases: [bal, money]
@@ -35,6 +35,10 @@ commands:
   pay:
     description: Pay another player.
     usage: /pay <player> <amount>
+  donate:
+    description: Donate money to an online player with a little fanfare.
+    aliases: [tip]
+    usage: /donate <player> <amount>
   wallet:
     description: Get your wallet, or open the one you hold.
     usage: /wallet
@@ -73,6 +77,12 @@ commands:
   eco:
     description: Administer player balances, and export or import them. Console only.
     usage: /eco [give|take|set|reset] <player> [amount] | /eco [export|import] <file> [confirm] (console only)
+  sh:
+    description: Reopen your last view in the global shop.
+    usage: /sh
+  psh:
+    description: Reopen the last player shop you were viewing, or your own.
+    usage: /psh
 
 permissions:
   minted.use:
@@ -89,6 +99,12 @@ permissions:
     default: op
   minted.pay:
     description: Pay another player.
+    default: true
+  minted.donate:
+    description: Donate money to another online player.
+    default: true
+  minted.donate.others:
+    description: Tab-complete other players when donating (the command itself still works for everyone with minted.donate).
     default: true
   minted.wallet:
     description: Get and use a wallet item.
