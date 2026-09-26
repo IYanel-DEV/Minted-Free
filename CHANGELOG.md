@@ -4,6 +4,12 @@ All notable changes to Minted are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries are added
 after each milestone passes review.
 
+## [0.68.0] - 2026-09-26 - Console can donate
+
+### Added
+- **/donate now works from the console** — `/donate <player> <amount>` from the server console credits the player's wallet with no sender wallet to charge, making it easy for a lone admin to test the donate fanfare. The receiver still gets the chat line, action bar text above the health bar, and the music.
+- Console donations are recorded in the ledger as `donate` from console.
+
 ## [0.67.0] - 2026-09-26 - /donate command
 
 ### Added

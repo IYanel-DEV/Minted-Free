@@ -23,6 +23,10 @@ import java.util.List;
  * to wallet. Unlike {@code /pay}, the target must be online: they get the money,
  * a chat line, text floating above the health bar, and a little fanfare unless
  * donation spam just played one (see {@link DonationMusic}).
+ *
+ * <p>From the console the command does not charge a wallet (there is none): the
+ * money simply appears in the receiver's wallet, which makes it a handy way for a
+ * lone admin to gift money - and to watch the fanfare play - while testing.
  */
 public final class DonateCommand implements CommandExecutor, TabCompleter {
 
@@ -43,11 +47,7 @@ public final class DonateCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can donate.");
-            return true;
-        }
-        if (!sender.hasPermission("minted.donate")) {
+        if (sender instanceof Player && !sender.hasPermission("minted.donate")) {
             sender.sendMessage(ChatColor.RED + "No permission.");
             return true;
         }
@@ -60,25 +60,27 @@ public final class DonateCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        final Player from = (Player) sender;
-
         double amount = parseAmount(args[1]);
         if (amount <= 0) {
             sender.sendMessage(ChatColor.RED + "Enter an amount greater than zero.");
             return true;
         }
 
-        Player target = from.getServer().getPlayerExact(args[0]);
+        Player target = sender.getServer().getPlayerExact(args[0]);
         if (target == null) {
             sender.sendMessage(ChatColor.RED + "Pick a player who is online - they need to see it land!");
             return true;
         }
-        if (target.equals(from)) {
+        if (sender instanceof Player && target.equals(sender)) {
             sender.sendMessage(ChatColor.RED + "You cannot donate to yourself.");
             return true;
         }
 
-        donate(from, target, amount);
+        if (sender instanceof Player) {
+            donate((Player) sender, target, amount);
+        } else {
+            donateFromConsole(sender, target, amount);
+        }
         return true;
     }
 
@@ -100,14 +102,38 @@ public final class DonateCommand implements CommandExecutor, TabCompleter {
         }
         from.sendMessage(ChatColor.GREEN + "Donated " + ChatColor.WHITE + format.format(amount)
                 + ChatColor.GREEN + " to " + target.getName() + ".");
-        target.sendMessage(ChatColor.GREEN + "You were donated " + ChatColor.WHITE + format.format(amount)
-                + ChatColor.GREEN + " by " + from.getName() + "!");
-        ActionBar.send(target, ChatColor.GOLD + "" + ChatColor.BOLD + format.format(amount)
-                + ChatColor.GREEN + " donated to you by " + ChatColor.WHITE + from.getName());
+        announce(from, target, amount, from.getName());
         ledger.record(from.getUniqueId(), -amount, "donate", "to " + target.getName());
         ledger.record(target.getUniqueId(), amount, "donate", "from " + from.getName());
         sounds.donateSent(from);
         music.play(target);
+    }
+
+    // Console path: there is no donor wallet to charge, so the gift appears in the
+    // receiver's wallet for free. Still plays the full fanfare so a lone admin can
+    // test the celebration without a second player online.
+    private void donateFromConsole(final CommandSender sender, final Player target, final double amount) {
+        Purse receiver = wallet.purseFor(target);
+        if (receiver == null) {
+            sender.sendMessage(ChatColor.RED + "Donation failed - the account is still loading, try again.");
+            return;
+        }
+        if (!receiver.credit(amount)) {
+            sender.sendMessage(ChatColor.RED + "Donation failed - the recipient cannot hold that much.");
+            return;
+        }
+        sender.sendMessage(ChatColor.GREEN + "Donated " + ChatColor.WHITE + format.format(amount)
+                + ChatColor.GREEN + " to " + target.getName() + " from the console.");
+        announce(sender, target, amount, "the console");
+        ledger.record(target.getUniqueId(), amount, "donate", "from console");
+        music.play(target);
+    }
+
+    private void announce(final CommandSender source, final Player target, final double amount, final String donorName) {
+        target.sendMessage(ChatColor.GREEN + "You were donated " + ChatColor.WHITE + format.format(amount)
+                + ChatColor.GREEN + " by " + donorName + "!");
+        ActionBar.send(target, ChatColor.GOLD + "" + ChatColor.BOLD + format.format(amount)
+                + ChatColor.GREEN + " donated to you by " + ChatColor.WHITE + donorName);
     }
 
     @Override
