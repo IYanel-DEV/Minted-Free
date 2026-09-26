@@ -1,0 +1,116 @@
+[center][size=18][b]Minted Free 0.66.0 — Beautiful Discord Webhook Embeds[/b][/size][/center]
+
+[center][url=https://github.com/IYanel-DEV/Minted-Free/releases/tag/v0.66.0][b][color=#4CAF50]⬇ Download Minted-0.66.0.jar[/color][/b][/url]  •  [url=https://github.com/IYanel-DEV/Minted-Free][b]Source & Issues[/b][/url]  •  [url=https://IYanel-DEV.github.io/Minted-Free/][b]Web Editor[/b][/url]  •  [url=https://github.com/IYanel-DEV/Minted-Free/wiki][b]Wiki[/b][/url][/center]
+
+[center][b]One jar. Minecraft 1.8 → 1.26. No per-version downloads. No required dependencies.[/b][/center]
+
+[size=14][b][color=#2196F3]🎉 What's New in 0.66.0[/color][/b][/size]
+
+[spoiler=🖼️ Discord Webhook Embeds — Fully Redesigned]
+[list]
+[*][b]Card-style notifications:[/b] every embed is now a polished, readable card
+[*][b]Server author header:[/b] server name with optional icon at the top of every embed
+[*][b]Event-tinted colors:[/b] green shop sales, teal player shops, purple auctions, gold buyouts, pink bounties, purple milestones, blue transfers, green/red server start & stop
+[*][b]Summary line:[/b] e.g. "[b]Steve[/b] bought [b]5 × Diamond[/b] from [b]Global Shop[/b]" right under the title
+[*][b]Bold-labelled fields[/b] laid out in tidy rows of three
+[*][b]Divider rows[/b] visually separate logical groups (sale details vs. tax collected)
+[*][b]Normalized version string:[/b] "Paper 1.26.2" instead of "git-Paper-432 (MC: 1.26.2)"
+[*][b]Player count[/b] shown on server start embeds
+[*]New [b][i]discord.embed.author-icon-url[/i][/b] config for the small icon beside the server name
+[/list]
+[/spoiler]
+
+[spoiler=📮 Discord Webhooks + Tax System (0.65.0)]
+[list]
+[*][b]Webhooks for all economy events:[/b] shop sales, player shop sales, auctions, bounty placing/claiming, balance milestones, large transfers, server start/stop
+[*][b]Tax system:[/b] per-shop-type buy/sell taxes (global shop, player shop, auctions) with minimum threshold
+[*]Taxes are [b]burned from economy[/b] and logged in the ledger
+[*][b]Per-event webhook URLs[/b] with ping support for important events
+[/list]
+[/spoiler]
+
+[spoiler=🩺 Crash-Proofing & Version Checker (0.65.1)]
+[list]
+[*][b]CRITICAL: server crash fixed[/b] — webhook called [i]Server.getServerName()[/i] which doesn't exist on Paper 1.26.2; now reflection with fallback
+[*][b]Version Checker:[/b] checks GitHub on startup, notifies ops/admins in-game + console when a new version is available
+[*][b]Crash protection:[/b] defensive try-catch in [i]onEnable()[/i] prevents init errors from killing the server
+[/list]
+[/spoiler]
+
+[spoiler=💰 Economy & Tax Config]
+[code]discord:
+  enabled: true
+  default-webhook-url: "https://discord.com/api/webhooks/..."
+  embed:
+    show-server-name: true
+    show-server-icon: false
+    color: "#4CAF50"
+    thumbnail-url: ""
+    author-icon-url: ""    # icon beside the server name at the top
+    footer-text: "Minted Economy"
+    ping-on:
+      large-transfer: ""
+      auction-buyout: ""
+
+tax:
+  enabled: true
+  global-shop-buy: 1.0     # %
+  global-shop-sell: 1.0
+  player-shop-buy: 1.0
+  player-shop-sell: 1.0
+  auction-buy: 1.0
+  auction-sell: 1.0
+  minimum-amount: 1.0
+
+update-checker:
+  enabled: true            # notify admins when a new release is out</code>
+[/spoiler]
+
+[size=14][b][color=#9C27B0]⚙️ How to Set Up Discord Notifications[/color][/b][/size]
+
+[b]One-Time Setup (2 minutes):[/b]
+1. In Discord: Server Settings → Integrations → Webhooks → New Webhook
+2. Copy the webhook URL
+3. In [i]config.yml[/i]: set [b][i]discord.enabled: true[/i][/b] and [b][i]discord.default-webhook-url[/i][/b]
+4. (Optional) set individual URLs per event under [i]discord.webhooks.[/i]
+5. Restart the server — done!
+
+[size=14][b][color=#E91E63]👥 Credits & Acknowledgments[/color][/b][/size]
+
+[b]Core Development:[/b] [b]IYanel-DEV[/b] — Lead developer, architecture, all systems
+
+[b]Community Contributors:[/b]
+• [b]LlmDl[/b] (https://www.spigotmc.org/members/llmdl.33402/) — [b]Suggested VaultUnlocked (vault2 API) support[/b] implemented in 0.49.0
+• [b]Iyouniss[/b] — Contributor
+• [b]iyanel01[/b] — Contributor
+• [b]vexx-rain[/b] — Contributor
+
+[b]Third-Party Libraries (Bundled & Relocated):[/b]
+HikariCP • MariaDB Connector/J • sqlite-jdbc • bStats (id 34228) • JUnit 5 (test scope) • VaultUnlockedAPI (provided)
+
+[size=14][b][color=#00BCD4]📥 Installation & Upgrade[/color][/b][/size]
+
+[b]Fresh Install:[/b]
+1. Drop [b]Minted-0.66.0.jar[/b] in [i]plugins/[/i]
+2. Start server — SQLite works with zero config
+3. Try [b]/minted gui[/b] — personal hub with balance, bank, wallet, stats, requests
+
+[b]Upgrade from Any Version:[/b]
+1. Replace jar, restart
+2. Existing global shops → auto-exported to [i]global-shops.yml[/i] exactly once
+3. Existing player shops → already in database, no action needed
+
+[size=14][b][color=#607D8B]🔗 Links[/color][/b][/size]
+
+[list]
+[*][url=https://github.com/IYanel-DEV/Minted-Free/releases]Releases & Downloads[/url]
+[*][url=https://github.com/IYanel-DEV/Minted-Free]Source & Issues[/url]
+[*][url=https://IYanel-DEV.github.io/Minted-Free/]Web Editor[/url]
+[*][url=https://github.com/IYanel-DEV/Minted-Free/wiki]Wiki[/url]
+[*][b]In-Game Diagnostics:[/b] [b]/minted report[/b] — live state of every integration
+[*][url=https://bstats.org/plugin/bukkit/Minted/34228]bStats[/url]
+[/list]
+
+[size=12][color=#757575]One jar, 1.8 → 1.26 • Compile against 1.8.8 API • api-version: 1.13 • Fully async storage • No required dependencies • Self-tests as source of truth[/color][/size]
+
+[center][b]Enjoy Minted 0.66.0! 🎉[/b][/center]
