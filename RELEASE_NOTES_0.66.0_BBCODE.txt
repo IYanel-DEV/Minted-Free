@@ -37,7 +37,8 @@
 [/list]
 [/spoiler]
 
-[spoiler=💰 Economy & Tax Config]
+[size=14][b][color=#9C27B0]💰 Economy & Tax Configuration[/color][/b][/size]
+
 [code]discord:
   enabled: true
   default-webhook-url: "https://discord.com/api/webhooks/..."
@@ -63,8 +64,7 @@ tax:
   minimum-amount: 1.0
 
 update-checker:
-  enabled: true            # notify admins when a new release is out</code>
-[/spoiler]
+  enabled: true            # notify admins when a new release is out[/code]
 
 [size=14][b][color=#9C27B0]⚙️ How to Set Up Discord Notifications[/color][/b][/size]
 
